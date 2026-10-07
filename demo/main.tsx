@@ -7,7 +7,37 @@ import './demo.css';
 import {
   Button, Icon, ICON_NAMES, VerifiedBadge, LedgerLine, ProofStat, JackpotFigure, JackpotTile, FlagshipRoster,
   PoweredBy, LeaderHero, RaffleBrand, NodeGraphic, NODE_NAMES, Odometer, TicketButton, tokens,
+  TextField, TextArea, Select, Checkbox, RadioGroup, Switch, ErrorSummary, Dropdown,
 } from '../src';
+
+function FormDemo() {
+  const [email, setEmail] = useState('jordan@');
+  const [prov, setProv] = useState('');
+  const [delivery, setDelivery] = useState('email');
+  const [live, setLive] = useState(true);
+  const [tried, setTried] = useState(false);
+  const [done, setDone] = useState('');
+  const errors = [
+    ...(/^\S+@\S+\.\S+$/.test(email) ? [] : [{ fieldId: 'demo-email', message: 'Enter an email address like name@example.com.' }]),
+    ...(prov ? [] : [{ fieldId: 'demo-prov', message: 'Choose your province.' }]),
+  ];
+  const err = (id: string) => (tried ? errors.find((e) => e.fieldId === id)?.message : undefined);
+  return (
+    <form noValidate onSubmit={(e) => { e.preventDefault(); setTried(true); setDone(errors.length ? '' : 'Saved (sample).'); }} style={{ display: 'grid', gap: 18, maxWidth: 520 }}>
+      {tried && errors.length ? <ErrorSummary errors={errors} /> : null}
+      <TextField label="Full name" autoComplete="name" defaultValue="Jordan Lee" />
+      <TextField id="demo-email" label="Email" type="email" autoComplete="email" hint="We send your tickets here." value={email} onChange={(e) => setEmail(e.target.value)} error={err('demo-email')} />
+      <Select id="demo-prov" label="Province" placeholder="Choose a province" value={prov} onChange={(e) => setProv(e.target.value)} error={err('demo-prov')}
+        options={[{ value: 'BC', label: 'British Columbia' }, { value: 'AB', label: 'Alberta' }, { value: 'SK', label: 'Saskatchewan' }, { value: 'MB', label: 'Manitoba' }, { value: 'ON', label: 'Ontario' }]} />
+      <TextArea label="Message" optional placeholder="Tell us about your raffle or lottery." />
+      <RadioGroup legend="Ticket delivery" name="delivery" value={delivery} onChange={setDelivery}
+        options={[{ value: 'email', label: 'eTickets by email', hint: 'Arrive in a minute or two.' }, { value: 'mail', label: 'Paper tickets by mail', hint: 'Allow 5 to 10 business days.' }]} />
+      <Checkbox label="Email me the draw results" defaultChecked />
+      <Switch label="Show the live jackpot on the site" checked={live} onChange={setLive} />
+      <div className="rnc-row"><Button type="submit">Save</Button>{done ? <span className="rnc-field-hint" role="status">{done}</span> : null}</div>
+    </form>
+  );
+}
 
 // Every name and figure here is a sample. Real client names need each client's permission.
 function Section({ title, note, children, stage }: { title: string; note?: ReactNode; children: ReactNode; stage?: boolean }) {
@@ -100,6 +130,17 @@ function App() {
         <div className="rnc-row" style={{ gap: 32, color: 'var(--brand)' }}>
           {NODE_NAMES.map((n) => <NodeGraphic key={n} name={n} size={120} />)}
           <NodeGraphic name="triad" size={120} shadow color="var(--action)" />
+        </div>
+      </Section>
+
+      <Section title="Form elements" note="Labels always visible, hints and errors tied to each field, an error summary on submit. Press Save to see the errors.">
+        <FormDemo />
+      </Section>
+
+      <Section title="Dropdown" note="A button that opens a short menu of actions or links. Arrow keys move, Escape closes.">
+        <div className="rnc-row">
+          <Dropdown label="Export report" items={[{ label: 'Download CSV', icon: 'receipt', onSelect: () => {} }, { label: 'Download PDF', icon: 'printer', onSelect: () => {} }, { label: 'Email to my team', icon: 'envelope-simple', onSelect: () => {} }, { label: 'Schedule a weekly export', icon: 'clock', disabled: true }]} />
+          <Dropdown label="Help" variant="primary" items={[{ label: 'Rules of play', href: '#' }, { label: 'Contact us', href: '#' }]} />
         </div>
       </Section>
 

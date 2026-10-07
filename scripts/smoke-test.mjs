@@ -31,6 +31,12 @@ const cases = [
   ['Odometer', h(DS.Odometer, { value: 684270, prefix: '$' }), ['aria-label="$684,270"', '$684,270']],
   ['TicketButton', h(DS.TicketButton, { label: 'Order tickets', stub: 'from $10', href: '#order' }), ['rnc-tbtn', 'aria-label="Order tickets, from $10"', 'tb-stub', 'href="#order"']],
   ['TicketButton as button', h(DS.TicketButton, { label: 'Buy tickets', size: 'big', fullWidth: true, colors: { bg: '#5a3fc0' } }), ['<button', 'big', 'full', '--tb-bg:#5a3fc0']],
+  ['TextField', h(DS.TextField, { label: 'Email', id: 'em', type: 'email', error: 'Enter your email.' }), ['rnc-input', 'for="em"', 'aria-invalid="true"', 'em-error']],
+  ['Select', h(DS.Select, { label: 'Province', placeholder: 'Choose', options: [{ value: 'BC', label: 'BC' }] }), ['rnc-select-wrap', 'Choose']],
+  ['Checkbox and RadioGroup', h('div', null, h(DS.Checkbox, { label: 'Agree' }), h(DS.RadioGroup, { legend: 'Delivery', name: 'd', options: [{ value: 'e', label: 'Email' }] })), ['type="checkbox"', 'rnc-fieldset', 'type="radio"']],
+  ['Switch', h(DS.Switch, { label: 'Live jackpot', checked: true, onChange: () => {} }), ['role="switch"', 'aria-checked="true"']],
+  ['ErrorSummary', h(DS.ErrorSummary, { errors: [{ fieldId: 'em', message: 'Enter your email.' }] }), ['rnc-errsum', 'href="#em"']],
+  ['Dropdown', h(DS.Dropdown, { label: 'Export', items: [{ label: 'CSV' }] }), ['aria-haspopup="menu"', 'role="menu"', 'hidden']],
 ];
 for (const [name, el, expect] of cases) {
   try { const html = render(el); const missing = expect.filter((s) => !html.includes(s)); check(name, !missing.length, missing.length ? 'missing ' + missing.join(', ') : ''); }

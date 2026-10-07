@@ -1,9 +1,14 @@
 # Changelog
 
-## 0.1.1 (2026-10-07)
+## 0.2.0 (2026-10-07)
 
-- Now released automatically from GitHub (anubir-raffle/rafflenexus-ui) with npm Trusted Publishing and provenance. No component changes.
-- The README covers automatic releases, `npm run status` and Dependabot, and the npm page links to the GitHub repository.
+- New form elements: `TextField`, `TextArea`, `Select`, `Checkbox`, `RadioGroup`, `Switch` and `ErrorSummary`, with labels, hints and errors tied to each field.
+- New `Dropdown`: a menu button for actions or links, fully keyboard-operable.
+- Unit tests (Vitest + Testing Library) for every component's behaviour; `npm test` runs them before every release.
+- Released automatically from GitHub (anubir-raffle/rafflenexus-ui) with npm Trusted Publishing and provenance; the npm page links to the repository.
+- `ErrorSummary` focuses the field safely where `scrollIntoView` isn't available.
+
+(0.1.1 was prepared but never published; its changes are part of 0.2.0.)
 
 ## 0.1.0 (2026-10-07)
 

@@ -60,6 +60,13 @@ export function Hero() {
 | `PoweredBy` | The only sign of Raffle Nexus on a client's site (footer and checkout). | `href`, `onStage` |
 | `NodeGraphic` | The logo's node shapes as large graphic elements. | `name` (`link`, `triad`, `link-tall`, `link-wide`), `size`, `color`, `shadow` |
 | `Icon` | Phosphor icons (regular weight) that take the text colour. | `name` (see `ICON_NAMES`), `size`, `label` |
+| `TextField`, `TextArea` | Labelled text inputs. Hint and error are tied to the field (`aria-describedby`); an error sets `aria-invalid`. Refs pass through, so form libraries work. | `label`, `hint`, `error`, `optional`, plus any input props (`type`, `autoComplete`, `value`…) |
+| `Select` | A labelled native select with a chevron (works with every keyboard, screen reader and phone picker). | `label`, `options` (or `<option>` children), `placeholder`, `hint`, `error` |
+| `Checkbox` | A 24px checkbox with its label to the right. | `label`, `hint`, `error`, plus input props |
+| `RadioGroup` | Radios in a fieldset with a legend. | `legend`, `name`, `options`, `value`/`defaultValue`, `onChange`, `hint`, `error` |
+| `Switch` | On/off for settings that apply straight away. Use a Checkbox in a submitted form. | `label`, `checked`, `onChange`, `disabled` |
+| `ErrorSummary` | Shown after a failed submit: takes focus and links to each field with a problem. | `errors: { fieldId, message }[]`, `title`, `autoFocus` |
+| `Dropdown` | A button that opens a short menu of actions or links (arrow keys, Home/End, Escape, click outside). For a form choice, use Select. | `label`, `items: { label, href?, onSelect?, icon?, disabled? }[]`, `variant`, `align` |
 
 Every component has TypeScript types with notes on each prop. Your editor shows them as you type.
 
@@ -117,9 +124,17 @@ The same values are available in JavaScript (`import { tokens } from '@rafflenex
 ```sh
 npm install
 npm run dev        # demo page with every component, live from src/
-npm test           # builds, renders every component, checks no client names ship
+npm test           # unit tests, then build, then smoke tests on the built package
+npm run test:watch # unit tests, re-run as you edit
 npm run build      # dist/: ESM, CommonJS, types, CSS, fonts, tokens.json
 ```
+
+**Tests run before every release.** GitHub Actions runs `npm test` on every pull request and before every publish; if anything fails, nothing is published.
+
+- **Unit tests** (`tests/`, Vitest + Testing Library in jsdom) check behaviour the way people use it: labels and errors are announced with their fields, the dropdown works by keyboard (arrows, Home/End, Escape returns focus) and closes on an outside click, the switch flips, the error summary takes focus and its links move to the field, jackpots read as the whole amount and count up once, and every animation stops under reduced motion.
+- **Smoke tests** (`scripts/smoke-test.mjs`) render every component from the built ES module and CommonJS files and, on Marketing's machine, check no client names appear anywhere.
+
+Add a unit test with every new component or behaviour change.
 
 `design/tokens.json`, `design/icons.json` and `design/nodes.json` are copies of the design system's files. When the design system changes, replace them and run `npm run generate` (the build does this too). Don't edit `styles/tokens.css` or `src/generated/` by hand.
 

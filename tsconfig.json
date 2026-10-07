@@ -17,10 +17,12 @@
   },
   "include": [
     "src",
-    "demo"
+    "demo",
+    "tests"
   ],
   "exclude": [
     "demo/vite.config.ts",
+    "vitest.config.ts",
     "demo/dist"
   ]
 }
