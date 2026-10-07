@@ -51,7 +51,9 @@
     "demo:build": "vite build --config demo/vite.config.ts",
     "prepublishOnly": "npm run typecheck && npm test",
     "sync": "node scripts/sync-from-design-system.mjs",
-    "status": "node scripts/status.mjs"
+    "status": "node scripts/status.mjs",
+    "preview": "node scripts/preview.mjs",
+    "release": "node scripts/release.mjs"
   },
   "peerDependencies": {
     "react": ">=17",

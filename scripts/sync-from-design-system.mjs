@@ -116,4 +116,4 @@ if (flag('--push')) {
   if (!sh('git remote').trim()) die('No git remote yet. Add the GitHub repo (git remote add origin …) and push.');
   sh('git push origin HEAD');
   console.log('✓ Pushed. GitHub Actions will test and publish it to npm.');
-} else console.log('Push to GitHub (git push) to publish it to npm.');
+} else console.log('Not pushed. Check it with npm run preview, then npm run release to publish it.');

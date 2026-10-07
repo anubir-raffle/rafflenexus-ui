@@ -143,22 +143,23 @@ Add a unit test with every new component or behaviour change.
 
 ## Automatic releases
 
-The design system is the source of truth. When Marketing changes it, this package follows without anyone publishing by hand:
+The design system is the source of truth. When Marketing changes it, this package follows, and nothing goes out until someone has looked at it:
 
 1. Marketing updates the RNC V2.1 design system.
-2. `npm run sync` (run on Marketing's machine, automatically after each design-system publish) copies the new tokens, icons, node shapes and component styles in, rebuilds, runs the tests, bumps the patch version, adds a changelog line, commits and pushes to `main`.
-3. GitHub Actions (`.github/workflows/release.yml`) type-checks, tests and publishes the new version to npm, then tags it. `ci.yml` tests pull requests.
+2. `npm run sync` (run on Marketing's machine, automatically after each design-system publish) copies the new tokens, icons, node shapes and component styles in, rebuilds, runs the tests, bumps the patch version, adds a changelog line and commits. It doesn't push.
+3. `npm run preview` builds the demo page from the local package, lists the commits and files that aren't on GitHub yet, and opens the demo at http://localhost:4180. Nothing is pushed or published.
+4. When it looks right, `npm run release` runs the tests again and pushes `main` to GitHub.
+5. GitHub Actions (`.github/workflows/release.yml`) type-checks, tests and publishes the new version to npm, then tags it. `ci.yml` tests pull requests. npmjs.com shows a new version as "validating" for a few minutes while it checks the provenance signature; it can already be installed.
 
 New components and changes to how a component behaves are code. They're ported into `src/` by hand in the same change, and released as a minor version (`npm run sync -- --minor`).
 
 `npm run status` checks every link (design system → package → GitHub → npm) and says what to fix if one is out of sync.
 
-**One-time setup**
-1. Push this repo to the public GitHub repository and give Marketing write access, so the sync can push to `main`. Set `repository.url` in `package.json` to the repository's address.
-2. Version 0.1.0 is already on npm (published 2026-10-07), so there's no hand publish to do.
-3. On npmjs.com, open the package's **Settings › Trusted Publisher** and add GitHub Actions with this repository and the workflow file `release.yml`. GitHub then publishes with no stored password. (Alternative: save an npm automation token as the repository secret `NPM_TOKEN`.)
+**Setup (done 2026-10-07)**
+- This repo is on GitHub, and Marketing can push to `main`. `repository.url` in `package.json` points at it.
+- On npmjs.com, the package's **Settings › Trusted Publisher** trusts GitHub Actions with this repository and the workflow file `release.yml`, so no password is stored. Its **Allowed actions** must include publishing: npm's default allows only staged publishing, and a plain publish then fails with `E403 OIDC permission denied for this action`. (Alternative: save an npm automation token as the repository secret `NPM_TOKEN`.)
 
-From then on, every push to `main` with a new version publishes it.
+Every push to `main` with a new version publishes it.
 
 **Client names.** The repository is public, so client and program names must never appear in it. The list the tests and the sync check against lives in `scripts/client-names.local.txt`, which git ignores; it exists only on Marketing's machine, and the check is skipped elsewhere.
 
