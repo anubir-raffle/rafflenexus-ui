@@ -1,0 +1,197 @@
+/* @rafflenexuscanada/design-system component styles. Every colour comes from tokens.css.
+   Generated from the design system's bundle.css by scripts/sync-from-design-system.mjs; edit the PATCHES there, not this file.
+   Import "@rafflenexuscanada/design-system/styles.css" once (it includes the tokens). */
+
+/* Optional base: put rnc-root on <body> (or an app wrapper) for the brand's page defaults. */
+.rnc-root { margin: 0; font-family: var(--font-sans); background: var(--ground); color: var(--ink-body); font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+.rnc-row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+
+/* Headlines: Newsreader, for h1 and h2 only */
+.rnc-h { font-family: var(--font-display); font-weight: 600; line-height: 1.04; letter-spacing: -0.015em; text-wrap: balance; margin: 0; color: var(--ink); }
+.rnc-label { color: var(--ink-muted); }
+.rnc-fig { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 500; }
+
+/* Button */
+.rnc-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); font: 700 15px/20px var(--font-sans); padding: 12px 22px; border-radius: var(--radius-pill); border: 2px solid transparent; cursor: pointer; text-decoration: none; transition: transform .2s ease, background-color .2s ease; }
+.rnc-btn:hover { transform: translateY(-1px); }
+.rnc-btn-primary:hover { box-shadow: var(--shadow-2); }
+.rnc-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.rnc-btn-primary { background: var(--action); border-color: var(--action); color: var(--on-action); }
+.rnc-btn-secondary { background: transparent; border-color: var(--action); color: var(--action); }
+.rnc-btn-stage { background: var(--on-stage); border-color: var(--on-stage); color: var(--stage); }
+.rnc-btn-stage-ghost { background: transparent; border-color: var(--stage-accent); color: var(--on-stage); }
+.rnc-btn-stage:focus-visible, .rnc-btn-stage-ghost:focus-visible { outline-color: var(--focus-stage); }
+@media (prefers-reduced-motion: reduce) { .rnc-btn { transition: none; } .rnc-btn:hover { transform: none; } }
+
+/* Stage band */
+.rnc-stage { background: var(--stage); color: var(--on-stage); }
+.rnc-stage .rnc-h { color: var(--on-stage); }
+.rnc-stage .rnc-label { color: var(--stage-accent); }
+
+/* Verified badge */
+.rnc-badge { display: inline-flex; align-items: center; gap: var(--space-3); border: 1.5px solid var(--verified); border-radius: var(--radius-md); padding: 10px 16px 10px 10px; background: var(--surface); box-shadow: var(--shadow-1); }
+.rnc-badge-check { flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--verified-soft); display: grid; place-items: center; }
+.rnc-badge-check svg { display: block; }
+.rnc-badge b { display: block; color: var(--ink); font-size: 15px; line-height: 1.3; }
+.rnc-badge span { display: block; font: 400 12px/1.4 var(--font-mono); letter-spacing: 0.01em; color: var(--ink-body); }
+.rnc-stage .rnc-badge { background: var(--stage-raised); border-color: var(--stage-verified); }
+.rnc-stage .rnc-badge b { color: var(--on-stage); }
+.rnc-stage .rnc-badge span { color: var(--on-stage-muted); }
+.rnc-stage .rnc-badge-check { background: var(--stage); }
+
+/* Ledger line */
+.rnc-ledger { display: flex; flex-wrap: wrap; border-top: 2px solid var(--ink); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.rnc-ledger > div { flex: 1 1 140px; min-width: 0; padding: 14px 16px 14px 0; display: flex; flex-direction: column; gap: 2px; }
+.rnc-ledger small { font: 500 13px/1.3 var(--font-sans); color: var(--ink-muted); }
+.rnc-ledger strong { font-size: 20px; font-weight: 500; color: var(--ink); }
+.rnc-ledger .is-done strong { color: var(--verified); }
+.rnc-stage .rnc-ledger { border-top-color: var(--stage-accent); }
+.rnc-stage .rnc-ledger small { color: var(--on-stage-muted); }
+.rnc-stage .rnc-ledger strong { color: var(--on-stage); }
+.rnc-stage .rnc-ledger .is-done strong { color: var(--stage-verified); }
+
+/* Jackpot tile */
+.rnc-jackpot { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); padding: var(--space-4); display: flex; flex-direction: column; gap: 4px; min-width: 0; box-shadow: var(--shadow-1); }
+.rnc-jackpot-top { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); }
+.rnc-live { display: inline-flex; align-items: center; gap: 6px; font: 600 12px/1.4 var(--font-sans); color: var(--ink-muted); }
+.rnc-live i { width: 7px; height: 7px; border-radius: 50%; background: var(--verified-fill); }
+.rnc-flag { font: 600 12px/1 var(--font-sans); padding: 4px 8px; border-radius: 6px; background: var(--lead-soft); color: var(--lead); }
+.rnc-jackpot b { color: var(--ink); font-size: 16px; line-height: 1.3; }
+.rnc-jackpot .rnc-amt { font-size: 32px; line-height: 1; color: var(--reward); margin: 6px 0 4px; }
+.rnc-jackpot .rnc-cap { font-size: 13px; color: var(--ink-muted); }
+.rnc-stage .rnc-jackpot { background: var(--stage-raised); border-color: var(--stage-line); box-shadow: var(--shadow-stage); }
+.rnc-stage .rnc-jackpot b { color: var(--on-stage); }
+.rnc-stage .rnc-jackpot .rnc-amt { color: var(--stage-reward); }
+.rnc-stage .rnc-live, .rnc-stage .rnc-jackpot .rnc-cap { color: var(--on-stage-muted); }
+.rnc-stage .rnc-flag { background: var(--stage); color: var(--stage-accent); }
+
+/* Proof stat */
+.rnc-proof { display: flex; flex-direction: column; gap: var(--space-2); border-top: 3px solid var(--lead-fill); padding-top: var(--space-4); max-width: 420px; }
+.rnc-proof .rnc-big { font: 500 clamp(40px, 11vw, 56px)/1 var(--font-mono); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--lead); }
+.rnc-proof .rnc-big em { font-style: normal; color: var(--ink-muted); white-space: nowrap; }
+.rnc-proof p { margin: 0; color: var(--ink); font-size: 17px; line-height: 1.45; font-weight: 500; }
+.rnc-proof small { font: 400 13px/1.4 var(--font-sans); color: var(--ink-muted); }
+.rnc-stage .rnc-proof { border-top-color: var(--stage-accent); }
+.rnc-stage .rnc-proof .rnc-big { color: var(--stage-accent); }
+.rnc-stage .rnc-proof .rnc-big em, .rnc-stage .rnc-proof small { color: var(--on-stage-muted); }
+.rnc-stage .rnc-proof p { color: var(--on-stage); }
+
+
+/* Flagship roster: a tinted row per province, names in two balanced columns, no counts */
+.rnc-roster-wrap { container-type: inline-size; }
+.rnc-roster { display: grid; gap: 6px; }
+.rnc-roster-row { display: grid; grid-template-columns: 168px minmax(0, 1fr); gap: 6px 32px; align-items: baseline; padding: 20px 24px; border-radius: var(--radius-md); }
+.rnc-roster-row:nth-child(odd) { background: var(--surface-tint); }
+.rnc-roster-prov { margin: 0; font: 600 14px/1.4 var(--font-sans); color: var(--ink-muted); }
+.rnc-roster ul { list-style: none; margin: 0; padding: 0; columns: 2 240px; column-gap: 40px; }
+.rnc-roster li { font: 500 18px/1.35 var(--font-sans); letter-spacing: -0.005em; color: var(--ink); padding: 4px 0 6px; break-inside: avoid; text-wrap: balance; }
+.rnc-roster-none { margin: 0; font: 400 16px/1.4 var(--font-sans); color: var(--ink-muted); }
+.rnc-roster-row.is-empty { padding-block: 14px; }
+.rnc-stage .rnc-roster-row:nth-child(odd) { background: var(--stage-raised); }
+.rnc-stage .rnc-roster-prov, .rnc-stage .rnc-roster-none { color: var(--on-stage-muted); }
+.rnc-stage .rnc-roster li { color: var(--on-stage); }
+@container (max-width: 560px) {
+  .rnc-roster-row { grid-template-columns: minmax(0, 1fr); padding: 16px; }
+  .rnc-roster li { font-size: 17px; }
+}
+.rnc-note { font-size: 14px; color: var(--ink-muted); margin: var(--space-4) 0 0; }
+
+/* Powered by */
+.rnc-powered { box-shadow: var(--shadow-1); display: inline-flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink-muted); border: 1px solid var(--line); background: var(--surface); padding: 8px 14px; border-radius: var(--radius-pill); text-decoration: none; }
+.rnc-powered img { height: 22px; width: auto; }
+.rnc-powered b { color: var(--ink); font-weight: 700; }
+.rnc-powered:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Leader hero */
+.rnc-hero { border-radius: var(--radius-lg); padding: var(--space-7) var(--space-6); display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: var(--space-7); align-items: end; }
+.rnc-hero-copy { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
+.rnc-hero .rnc-h { font-size: clamp(40px, 6vw, 72px); }
+.rnc-hero-sub { margin: 0; font-size: 19px; line-height: 1.55; color: var(--on-stage); max-width: 52ch; }
+.rnc-hero-side { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+@media (max-width: 760px) { .rnc-hero { grid-template-columns: minmax(0, 1fr); padding: var(--space-6) var(--space-5); } }
+
+
+/* Icons: inline Phosphor SVGs that take the text colour */
+.rnc-icon { display: inline-block; flex: none; vertical-align: -0.2em; }
+
+/* RaffleBrand: the raffle's own logo, plus an optional sponsor, on white-label raffle sites */
+.rnc-rb { --rb-h: 48px; display: flex; align-items: center; gap: 20px; min-width: 0; flex: 0 1 auto; }
+.rnc-rb-logo { display: block; flex: 0 1 auto; min-width: 48px; line-height: 0; border-radius: var(--radius-sm); }
+.rnc-rb-logo img, .rnc-rb-logo svg { display: block; height: var(--rb-h); width: auto; max-width: min(240px, 100%); object-fit: contain; object-position: left center; }
+.rnc-rb-logo:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+.rnc-rb-sponsor { display: flex; flex-direction: column; justify-content: center; gap: 4px; min-width: 0; flex: 0 1 auto; padding-left: 20px; border-left: 1px solid var(--line); }
+.rnc-rb-sponsor span, .rnc-rb-strip span { font: 500 12px/1.2 var(--font-sans); color: var(--ink-muted); white-space: nowrap; }
+.rnc-rb-sponsor img, .rnc-rb-sponsor svg { display: block; height: calc(var(--rb-h) * 0.62); width: auto; max-width: 220px; object-fit: contain; object-position: left center; }
+.rnc-rb-plate { background: #fff; padding: 12px 18px 14px; margin-top: -16px; border-radius: 0 0 var(--radius-md) var(--radius-md); box-shadow: var(--shadow-2); }
+.rnc-rb-plate .rnc-rb-sponsor { border-left-color: #d9dee6; }
+.rnc-rb-plate .rnc-rb-sponsor span { color: #5b6573; }
+.rnc-rb-strip { display: none; align-items: center; gap: 10px; padding: 8px 20px; background: var(--surface-tint); }
+.rnc-rb-strip img, .rnc-rb-strip svg { display: block; height: 22px; width: auto; max-width: 180px; object-fit: contain; }
+@container (max-width: 640px) {
+  .rnc-rb { --rb-h: 40px; }
+  .rnc-rb .rnc-rb-sponsor { display: none; }
+  .rnc-rb-strip { display: flex; }
+  .rnc-rb-plate { padding: 10px 14px 12px; }
+}
+
+/* Jackpot figure: raised currency, tight tabular digits, a ticket-perforation rule, optional growth line.
+   Size it with font-size on the wrapper; colour with color, --jp-cur (currency) and --jp-perf (rule). */
+.rnc-jp.rnc-jp { font-size: inherit; opacity: 1; }
+.rnc-jp { display: flex; width: fit-content; flex-direction: column; align-items: flex-start; max-width: 100%; --jp-cur: currentColor; --jp-perf: currentColor; }
+.rnc-jp .rnc-jp-num { font-size: inherit; opacity: 1; }
+.rnc-jp .rnc-jp-fig { font-size: inherit; opacity: 1; display: inline-flex; align-items: flex-start; font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -0.045em; line-height: 0.92; white-space: nowrap; }
+.rnc-jp .rnc-jp-cur { opacity: 1; font: 600 0.44em/1 var(--font-sans); letter-spacing: 0; margin: 0.16em 0.1em 0 0; color: var(--jp-cur); }
+.rnc-jp .rnc-jp-sep { font-size: inherit; display: inline-block; margin: 0 -0.12em 0 -0.1em; }
+.rnc-jp .rnc-jp-perf { display: block; align-self: stretch; height: max(5px, 0.05em); margin-top: 0.14em; background: radial-gradient(circle closest-side, var(--jp-perf) 72%, transparent 78%) left center / max(9px, 0.09em) 100% repeat-x; opacity: 0.55; }
+.rnc-jp .rnc-jp-grow { opacity: 1; margin-top: 10px; font: 600 14px/1.3 var(--font-sans); letter-spacing: 0; color: var(--jp-grow, currentColor); }
+.rnc-jackpot .rnc-amt .rnc-jp { --jp-perf: var(--reward); }
+.rnc-stage .rnc-jackpot .rnc-amt .rnc-jp { --jp-perf: var(--stage-reward); }
+/* On a plate (dark or photo headers), the sponsor stays inside the plate on phones, stacked under the logo */
+@container (max-width: 640px) {
+  .rnc-rb.rnc-rb-plate { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .rnc-rb.rnc-rb-plate .rnc-rb-sponsor { display: flex; flex-direction: row; align-items: center; gap: 8px; padding: 8px 0 0; border-left: 0; border-top: 1px solid #d9dee6; align-self: stretch; }
+  .rnc-rb.rnc-rb-plate .rnc-rb-sponsor img, .rnc-rb.rnc-rb-plate .rnc-rb-sponsor svg { height: 22px; }
+}
+
+/* Node graphics: colour with `color` (currentColor). Large and cropped at a section edge, never as bullets or icons. */
+.rnc-node { display: block; overflow: visible; }
+.rnc-node-shadow { filter: drop-shadow(0 8px 14px rgba(15, 42, 68, 0.22)); }
+.rnc-stage .rnc-node-shadow { filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.35)); }
+
+/* Odometer: rolling digits for real figures. The element keeps its own font. */
+.rnc-odo { display: inline-flex; align-items: flex-start; line-height: 1; height: 1em; overflow: hidden; vertical-align: top; }
+.rnc-odo-d { display: inline-block; height: 1em; overflow: hidden; }
+.rnc-odo-col { display: flex; flex-direction: column; will-change: transform; }
+.rnc-odo-col span, .rnc-odo-s { display: block; height: 1em; line-height: 1; }
+
+/* TicketButton: the buy action as a ticket. Colours: --tb-bg, --tb-fg, --tb-stub, --tb-stub-fg, --tb-ring. */
+.rnc-tbtn { --tb-bg: var(--action); --tb-fg: var(--on-action); --tb-stub: color-mix(in srgb, var(--tb-bg) 82%, #000); --tb-stub-fg: var(--tb-fg); --tb-ring: var(--focus); --tb-notch: 7px;
+  position: relative; display: inline-flex; align-items: stretch; min-height: 52px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 16px; color: var(--tb-fg); isolation: isolate; cursor: pointer;
+  filter: drop-shadow(0 6px 10px rgba(15, 42, 68, .22)); }
+.rnc-tbtn .tb-main { position: relative; display: flex; align-items: center; padding: 0 20px 0 22px; background: var(--tb-bg); border-radius: 12px 0 0 12px; overflow: hidden; white-space: nowrap;
+  -webkit-mask: radial-gradient(circle var(--tb-notch) at 100% 0, transparent 98%, #000) top / 100% 51% no-repeat, radial-gradient(circle var(--tb-notch) at 100% 100%, transparent 98%, #000) bottom / 100% 51% no-repeat;
+          mask: radial-gradient(circle var(--tb-notch) at 100% 0, transparent 98%, #000) top / 100% 51% no-repeat, radial-gradient(circle var(--tb-notch) at 100% 100%, transparent 98%, #000) bottom / 100% 51% no-repeat; }
+.rnc-tbtn .tb-main::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, .45) 50%, transparent 70%); transform: translateX(-120%); }
+.rnc-tbtn .tb-stub { position: relative; display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 52px; padding: 0 14px; background: var(--tb-stub); color: var(--tb-stub-fg); border-radius: 0 12px 12px 0; border-left: 2px dashed color-mix(in srgb, var(--tb-fg) 55%, transparent); transform-origin: 0 100%; font-size: 14px; white-space: nowrap;
+  -webkit-mask: radial-gradient(circle var(--tb-notch) at 0 0, transparent 98%, #000) top / 100% 51% no-repeat, radial-gradient(circle var(--tb-notch) at 0 100%, transparent 98%, #000) bottom / 100% 51% no-repeat;
+          mask: radial-gradient(circle var(--tb-notch) at 0 0, transparent 98%, #000) top / 100% 51% no-repeat, radial-gradient(circle var(--tb-notch) at 0 100%, transparent 98%, #000) bottom / 100% 51% no-repeat; }
+.rnc-tbtn .tb-stub .rnc-icon { display: block; }
+.rnc-tbtn .tb-hole { position: absolute; right: 9px; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: transparent; }
+.rnc-tbtn .tb-bit { position: absolute; right: 13px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px; border-radius: 50%; background: var(--tb-fg); pointer-events: none; }
+.rnc-tbtn:focus-visible { outline: none; } .rnc-tbtn:focus-visible .tb-main, .rnc-tbtn:focus-visible .tb-stub { box-shadow: inset 0 0 0 3px var(--tb-ring); }
+.rnc-tbtn:focus-visible { filter: drop-shadow(0 0 0 var(--tb-ring)) drop-shadow(0 6px 10px rgba(15, 42, 68, .22)); }
+.rnc-tbtn:hover .tb-stub, .rnc-tbtn:focus-visible .tb-stub { background: color-mix(in srgb, var(--tb-stub) 85%, #fff); }
+@media (prefers-reduced-motion: no-preference) {
+  .rnc-tbtn { transition: transform .15s ease; }
+  .rnc-tbtn .tb-stub { transition: transform .35s cubic-bezier(.2, 1.4, .4, 1), background .2s ease; }
+  .rnc-tbtn:hover .tb-stub, .rnc-tbtn:focus-visible .tb-stub { transform: rotate(-7deg) translate(3px, -2px); }
+  .rnc-tbtn:hover .tb-main::after, .rnc-tbtn:focus-visible .tb-main::after { transform: translateX(120%); transition: transform .7s ease; }
+  .rnc-tbtn:hover .rnc-icon { animation: tbwig .5s ease; } @keyframes tbwig { 30% { transform: rotate(-14deg); } 60% { transform: rotate(10deg); } }
+  .rnc-tbtn:active { transform: scale(.97); }
+  .rnc-tbtn.punched .tb-hole { animation: tbpunch .45s ease forwards; } @keyframes tbpunch { 0% { background: var(--tb-fg); transform: scale(0); } 60% { transform: scale(1.4); } 100% { background: var(--tb-fg); transform: scale(1); box-shadow: inset 0 0 0 9px rgba(0, 0, 0, .25); } }
+  .rnc-tbtn .tb-bit { animation: tbbit .6s cubic-bezier(.2, .8, .3, 1) forwards; } @keyframes tbbit { to { transform: translate(var(--x), var(--y)) scale(.4); opacity: 0; } }
+}
+.rnc-tbtn.punched .tb-hole { background: var(--tb-fg); }
+button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit; text-align: left; }
+.rnc-tbtn.big { min-height: 58px; font-size: 18px; } .rnc-tbtn.big .tb-main { padding: 0 26px 0 28px; }
+.rnc-tbtn.full { display: flex; width: 100%; box-sizing: border-box; } .rnc-tbtn.full .tb-main { flex: 1; justify-content: center; }

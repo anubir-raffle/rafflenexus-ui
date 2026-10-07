@@ -1,0 +1,64 @@
+// Renders every component from the built package (ESM and CJS) and checks the published files carry no client names.
+import { createRequire } from 'node:module';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import React from 'react';
+import { renderToString } from 'react-dom/server';
+import * as DS from '../dist/index.js';
+import { clientNamePattern } from './client-names.mjs';
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const h = React.createElement;
+let fails = 0;
+const check = (name, ok, detail = '') => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}${detail ? ' — ' + detail : ''}`); if (!ok) fails++; };
+const render = (el) => renderToString(el);
+
+const cases = [
+  ['Button', h(DS.Button, null, 'Talk to our lottery team'), ['rnc-btn-primary', 'Talk to our lottery team']],
+  ['Button as link', h(DS.Button, { href: '/contact', variant: 'secondary' }, 'Book a call'), ['<a', 'href="/contact"', 'rnc-btn-secondary']],
+  ['Icon', h(DS.Icon, { name: 'ticket' }), ['rnc-icon', 'aria-hidden="true"', '<path']],
+  ['VerifiedBadge', h(DS.VerifiedBadge, { regulator: 'IGCO', licence: '171012' }), ['IGCO licence #171012', 'GLI-certified RNG']],
+  ['LedgerLine', h(DS.LedgerLine, { items: [{ label: 'Tickets', value: '12,400' }, { label: 'Reconciled', value: 'Yes', done: true }] }), ['rnc-ledger', 'is-done', '12,400']],
+  ['ProofStat', h(DS.ProofStat, { value: 11, of: 29, label: 'flagship lotteries', source: 'Research count · 5 Oct 2026' }), ['rnc-proof', ' of ', 'Research count']],
+  ['JackpotFigure', h(DS.JackpotFigure, { amount: 2548700, growth: 'Up $1,240 since yesterday' }), ['aria-label="$2,548,700"', 'rnc-jp-sep', 'rnc-jp-perf', 'Up $1,240']],
+  ['JackpotTile', h(DS.JackpotTile, { program: 'Sample Hospital Lottery', amount: 10640, province: 'BC' }), ['Live · BC', 'Sample Hospital Lottery', '$10,640']],
+  ['FlagshipRoster', h(DS.FlagshipRoster, { groups: [{ province: 'BC', items: ['Sample Lottery A', 'Sample Lottery B'] }, { province: 'SK', items: [] }] }), ['British Columbia', 'Sample Lottery A', 'None yet']],
+  ['PoweredBy', h(DS.PoweredBy), ['Powered by', 'data:image/png;base64']],
+  ['LeaderHero', h(DS.LeaderHero, { sub: 'The platform behind charity lotteries in five provinces.', tiles: [{ program: 'Sample 50/50', amount: 5000 }] }), ["Canada&#x27;s raffle leader.", 'rnc-stage', 'Talk to our lottery team', 'Sample 50/50']],
+  ['RaffleBrand', h(DS.RaffleBrand, { logo: { src: '/logo.png', alt: 'Sample 50/50' }, sponsor: { src: '/sponsor.png', alt: 'Sample Credit Union', label: 'Presented by' }, strip: true }), ['rnc-rb', 'Sample 50/50, home', 'Presented by', 'rnc-rb-strip']],
+  ['NodeGraphic', h(DS.NodeGraphic, { name: 'triad', size: 200 }), ['rnc-node', 'viewBox="0 0 523 466"', 'width="200"']],
+  ['Odometer', h(DS.Odometer, { value: 684270, prefix: '$' }), ['aria-label="$684,270"', '$684,270']],
+  ['TicketButton', h(DS.TicketButton, { label: 'Order tickets', stub: 'from $10', href: '#order' }), ['rnc-tbtn', 'aria-label="Order tickets, from $10"', 'tb-stub', 'href="#order"']],
+  ['TicketButton as button', h(DS.TicketButton, { label: 'Buy tickets', size: 'big', fullWidth: true, colors: { bg: '#5a3fc0' } }), ['<button', 'big', 'full', '--tb-bg:#5a3fc0']],
+];
+for (const [name, el, expect] of cases) {
+  try { const html = render(el); const missing = expect.filter((s) => !html.includes(s)); check(name, !missing.length, missing.length ? 'missing ' + missing.join(', ') : ''); }
+  catch (e) { check(name, false, e.message); }
+}
+const hex = /^#[0-9a-f]{6}$/i;
+check('tokens', ['action', 'ink', 'stage', 'ground', 'reward', 'verified', 'focus'].every((k) => hex.test(DS.tokens.color[k])) && DS.tokens.font.display.startsWith('Newsreader') && DS.tokens.font.mono.includes('DM Mono'));
+check('icon names', DS.ICON_NAMES.length === 24 && DS.ICON_NAMES.includes('ticket'));
+const require = createRequire(import.meta.url);
+const cjs = require('../dist/index.cjs');
+check('CommonJS build', typeof cjs.TicketButton === 'function' && typeof cjs.JackpotFigure === 'function');
+
+// The package and its repository are public: no client names may appear in either.
+// The names live in a git-ignored local file (see client-names.mjs), so this check runs on Marketing's machine.
+const clients = clientNamePattern();
+if (!clients) console.log("–    no client names: skipped (scripts/client-names.local.txt is only on Marketing's machine)");
+else {
+  const files = [];
+  const walk = (d) => { for (const f of readdirSync(d)) { const p = join(d, f); statSync(p).isDirectory() ? walk(p) : files.push(p); } };
+  walk(join(root, 'dist'));
+  for (const d of ['src', 'styles', 'design', 'demo', 'scripts', '.github']) walk(join(root, d));
+  for (const f of ['README.md', 'CHANGELOG.md', 'package.json', 'LICENSE']) files.push(join(root, f));
+  const hits = [];
+  for (const f of files.filter((f) => /\.(js|mjs|cjs|ts|cts|tsx|css|json|map|html|md|yml)$|LICENSE$/.test(f) && !f.includes('/demo/dist/'))) {
+    const m = readFileSync(f, 'utf8').match(clients);
+    if (m) hits.push(`${f.replace(root + '/', '')}: "${m[0]}"`);
+  }
+  check('no client names in the package or repository', !hits.length, hits.join('; '));
+}
+console.log(fails ? `\n${fails} check(s) failed` : '\nall checks passed');
+process.exit(fails ? 1 : 0);

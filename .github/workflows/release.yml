@@ -1,0 +1,50 @@
+# Publishes to npm whenever main has a version that isn't on npm yet.
+# Marketing's sync (scripts/sync-from-design-system.mjs) bumps the version and pushes; this does the rest.
+#
+# One-time setup (see README › Automatic releases):
+#   - Publish 0.1.0 once by hand (npm publish), then in the package's npm settings add a
+#     Trusted Publisher: GitHub Actions, this repository, workflow file "release.yml".
+#   - Or, instead of Trusted Publishing, add an npm automation token as the NPM_TOKEN secret.
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # to tag the release
+  id-token: write   # for npm Trusted Publishing (OIDC) and provenance
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm install -g npm@latest   # Trusted Publishing needs npm 11.5 or later
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Publish if this version is new
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$NAME@$VERSION is already on npm. Nothing to publish."
+            exit 0
+          fi
+          npm publish --access public
+          git tag "v$VERSION"
+          git push origin "v$VERSION"
+          echo "Published $NAME@$VERSION" >> "$GITHUB_STEP_SUMMARY"

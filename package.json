@@ -1,0 +1,71 @@
+{
+  "name": "@rafflenexuscanada/design-system",
+  "version": "0.1.0",
+  "description": "Raffle Nexus Canada design system (RNC V2.1): React components, design tokens and fonts.",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Raffle Nexus Canada",
+  "homepage": "https://rafflenexus.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anubir-raffle/rafflenexus-ui.git"
+  },
+  "keywords": [
+    "raffle-nexus",
+    "design-system",
+    "react",
+    "design-tokens"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./tokens.css": "./dist/tokens.css",
+    "./fonts.css": "./dist/fonts.css",
+    "./tokens.json": "./dist/tokens.json",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "generate": "node scripts/generate.mjs",
+    "build": "npm run generate && tsup && node scripts/build-css.mjs",
+    "typecheck": "npm run generate && tsc --noEmit",
+    "test": "npm run build && node scripts/smoke-test.mjs",
+    "dev": "vite --config demo/vite.config.ts",
+    "demo:build": "vite build --config demo/vite.config.ts",
+    "prepublishOnly": "npm run typecheck && npm test",
+    "sync": "node scripts/sync-from-design-system.mjs",
+    "status": "node scripts/status.mjs"
+  },
+  "peerDependencies": {
+    "react": ">=17",
+    "react-dom": ">=17"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "tsup": "^8.5.1",
+    "typescript": "~5.9",
+    "vite": "^8.3.3"
+  }
+}

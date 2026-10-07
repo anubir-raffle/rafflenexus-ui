@@ -1,0 +1,24 @@
+Copyright (c) 2026 Raffle Nexus Canada. All rights reserved.
+
+This package is published so Raffle Nexus Canada and the people it works with can build
+Raffle Nexus products and client raffle sites. No other use, copying or redistribution of
+the source code, styles or brand elements is permitted without written permission from
+Raffle Nexus Canada.
+
+The Raffle Nexus name, ticket mark and node shapes are trademarks of Raffle Nexus Canada.
+
+Third-party material included in this package keeps its own licence:
+
+- Icons: Phosphor Icons, regular weight. MIT License.
+  Copyright (c) 2020 Phosphor Icons.
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this
+  software and associated documentation files (the "Software"), to deal in the Software
+  without restriction, including without limitation the rights to use, copy, modify,
+  merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+  permit persons to whom the Software is furnished to do so, subject to the following
+  conditions: The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software. THE SOFTWARE IS PROVIDED "AS IS",
+  WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
+
+- Fonts: Newsreader, DM Sans and DM Mono, SIL Open Font License 1.1. The licence texts
+  ship in dist/fonts (OFL-newsreader.txt, OFL-dmsans.txt, OFL-dmmono.txt).

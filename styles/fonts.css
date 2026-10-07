@@ -1,0 +1,6 @@
+/* The brand's three typefaces, self-hosted (SIL Open Font License 1.1; licences in dist/fonts).
+   Import "@rafflenexuscanada/design-system/fonts.css" once, or load the same families another way. */
+@font-face { font-family: 'Newsreader'; src: url('./fonts/Newsreader-Variable.woff2') format('woff2'); font-weight: 400 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'DM Sans'; src: url('./fonts/DMSans-Variable.woff2') format('woff2'); font-weight: 400 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'DM Mono'; src: url('./fonts/DMMono-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'DM Mono'; src: url('./fonts/DMMono-Medium.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
