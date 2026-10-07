@@ -3,6 +3,8 @@
 #
 # Publishing uses npm Trusted Publishing: the package's npm settings trust GitHub Actions in this repository
 # with the workflow file "release.yml", so no password is stored. (If an NPM_TOKEN secret is set instead, it's used.)
+# That trusted publisher entry must allow the "npm publish" action; npm's default allows only staged publishing,
+# and a plain publish then fails with "E403 OIDC permission denied for this action".
 name: Release
 
 on:
@@ -37,7 +39,9 @@ jobs:
         run: |
           NAME=$(node -p "require('./package.json').name")
           VERSION=$(node -p "require('./package.json').version")
-          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+          # Compare the output instead of trusting the exit code alone (some npm versions exit 0 with no output for a missing version).
+          PUBLISHED=$(npm view "$NAME@$VERSION" version 2>/dev/null || true)
+          if [ "$PUBLISHED" = "$VERSION" ]; then
             echo "$NAME@$VERSION is already on npm. Nothing to publish."
             exit 0
           fi
