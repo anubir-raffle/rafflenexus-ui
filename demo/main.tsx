@@ -8,7 +8,67 @@ import {
   Button, Icon, ICON_NAMES, VerifiedBadge, LedgerLine, ProofStat, JackpotFigure, JackpotTile, FlagshipRoster,
   PoweredBy, LeaderHero, RaffleBrand, NodeGraphic, NODE_NAMES, Odometer, TicketButton, tokens,
   TextField, TextArea, Select, Checkbox, RadioGroup, Switch, ErrorSummary, Dropdown,
+  Sidebar, Offcanvas, Table, createColumnHelper, type ColumnDef, type SidebarSection,
 } from '../src';
+
+// Sample orders (made-up names and figures)
+type Order = { id: string; name: string; town: string; channel: string; amount: number; status: string };
+const ORDERS: Order[] = [
+  ['A-104233', 'Priya Sharma', 'Nanaimo', 'Online', 100, 'Paid'], ['A-104234', 'Liam Chen', 'Kelowna', 'Phone', 250, 'Paid'],
+  ['A-104235', 'Ava Martin', 'Victoria', 'Mail', 50, 'Processing'], ['A-104236', 'Noah Singh', 'Surrey', 'Online', 450, 'Paid'],
+  ['A-104237', 'Emma Roy', 'Kamloops', 'In person', 20, 'Paid'], ['A-104238', 'Lucas Tremblay', 'Burnaby', 'Online', 100, 'Refunded'],
+  ['A-104239', 'Mia Wilson', 'Prince George', 'Phone', 800, 'Paid'], ['A-104240', 'Ethan Brown', 'Richmond', 'Online', 250, 'Paid'],
+].map(([id, name, town, channel, amount, status]) => ({ id, name, town, channel, amount, status }) as Order);
+const oc = createColumnHelper<Order>();
+const ORDER_COLUMNS = [
+  oc.accessor('id', { header: 'Order', enableSorting: false }),
+  oc.accessor('name', { header: 'Name' }),
+  oc.accessor('town', { header: 'Town' }),
+  oc.accessor('channel', { header: 'Channel' }),
+  oc.accessor('amount', { header: 'Amount', cell: (c) => `$${c.getValue().toLocaleString('en-CA')}`, meta: { numeric: true } }),
+  oc.accessor('status', { header: 'Status' }),
+] as ColumnDef<Order, any>[]; // eslint-disable-line @typescript-eslint/no-explicit-any
+const NAV: SidebarSection[] = [
+  { items: [
+    { label: 'Dashboard', href: '#', icon: 'chart-line-up', current: true }, { label: 'Raffles', href: '#', icon: 'ticket', badge: '3' },
+    { label: 'Orders', href: '#', icon: 'receipt' }, { label: 'Draws', href: '#', icon: 'trophy' }, { label: 'Customers', href: '#', icon: 'users-three' },
+  ] },
+  { title: 'Tools', items: [{ label: 'Point of sale', href: '#', icon: 'cash-register' }, { label: 'Help', href: '#', icon: 'headset' }] },
+];
+const Logo = () => <svg width="150" height="32" viewBox="0 0 150 32" role="img" aria-label="Sample logo"><rect width="32" height="32" rx="8" fill="var(--action)" /><text x="42" y="22" fontFamily="DM Sans, Arial" fontWeight="700" fontSize="17" fill="var(--ink)">Sample admin</text></svg>;
+const Mark = () => <svg width="32" height="32" viewBox="0 0 32 32" role="img" aria-label="Sample logo"><rect width="32" height="32" rx="8" fill="var(--action)" /></svg>;
+
+function LayoutDemo() {
+  const [collapsed, setCollapsed] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [side, setSide] = useState<'left' | 'right' | 'bottom'>('left');
+  const [picked, setPicked] = useState(0);
+  return (
+    <div style={{ display: 'grid', gap: 20 }}>
+      <div className="rnc-row">
+        <Switch label="Collapse the sidebar" checked={collapsed} onChange={setCollapsed} />
+        <Button onClick={() => { setSide('left'); setOpen(true); }}>Open the menu (offcanvas)</Button>
+        <Button variant="secondary" onClick={() => { setSide('right'); setOpen(true); }}>Filters from the right</Button>
+      </div>
+      <div className="demo-layout">
+        <div className="demo-layout-side">
+          <Sidebar logo={<Logo />} logoCollapsed={<Mark />} sections={NAV} collapsed={collapsed} footer={<span className="rnc-field-hint">Signed in as Jordan Lee</span>} />
+        </div>
+        <div className="demo-layout-main">
+          <Table data={ORDERS} columns={ORDER_COLUMNS} caption="Orders (sample)" searchable searchLabel="Search orders" searchPlaceholder="Name, town or order number"
+            pageSize={5} enableRowSelection getRowId={(o) => o.id} getRowLabel={(o) => `order ${o.id}`} countNoun={['order', 'orders']}
+            onRowSelectionChange={(rows) => setPicked(rows.length)} emptyMessage="No orders match your search." />
+          <p className="rnc-field-hint" style={{ marginTop: 8 }}>{picked} selected (reported through onRowSelectionChange)</p>
+        </div>
+      </div>
+      <Offcanvas open={open} onClose={() => setOpen(false)} side={side} title={side === 'left' ? 'Menu' : 'Filter orders'} flush={side === 'left'}>
+        {side === 'left'
+          ? <Sidebar logo={<Logo />} sections={NAV} className="demo-oc-sidebar" />
+          : <div style={{ display: 'grid', gap: 16 }}><Select label="Channel" placeholder="Any channel" options={[{ value: 'online', label: 'Online' }, { value: 'phone', label: 'Phone' }, { value: 'mail', label: 'Mail' }]} /><Button onClick={() => setOpen(false)}>Apply</Button></div>}
+      </Offcanvas>
+    </div>
+  );
+}
 
 function FormDemo() {
   const [email, setEmail] = useState('jordan@');
@@ -142,6 +202,10 @@ function App() {
           <Dropdown label="Export report" items={[{ label: 'Download CSV', icon: 'receipt', onSelect: () => {} }, { label: 'Download PDF', icon: 'printer', onSelect: () => {} }, { label: 'Email to my team', icon: 'envelope-simple', onSelect: () => {} }, { label: 'Schedule a weekly export', icon: 'clock', disabled: true }]} />
           <Dropdown label="Help" variant="primary" items={[{ label: 'Rules of play', href: '#' }, { label: 'Contact us', href: '#' }]} />
         </div>
+      </Section>
+
+      <Section title="Sidebar, Offcanvas and Table" note="An admin layout: the sidebar (collapsible), a table with sorting, search, row selection and pages, and an offcanvas from the left (the phone menu) or the right (filters).">
+        <LayoutDemo />
       </Section>
 
       <Section title="Icons" note="Phosphor, regular weight. Always beside a word.">

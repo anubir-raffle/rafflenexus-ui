@@ -25,6 +25,13 @@ export { ErrorSummary, type ErrorSummaryProps, type ErrorSummaryItem } from './c
 export { Dropdown, type DropdownProps, type DropdownItem } from './components/Dropdown';
 export type { FieldBaseProps } from './components/Field';
 
+// App layout and data
+export { Sidebar, type SidebarProps, type SidebarItem, type SidebarSection } from './components/Sidebar';
+export { Offcanvas, type OffcanvasProps } from './components/Offcanvas';
+export { Table, type TableProps, type TableColumnMeta } from './components/Table';
+// TanStack Table helpers, re-exported so column definitions type-check without a second import.
+export { createColumnHelper, type ColumnDef, type SortingState, type Row } from '@tanstack/react-table';
+
 export { tokens, type ColorToken } from './generated/tokens';
 export { ICONS, ICON_NAMES, type IconName } from './generated/icons';
 export { NODES, NODE_NAMES, type NodeName } from './generated/nodes';

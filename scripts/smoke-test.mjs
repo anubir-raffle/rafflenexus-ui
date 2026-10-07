@@ -37,6 +37,9 @@ const cases = [
   ['Switch', h(DS.Switch, { label: 'Live jackpot', checked: true, onChange: () => {} }), ['role="switch"', 'aria-checked="true"']],
   ['ErrorSummary', h(DS.ErrorSummary, { errors: [{ fieldId: 'em', message: 'Enter your email.' }] }), ['rnc-errsum', 'href="#em"']],
   ['Dropdown', h(DS.Dropdown, { label: 'Export', items: [{ label: 'CSV' }] }), ['aria-haspopup="menu"', 'role="menu"', 'hidden']],
+  ['Sidebar', h(DS.Sidebar, { logo: 'RNC', items: [{ label: 'Dashboard', href: '/', icon: 'chart-line-up', current: true }, { label: 'Raffles', href: '/r', icon: 'ticket', badge: '3' }] }), ['rnc-sidebar', 'aria-current="page"', 'aria-label="Raffles, 3"', 'rnc-icon']],
+  ['Offcanvas (closed renders nothing)', h('div', { 'data-x': '1' }, h(DS.Offcanvas, { open: false, onClose: () => {}, title: 'Menu' })), ['data-x="1"']],
+  ['Table', h(DS.Table, { caption: 'Orders', data: [{ n: 'Ava', a: 50 }], columns: [{ accessorKey: 'n', header: 'Name' }, { accessorKey: 'a', header: 'Amount', meta: { numeric: true } }] }), ['rnc-table', 'aria-sort="none"', '>Ava<', 'is-num']],
 ];
 for (const [name, el, expect] of cases) {
   try { const html = render(el); const missing = expect.filter((s) => !html.includes(s)); check(name, !missing.length, missing.length ? 'missing ' + missing.join(', ') : ''); }
@@ -44,7 +47,7 @@ for (const [name, el, expect] of cases) {
 }
 const hex = /^#[0-9a-f]{6}$/i;
 check('tokens', ['action', 'ink', 'stage', 'ground', 'reward', 'verified', 'focus'].every((k) => hex.test(DS.tokens.color[k])) && DS.tokens.font.display.startsWith('Newsreader') && DS.tokens.font.mono.includes('DM Mono'));
-check('icon names', DS.ICON_NAMES.length === 24 && DS.ICON_NAMES.includes('ticket'));
+check('icon names', DS.ICON_NAMES.length >= 24 && ['ticket', 'x', 'list'].every((n) => DS.ICON_NAMES.includes(n)));
 const require = createRequire(import.meta.url);
 const cjs = require('../dist/index.cjs');
 check('CommonJS build', typeof cjs.TicketButton === 'function' && typeof cjs.JackpotFigure === 'function');
