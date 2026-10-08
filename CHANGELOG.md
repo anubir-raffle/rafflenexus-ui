@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.3 (2026-10-08)
+
+- `InputMasked` holds its layout even against `!important` app-wide CSS. In the Raffle Builder, the prefix still sat flush against the field's edge after 0.3.2, so the field padding, the input's transparent background and the prefix/suffix spacing and font are now `!important` as well as high-specificity (tested against `!important` rules that zero the padding, paint the input white and bold the affixes).
+- Tighter after the prefix: 4px between "https://" and the value (was 8px), so the URL reads as one. The suffix keeps 8px. Same in the design system's `BriefFormInputs` card.
+
 ## 0.3.2 (2026-10-08)
 
 - `InputMasked` holds its look inside apps with their own global CSS. Reported in the Raffle Builder: the prefix sat flush against the field's edge, the prefix and suffix turned bold grey, and a disabled or review-mode field showed the value as a white box (an app-wide `input:disabled` background). The prefix and suffix are now plain text (not MUI's `<p>`), and the field's padding, input background and affix styles use selectors that outrank one-class app rules.

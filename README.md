@@ -4,7 +4,7 @@ React components, design tokens and fonts for Raffle Nexus Canada: the "Canada's
 
 The full design system, with page concepts, guidelines and assets, lives in the RNC V2.1 design-system artifact on claude.ai. This package holds the parts you build with.
 
-> **Status: 0.3.2.** The brand direction is chosen by Marketing and pending sign-off from the CEO. Expect changes before 1.0.
+> **Status: 0.3.3.** The brand direction is chosen by Marketing and pending sign-off from the CEO. Expect changes before 1.0.
 
 ## Install
 

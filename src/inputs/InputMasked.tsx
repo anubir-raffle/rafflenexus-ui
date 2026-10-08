@@ -27,8 +27,10 @@ export interface InputMaskedProps {
 // The input is only as wide as its value, so a suffix ("%") sits right after it. A hidden span with the same
 // font measures the value.
 const MEASURE_FONT = '400 16px/22px var(--font-sans)';
-// Space between the value and its prefix or suffix, so "https://" and "%" read as separate from the value.
-const AFFIX_GAP = 8;
+// Space between the value and its prefix or suffix: tight after a prefix ("https://" + value reads as one URL),
+// wider before a suffix so ".rafflenexus.com" or "%" stays distinct.
+const PREFIX_GAP = 4;
+const SUFFIX_GAP = 8;
 
 /**
  * A text field with a prefix and/or suffix (money, percentages, URLs), for react-final-form.
@@ -92,24 +94,25 @@ export function InputMasked({
         inputRef={inputRef}
         sx={{
           ...(disabledAll ? { pointerEvents: 'none' } : {}),
-          // Doubled classes outrank app-wide rules such as `input:disabled { background: #fff }`
-          // or `.MuiInputBase-adornedStart { padding-left: 0 }`, so the field looks the same in any app.
-          '& .MuiOutlinedInput-root.MuiInputBase-adornedStart.MuiInputBase-adornedStart': { paddingLeft: '14px' },
-          '& .MuiOutlinedInput-root.MuiInputBase-adornedEnd.MuiInputBase-adornedEnd': { paddingRight: '14px' },
+          // The prefix/suffix layout must survive app-wide CSS (the Raffle Builder's zeroed the left padding and painted
+          // disabled inputs white), so these few rules are !important as well as high-specificity.
+          '& .MuiOutlinedInput-root.MuiInputBase-adornedStart.MuiInputBase-adornedStart': { paddingLeft: '14px !important' },
+          '& .MuiOutlinedInput-root.MuiInputBase-adornedEnd.MuiInputBase-adornedEnd': { paddingRight: '14px !important' },
           '& .MuiOutlinedInput-root .MuiInputBase-input.MuiInputBase-input': {
-            width: inputWidth,
+            width: `${inputWidth} !important`,
             flex: '0 0 auto',
-            paddingLeft: pre ? 0 : undefined,
-            paddingRight: post ? 0 : undefined,
-            background: 'transparent',
-            boxShadow: 'none',
+            paddingLeft: pre ? '0 !important' : undefined,
+            paddingRight: post ? '0 !important' : undefined,
+            background: 'transparent !important',
+            boxShadow: 'none !important',
           },
           '& .MuiInputAdornment-root.rnc-masked-affix.rnc-masked-affix': {
-            height: 'auto', maxHeight: 'none', margin: 0, cursor: 'pointer', whiteSpace: 'nowrap',
-            font: '400 16px/22px var(--font-sans)', letterSpacing: 'normal', color: 'var(--ink-muted)',
+            height: 'auto', maxHeight: 'none', margin: '0 !important', padding: '0 !important', position: 'static !important',
+            cursor: 'pointer', whiteSpace: 'nowrap',
+            font: '400 16px/22px var(--font-sans) !important', letterSpacing: 'normal', color: 'var(--ink-muted) !important',
           },
-          '& .MuiInputAdornment-positionStart.rnc-masked-affix.rnc-masked-affix': { marginRight: `${AFFIX_GAP}px` },
-          '& .MuiInputAdornment-positionEnd.rnc-masked-affix.rnc-masked-affix': { marginLeft: `${AFFIX_GAP}px` },
+          '& .MuiInputAdornment-positionStart.rnc-masked-affix.rnc-masked-affix': { marginRight: `${PREFIX_GAP}px !important` },
+          '& .MuiInputAdornment-positionEnd.rnc-masked-affix.rnc-masked-affix': { marginLeft: `${SUFFIX_GAP}px !important` },
         }}
         InputProps={{
           // disableTypography: the prefix and suffix are plain text, not MUI's <p>, so app-wide `p` styles can't reach them.
