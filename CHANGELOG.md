@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.2 (2026-10-08)
+
+- `InputMasked` holds its look inside apps with their own global CSS. Reported in the Raffle Builder: the prefix sat flush against the field's edge, the prefix and suffix turned bold grey, and a disabled or review-mode field showed the value as a white box (an app-wide `input:disabled` background). The prefix and suffix are now plain text (not MUI's `<p>`), and the field's padding, input background and affix styles use selectors that outrank one-class app rules.
+- More space between the value and its prefix or suffix: 8px (was 6px). Same in the design system's `BriefFormInputs` card.
+
 ## 0.3.1 (2026-10-08)
 
 - `@rafflenexuscanada/design-system/inputs` now resolves in tools that ignore package.json `exports` (webpack 4, Create React App 4, older Jest, TypeScript with `"moduleResolution": "node"`), through an `inputs/` folder and `typesVersions`. In 0.3.0 those reported "Cannot find module '@rafflenexuscanada/design-system/inputs'".

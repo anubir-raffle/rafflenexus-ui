@@ -216,6 +216,15 @@ describe('InputMasked', () => {
     expect(onChange).toHaveBeenCalledWith('1');
   });
 
+  it('renders the prefix and suffix as plain text, not <p>, so app-wide p styles cannot restyle them', () => {
+    render(<InputMasked label="Sub domain" input={{ value: 'samplecause', onChange: () => {} }} pre="https://" post=".rafflenexus.com" />);
+    for (const text of ['https://', '.rafflenexus.com']) {
+      const el = screen.getByText(text);
+      expect(el.tagName).not.toBe('P');
+      expect(el).toHaveClass('rnc-masked-affix');
+    }
+  });
+
   it('review mode copies prefix + value + suffix', () => {
     render(<InputMasked label="Facebook Page" input={{ value: 'samplecause', onChange: () => {} }} pre="https://facebook.com/" disabledAll />);
     fireEvent.click(screen.getByLabelText('Facebook Page').closest('.rnc-mui-field')!.lastElementChild!);

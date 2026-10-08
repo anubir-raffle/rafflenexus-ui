@@ -28,7 +28,7 @@ export interface InputMaskedProps {
 // font measures the value.
 const MEASURE_FONT = '400 16px/22px var(--font-sans)';
 // Space between the value and its prefix or suffix, so "https://" and "%" read as separate from the value.
-const AFFIX_GAP = 6;
+const AFFIX_GAP = 8;
 
 /**
  * A text field with a prefix and/or suffix (money, percentages, URLs), for react-final-form.
@@ -90,26 +90,39 @@ export function InputMasked({
         fullWidth
         disabled={isDisabled}
         inputRef={inputRef}
-        sx={disabledAll ? { pointerEvents: 'none' } : {}}
+        sx={{
+          ...(disabledAll ? { pointerEvents: 'none' } : {}),
+          // Doubled classes outrank app-wide rules such as `input:disabled { background: #fff }`
+          // or `.MuiInputBase-adornedStart { padding-left: 0 }`, so the field looks the same in any app.
+          '& .MuiOutlinedInput-root.MuiInputBase-adornedStart.MuiInputBase-adornedStart': { paddingLeft: '14px' },
+          '& .MuiOutlinedInput-root.MuiInputBase-adornedEnd.MuiInputBase-adornedEnd': { paddingRight: '14px' },
+          '& .MuiOutlinedInput-root .MuiInputBase-input.MuiInputBase-input': {
+            width: inputWidth,
+            flex: '0 0 auto',
+            paddingLeft: pre ? 0 : undefined,
+            paddingRight: post ? 0 : undefined,
+            background: 'transparent',
+            boxShadow: 'none',
+          },
+          '& .MuiInputAdornment-root.rnc-masked-affix.rnc-masked-affix': {
+            height: 'auto', maxHeight: 'none', margin: 0, cursor: 'pointer', whiteSpace: 'nowrap',
+            font: '400 16px/22px var(--font-sans)', letterSpacing: 'normal', color: 'var(--ink-muted)',
+          },
+          '& .MuiInputAdornment-positionStart.rnc-masked-affix.rnc-masked-affix': { marginRight: `${AFFIX_GAP}px` },
+          '& .MuiInputAdornment-positionEnd.rnc-masked-affix.rnc-masked-affix': { marginLeft: `${AFFIX_GAP}px` },
+        }}
         InputProps={{
+          // disableTypography: the prefix and suffix are plain text, not MUI's <p>, so app-wide `p` styles can't reach them.
           startAdornment: pre ? (
-            <InputAdornment position="start" onClick={handleAdornmentClick} style={{ cursor: 'pointer', marginRight: AFFIX_GAP }}>
+            <InputAdornment position="start" disableTypography className="rnc-masked-affix" onClick={handleAdornmentClick}>
               {pre}
             </InputAdornment>
           ) : undefined,
           endAdornment: post ? (
-            <InputAdornment position="end" onClick={handleAdornmentClick} style={{ cursor: 'pointer', marginLeft: AFFIX_GAP }}>
+            <InputAdornment position="end" disableTypography className="rnc-masked-affix" onClick={handleAdornmentClick}>
               {post}
             </InputAdornment>
           ) : undefined,
-          sx: {
-            '& input': {
-              width: inputWidth,
-              flex: '0 0 auto',
-              paddingLeft: pre ? 0 : undefined,
-              paddingRight: post ? 0 : undefined,
-            },
-          },
         }}
       />
       <span ref={measureRef} aria-hidden="true"
