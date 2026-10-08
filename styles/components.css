@@ -247,13 +247,13 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-tip iframe { margin-top: 8px; }
 .rnc-tip p { margin: 6px 0 0; font-size: 13px; color: var(--ink-muted); }
 /* A field with a prefix or suffix ("https://", "$", "%") or a button at the end (show password, open calendar) */
-.rnc-affix { box-sizing: border-box; display: flex; align-items: center; gap: 2px; width: 100%; min-height: 46px; padding: 0 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); font: 400 16px/1.4 var(--font-sans); color: var(--ink); cursor: text; }
+.rnc-affix { box-sizing: border-box; display: flex; align-items: center; gap: 6px; width: 100%; min-height: 46px; padding: 0 14px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); font: 400 16px/1.4 var(--font-sans); color: var(--ink); cursor: text; }
 .rnc-affix:hover { border-color: var(--ink-muted); }
 .rnc-affix:focus-within { outline: 2px solid var(--focus); outline-offset: 0; border-color: var(--focus); }
 .rnc-affix > span { flex: none; color: var(--ink-muted); white-space: nowrap; }
 .rnc-affix .rnc-input { flex: 1; min-width: 0; min-height: 44px; padding: 0; border: 0; border-radius: 0; background: none; }
 .rnc-affix .rnc-input:focus-visible { outline: none; }
-.rnc-affix-btn { flex: none; display: inline-grid; place-items: center; width: 40px; height: 40px; margin-right: -10px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-muted); cursor: pointer; }
+.rnc-affix-btn { flex: none; display: inline-grid; place-items: center; width: 40px; height: 40px; margin: 0 -7px 0 3px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-muted); cursor: pointer; }
 .rnc-affix-btn:hover { color: var(--action); background: var(--surface-tint); }
 .rnc-affix-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; }
 .rnc-field.is-invalid .rnc-affix { border: 2px solid var(--error); }

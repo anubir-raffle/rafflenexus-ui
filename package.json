@@ -1,6 +1,6 @@
 {
   "name": "@rafflenexuscanada/design-system",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Raffle Nexus Canada design system (RNC V2.1): React components, design tokens and fonts, plus MUI form inputs for react-final-form.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "Raffle Nexus Canada",
@@ -19,6 +19,13 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "inputs": [
+        "./dist/inputs.d.ts"
+      ]
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -38,6 +45,7 @@
   },
   "files": [
     "dist",
+    "inputs",
     "LICENSE",
     "README.md",
     "CHANGELOG.md"

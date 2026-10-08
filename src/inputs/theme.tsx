@@ -56,7 +56,13 @@ export const rncInputsTheme = createTheme({
         adornedEnd: { paddingRight: 8 },
       },
     },
-    MuiInputAdornment: { styleOverrides: { root: { color: 'var(--ink-muted)', '& .MuiTypography-root': { color: 'var(--ink-muted)', font: '400 16px/1.4 var(--font-sans)' } } } },
+    MuiInputAdornment: {
+      styleOverrides: {
+        root: { color: 'var(--ink-muted)', '& .MuiTypography-root': { color: 'var(--ink-muted)', font: '400 16px/1.4 var(--font-sans)' } },
+        // Buttons at the end (show password, open calendar): the icon sits 16px from the edge, like the text's 14px inset.
+        positionEnd: { marginLeft: 10, '& .MuiIconButton-edgeEnd': { marginRight: 0 } },
+      },
+    },
     MuiIconButton: {
       styleOverrides: {
         root: {

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 (2026-10-08)
+
+- `@rafflenexuscanada/design-system/inputs` now resolves in tools that ignore package.json `exports` (webpack 4, Create React App 4, older Jest, TypeScript with `"moduleResolution": "node"`), through an `inputs/` folder and `typesVersions`. In 0.3.0 those reported "Cannot find module '@rafflenexuscanada/design-system/inputs'".
+- More room around icons and affixes in the inputs: show-password and calendar buttons sit 16px from the field's edge (was about 6–10px), and prefixes and suffixes ("https://", "%") sit 6px from the value (was 2px). Same in the design system's `BriefFormInputs` card.
+- README: a pointer to `/inputs` at the top of the component list, for anyone looking for `TextInput` in the main entry.
+
 ## 0.3.0 (2026-10-08)
 
 - New entry point `@rafflenexuscanada/design-system/inputs`: the Raffle Builder's form inputs rebuilt from the app's `src/js/shared/` files with the same props and defaults: `TextInput` (text, password, number, dropdown), `DropdownInput`, `InputMasked`, `DatePicker`, `MaskedInput`, `TextArea`, `FinalFormError`, `BriefToolTip` (`TooltipBriefForm`) and `DebouncingValidatingField`, plus `copyToClipboard`, `DATEFORMAT_RAFFLE_NEXUS` and the MUI theme `rncInputsTheme`. MUI fields for react-final-form in the design system's look, with review mode (`disabledAll`: click to copy, "Copied!" toast). See the README for the differences from the app's files and the points to confirm.

@@ -72,6 +72,12 @@ for (const [name, el, expect] of inputCases) {
 }
 check('inputs entry exports', ['TextInput', 'DropdownInput', 'InputMasked', 'DatePicker', 'MaskedInput', 'TextArea', 'FinalFormError', 'BriefToolTip', 'TooltipBriefForm', 'DebouncingValidatingField', 'copyToClipboard', 'rncInputsTheme']
   .every((n) => IN[n] != null) && IN.DATEFORMAT_RAFFLE_NEXUS === 'YYYY-MM-DD HH:mm:ss');
+// Tools that ignore "exports" (webpack 4, CRA 4, TypeScript moduleResolution "node") find /inputs through inputs/package.json and typesVersions.
+const legacy = JSON.parse(readFileSync(join(root, 'inputs/package.json'), 'utf8'));
+const pkgJson = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+check('inputs/ fallback for older tools', ['main', 'module', 'types'].every((k) => statSync(join(root, 'inputs', legacy[k])).isFile())
+  && require(join(root, 'inputs', legacy.main)).TextInput != null
+  && pkgJson.files.includes('inputs') && pkgJson.typesVersions?.['*']?.inputs?.[0] === './dist/inputs.d.ts');
 
 // The package and its repository are public: no client names may appear in either.
 // The names live in a git-ignored local file (see client-names.mjs), so this check runs on Marketing's machine.

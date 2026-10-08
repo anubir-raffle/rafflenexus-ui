@@ -27,6 +27,8 @@ export interface InputMaskedProps {
 // The input is only as wide as its value, so a suffix ("%") sits right after it. A hidden span with the same
 // font measures the value.
 const MEASURE_FONT = '400 16px/22px var(--font-sans)';
+// Space between the value and its prefix or suffix, so "https://" and "%" read as separate from the value.
+const AFFIX_GAP = 6;
 
 /**
  * A text field with a prefix and/or suffix (money, percentages, URLs), for react-final-form.
@@ -91,12 +93,12 @@ export function InputMasked({
         sx={disabledAll ? { pointerEvents: 'none' } : {}}
         InputProps={{
           startAdornment: pre ? (
-            <InputAdornment position="start" onClick={handleAdornmentClick} style={{ cursor: 'pointer', marginRight: 2 }}>
+            <InputAdornment position="start" onClick={handleAdornmentClick} style={{ cursor: 'pointer', marginRight: AFFIX_GAP }}>
               {pre}
             </InputAdornment>
           ) : undefined,
           endAdornment: post ? (
-            <InputAdornment position="end" onClick={handleAdornmentClick} style={{ cursor: 'pointer', marginLeft: 2 }}>
+            <InputAdornment position="end" onClick={handleAdornmentClick} style={{ cursor: 'pointer', marginLeft: AFFIX_GAP }}>
               {post}
             </InputAdornment>
           ) : undefined,

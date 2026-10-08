@@ -4,7 +4,7 @@ React components, design tokens and fonts for Raffle Nexus Canada: the "Canada's
 
 The full design system, with page concepts, guidelines and assets, lives in the RNC V2.1 design-system artifact on claude.ai. This package holds the parts you build with.
 
-> **Status: 0.3.0.** The brand direction is chosen by Marketing and pending sign-off from the CEO. Expect changes before 1.0.
+> **Status: 0.3.1.** The brand direction is chosen by Marketing and pending sign-off from the CEO. Expect changes before 1.0.
 
 ## Install
 
@@ -43,6 +43,8 @@ export function Hero() {
 ```
 
 ## Components
+
+> **Looking for `TextInput`, `DatePicker`, `InputMasked` or the other Raffle Builder inputs?** They're in a separate entry point, not this one: `import { TextInput } from '@rafflenexuscanada/design-system/inputs'`. See [Raffle Builder inputs](#raffle-builder-inputs-inputs). (`TextField` and `TextArea` below are the design system's simpler fields, with different props.)
 
 | Component | What it's for | Key props |
 | --- | --- | --- |
@@ -133,7 +135,7 @@ Also exported: `copyToClipboard(text)`, `DATEFORMAT_RAFFLE_NEXUS` (`'YYYY-MM-DD 
 - The dropdown's `autoComplete="off"` turns MUI's inline completion **on** (MUI reads any string as true).
 - Not ported: `ReactSelectAdapter`, `ReactPhoneNumberAdapter` (unused) and `NumberPicker` (a stub). A stepper should be designed rather than ported.
 
-The ES module build is for bundlers (webpack, Vite, Next.js): MUI 5's subpath imports don't load in plain Node ESM. The CommonJS build works in Node and Jest.
+The ES module build is for bundlers (webpack, Vite, Next.js): MUI 5's subpath imports don't load in plain Node ESM. The CommonJS build works in Node and Jest. Older tools that ignore package.json `exports` (webpack 4, Create React App 4, older Jest, TypeScript with `"moduleResolution": "node"`) find `/inputs` too, through the package's `inputs/` folder and `typesVersions` (0.3.1 and later).
 
 ### Examples
 
