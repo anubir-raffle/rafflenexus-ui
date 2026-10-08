@@ -4,7 +4,7 @@ React components, design tokens and fonts for Raffle Nexus Canada: the "Canada's
 
 The full design system, with page concepts, guidelines and assets, lives in the RNC V2.1 design-system artifact on claude.ai. This package holds the parts you build with.
 
-> **Status: 0.3.3.** The brand direction is chosen by Marketing and pending sign-off from the CEO. Expect changes before 1.0.
+> **Status: 0.4.0.** The brand direction is chosen by Marketing and pending sign-off from the CEO. Expect changes before 1.0.
 
 ## Install
 
@@ -44,7 +44,7 @@ export function Hero() {
 
 ## Components
 
-> **Looking for `TextInput`, `DatePicker`, `InputMasked` or the other Raffle Builder inputs?** They're in a separate entry point, not this one: `import { TextInput } from '@rafflenexuscanada/design-system/inputs'`. See [Raffle Builder inputs](#raffle-builder-inputs-inputs). (`TextField` and `TextArea` below are the design system's simpler fields, with different props.)
+> **Looking for `TextInput`, `DatePicker`, `InputMasked` or `SweetAlert`?** They're in separate entry points, not this one: `import { TextInput } from '@rafflenexuscanada/design-system/inputs'` and `import { SweetAlert } from '@rafflenexuscanada/design-system/alerts'`. See [Raffle Builder inputs](#raffle-builder-inputs-inputs) and [Alert dialogs](#alert-dialogs-alerts). (`TextField` and `TextArea` below are the design system's simpler fields, with different props.)
 
 | Component | What it's for | Key props |
 | --- | --- | --- |
@@ -136,6 +136,35 @@ Also exported: `copyToClipboard(text)`, `DATEFORMAT_RAFFLE_NEXUS` (`'YYYY-MM-DD 
 - Not ported: `ReactSelectAdapter`, `ReactPhoneNumberAdapter` (unused) and `NumberPicker` (a stub). A stepper should be designed rather than ported.
 
 The ES module build is for bundlers (webpack, Vite, Next.js): MUI 5's subpath imports don't load in plain Node ESM. The CommonJS build works in Node and Jest. Older tools that ignore package.json `exports` (webpack 4, Create React App 4, older Jest, TypeScript with `"moduleResolution": "node"`) find `/inputs` too, through the package's `inputs/` folder and `typesVersions` (0.3.1 and later).
+
+## Alert dialogs (`/alerts`)
+
+`@rafflenexuscanada/design-system/alerts` is the Raffle Builder's `SweetAlert` helper (SweetAlert2), with the same API, in the design system's look (the `AlertBox` card). Install `sweetalert2` and `sweetalert2-react-content` (the app has them), and import `styles.css` once.
+
+The app's helper imports two of its own services; pass them in once at startup. Replacing the app's SweetAlert file with this keeps every call site as it is:
+
+```js
+// the app's SweetAlert file
+import { SweetAlert, configureSweetAlert } from '@rafflenexuscanada/design-system/alerts';
+import { saveUserSettings } from '../services';
+import { pushEscapeLayer } from './escapeLayerStack';
+
+configureSweetAlert({ saveUserSettings, pushEscapeLayer });
+export { isSweetAlertOpen } from '@rafflenexuscanada/design-system/alerts';
+export default SweetAlert;
+```
+
+| Call | What it shows |
+| --- | --- |
+| `SweetAlert.confirm({ title, text, confirmButtonText, cancelButtonText, onConfirm, onCancel, ... })` | A question with Cancel and a primary button. `onConfirm` runs as SweetAlert2's `preConfirm`. |
+| `SweetAlert.delete({ title, text, onConfirm, onCancel, ... })` | A warning icon and a red "Yes, delete it!" button (the one red button in the system). |
+| `SweetAlert.success / .error / .info({ title, text, onClose, ... })` | A notice with a state icon and OK. |
+| `SweetAlert.loading({ title, text })`, `SweetAlert.close()` | A spinner with no buttons, until you close it. |
+| `SweetAlert.custom(options)`, `SweetAlert.update(options)` | Any SweetAlert2 options on top of the defaults. |
+
+Every call except `loading` and `custom` takes the same extras as the app: `checkboxKey`, `checkboxLabel`, `autoSaveCheckbox`, `checkSetting`, `userSettings` ("Don't show this again"), and `customConfig` (SweetAlert2 options). `text` can be a string or JSX. `isSweetAlertOpen()` says whether an alert is open. `AlertBox` is another name for `SweetAlert`.
+
+**Where it differs from the app's file:** buttons use the design system's button classes (`buttonsStyling: false`), so `confirmButtonColor` and `cancelButtonColor` no longer change them; icons are Phosphor (warning, check-circle, x-circle, info, x); classes passed in `customConfig.customClass` are added to the design system's instead of replacing the defaults; the checkbox shows even when an alert has no text, and a ticked checkbox is saved even when the dialog closes without an animation (under reduced motion the app's version lost it). The app's class names (`swal2-title-with-icon`, `swal2-delete-icon`, `swal2-custom-close-button` and so on) are kept, so its CSS still finds them.
 
 ### Examples
 

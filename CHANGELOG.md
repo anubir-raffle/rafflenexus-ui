@@ -1,6 +1,14 @@
 # Changelog
 
-## 0.3.3 (2026-10-08)
+## 0.4.0 (2026-10-08)
+
+- New entry point `@rafflenexuscanada/design-system/alerts`: the Raffle Builder's `SweetAlert` helper (SweetAlert2) with its existing API, in the design system's look (the `AlertBox` card). `SweetAlert.confirm`, `.delete`, `.success`, `.error`, `.info`, `.custom`, `.loading`, `.close`, `.update`, `isSweetAlertOpen()`, the "Don't show this again" checkbox, and `AlertBox` as another name. The app passes its `saveUserSettings` and `pushEscapeLayer` once with `configureSweetAlert`. Older tools find `/alerts` too (an `alerts/` folder and `typesVersions`).
+- `sweetalert2` and `sweetalert2-react-content` are optional peer dependencies, needed only for `/alerts`.
+- Styles from the design system's new `AlertBox` card, including `rnc-btn-danger` (delete confirmations only). Icons: added `warning`, `check-circle` and `x-circle`.
+- Also contains 0.3.3, which was prepared but not published: `InputMasked`'s layout holds against `!important` app-wide CSS (field padding, input background, prefix/suffix spacing and font), and the gap after a prefix is 4px (a suffix keeps 8px).
+- 14 new unit tests (97 in all) and smoke tests for the `/alerts` build.
+
+## 0.3.3 (2026-10-08, not published; part of 0.4.0)
 
 - `InputMasked` holds its layout even against `!important` app-wide CSS. In the Raffle Builder, the prefix still sat flush against the field's edge after 0.3.2, so the field padding, the input's transparent background and the prefix/suffix spacing and font are now `!important` as well as high-specificity (tested against `!important` rules that zero the padding, paint the input white and bold the affixes).
 - Tighter after the prefix: 4px between "https://" and the value (was 8px), so the URL reads as one. The suffix keeps 8px. Same in the design system's `BriefFormInputs` card.

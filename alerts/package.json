@@ -1,0 +1,9 @@
+{
+  "name": "@rafflenexuscanada/design-system/alerts",
+  "private": true,
+  "description": "Fallback for tools that ignore package.json \"exports\" (webpack 4, Create React App 4, older Jest): resolves @rafflenexuscanada/design-system/alerts.",
+  "main": "../dist/alerts.cjs",
+  "module": "../dist/alerts.js",
+  "types": "../dist/alerts.d.ts",
+  "sideEffects": false
+}

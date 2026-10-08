@@ -1,7 +1,7 @@
 {
   "name": "@rafflenexuscanada/design-system",
-  "version": "0.3.3",
-  "description": "Raffle Nexus Canada design system (RNC V2.1): React components, design tokens and fonts, plus MUI form inputs for react-final-form.",
+  "version": "0.4.0",
+  "description": "Raffle Nexus Canada design system (RNC V2.1): React components, design tokens and fonts, plus MUI form inputs for react-final-form and SweetAlert2 alert dialogs.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "Raffle Nexus Canada",
   "homepage": "https://rafflenexus.com",
@@ -23,6 +23,9 @@
     "*": {
       "inputs": [
         "./dist/inputs.d.ts"
+      ],
+      "alerts": [
+        "./dist/alerts.d.ts"
       ]
     }
   },
@@ -37,6 +40,11 @@
       "import": "./dist/inputs.js",
       "require": "./dist/inputs.cjs"
     },
+    "./alerts": {
+      "types": "./dist/alerts.d.ts",
+      "import": "./dist/alerts.js",
+      "require": "./dist/alerts.cjs"
+    },
     "./styles.css": "./dist/styles.css",
     "./tokens.css": "./dist/tokens.css",
     "./fonts.css": "./dist/fonts.css",
@@ -46,6 +54,7 @@
   "files": [
     "dist",
     "inputs",
+    "alerts",
     "LICENSE",
     "README.md",
     "CHANGELOG.md"
@@ -69,8 +78,6 @@
     "release": "node scripts/release.mjs"
   },
   "peerDependencies": {
-    "react": ">=17",
-    "react-dom": ">=17",
     "@emotion/react": "^11.5.0",
     "@emotion/styled": "^11.3.0",
     "@mui/material": "^5.15.0 || ^6.0.0 || ^7.0.0",
@@ -78,8 +85,12 @@
     "@react-input/mask": "^2.0.4",
     "final-form": "^4.20.4 || ^5.0.0",
     "moment": "^2.29.4",
+    "react": ">=17",
+    "react-dom": ">=17",
     "react-final-form": "^6.5.9 || ^7.0.0",
-    "react-hot-toast": "^2.4.1"
+    "react-hot-toast": "^2.4.1",
+    "sweetalert2": "^11.0.0",
+    "sweetalert2-react-content": "^5.0.0"
   },
   "peerDependenciesMeta": {
     "@emotion/react": {
@@ -108,6 +119,12 @@
     },
     "react-hot-toast": {
       "optional": true
+    },
+    "sweetalert2": {
+      "optional": true
+    },
+    "sweetalert2-react-content": {
+      "optional": true
     }
   },
   "publishConfig": {
@@ -132,6 +149,8 @@
     "react-dom": "^19.3.0",
     "react-final-form": "^7.0.1",
     "react-hot-toast": "^2.6.1",
+    "sweetalert2": "^11.26.25",
+    "sweetalert2-react-content": "^5.1.2",
     "tsup": "^8.5.1",
     "typescript": "~5.9",
     "vite": "^8.3.3",

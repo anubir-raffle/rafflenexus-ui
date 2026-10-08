@@ -54,7 +54,7 @@ check('CommonJS build', typeof cjs.TicketButton === 'function' && typeof cjs.Jac
 
 // The /inputs entry (MUI + react-final-form). Rendered from the CommonJS build: MUI 5's subpath imports
 // (@mui/material/TextField) need a bundler for ESM, as they do in the app itself.
-check('main entry has no MUI', !/@mui|@emotion|react-final-form/.test(readFileSync(join(root, 'dist/index.js'), 'utf8')));
+check('main entry has no MUI or SweetAlert2', !/@mui|@emotion|react-final-form|sweetalert2/.test(readFileSync(join(root, 'dist/index.js'), 'utf8')));
 const IN = require('../dist/inputs.cjs');
 const noop = () => {};
 const inputCases = [
@@ -75,9 +75,18 @@ check('inputs entry exports', ['TextInput', 'DropdownInput', 'InputMasked', 'Dat
 // Tools that ignore "exports" (webpack 4, CRA 4, TypeScript moduleResolution "node") find /inputs through inputs/package.json and typesVersions.
 const legacy = JSON.parse(readFileSync(join(root, 'inputs/package.json'), 'utf8'));
 const pkgJson = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
+// The /alerts entry (SweetAlert2). Opening a dialog needs a browser; here: it loads and exposes the app's API.
+const AL = require('../dist/alerts.cjs');
+check('alerts entry exports', typeof AL.SweetAlert === 'function' && AL.AlertBox === AL.SweetAlert
+  && ['confirm', 'delete', 'success', 'error', 'info', 'custom', 'loading', 'close', 'update'].every((m) => typeof AL.SweetAlert[m] === 'function')
+  && typeof AL.isSweetAlertOpen === 'function' && AL.isSweetAlertOpen() === false && typeof AL.configureSweetAlert === 'function');
+const legacyAlerts = JSON.parse(readFileSync(join(root, 'alerts/package.json'), 'utf8'));
+check('alerts/ fallback for older tools', ['main', 'module', 'types'].every((k) => statSync(join(root, 'alerts', legacyAlerts[k])).isFile())
+  && require(join(root, 'alerts', legacyAlerts.main)).SweetAlert != null);
 check('inputs/ fallback for older tools', ['main', 'module', 'types'].every((k) => statSync(join(root, 'inputs', legacy[k])).isFile())
   && require(join(root, 'inputs', legacy.main)).TextInput != null
-  && pkgJson.files.includes('inputs') && pkgJson.typesVersions?.['*']?.inputs?.[0] === './dist/inputs.d.ts');
+  && pkgJson.files.includes('inputs') && pkgJson.files.includes('alerts') && pkgJson.typesVersions?.['*']?.inputs?.[0] === './dist/inputs.d.ts'
+  && pkgJson.typesVersions?.['*']?.alerts?.[0] === './dist/alerts.d.ts');
 
 // The package and its repository are public: no client names may appear in either.
 // The names live in a git-ignored local file (see client-names.mjs), so this check runs on Marketing's machine.

@@ -370,5 +370,31 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-table-pager .rnc-btn { padding: 8px 16px; font-size: 14px; }
 .rnc-table-pager .rnc-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
 
+/* Alert box (npm: @rafflenexuscanada/design-system/alerts, on SweetAlert2): a modal that asks, confirms or reports one thing.
+   Title in DM Sans with a state icon, body text, actions at the end (cancel, then confirm). */
+.rnc-alert-backdrop.swal2-backdrop-show, .rnc-alert-backdrop.swal2-noanimation, .rnc-alert-scrim { background: rgba(15, 42, 68, .48); }
+.rnc-alert { box-sizing: border-box; position: relative; width: min(480px, calc(100vw - 32px)); max-width: 100%; padding: 28px 28px 24px; border: 0; border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-3); color: var(--ink-body); font-family: var(--font-sans); text-align: left; }
+.rnc-alert-title { display: block; margin: 0; padding: 0 40px 0 0; font: 600 20px/1.3 var(--font-sans); color: var(--ink); text-align: left; text-wrap: balance; }
+.rnc-alert-head { display: flex; align-items: flex-start; gap: 10px; }
+.rnc-alert-head .rnc-icon { flex: none; width: 24px; height: 24px; margin-top: 1px; color: var(--action); }
+.rnc-alert-head.is-success .rnc-icon { color: var(--verified); }
+.rnc-alert-head.is-error .rnc-icon, .rnc-alert-head.is-danger .rnc-icon { color: var(--error); }
+.rnc-alert-body { margin: 10px 0 0; padding: 0; font: 400 16px/1.5 var(--font-sans); color: var(--ink-body); text-align: left; overflow-wrap: anywhere; }
+.rnc-alert-body p { margin: 0 0 8px; }
+.rnc-alert-body p:last-child { margin-bottom: 0; }
+.rnc-alert-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; width: 100%; margin: 24px 0 0; padding: 0; }
+.rnc-alert-actions.is-loading { justify-content: flex-start; }
+.rnc-alert-actions .rnc-btn { margin: 0; }
+.rnc-btn-danger { background: var(--error); border-color: var(--error); color: #ffffff; }
+.rnc-btn-danger:hover { box-shadow: var(--shadow-2); }
+.rnc-alert-close { position: absolute; top: 14px; right: 14px; display: grid; place-items: center; width: 40px; height: 40px; margin: 0; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-muted); font: inherit; cursor: pointer; }
+.rnc-alert-close:hover { color: var(--ink); background: var(--surface-tint); }
+.rnc-alert-close:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; box-shadow: none; }
+.rnc-alert-close svg { width: 22px; height: 22px; }
+.rnc-alert-check { margin-top: 20px; }
+.rnc-alert-loader { box-sizing: border-box; width: 28px; height: 28px; margin: 0; border: 3px solid var(--action); border-right-color: transparent; border-left-color: transparent; border-radius: 50%; }
+@media (max-width: 480px) { .rnc-alert-actions { flex-direction: column-reverse; align-items: stretch; } }
+@media (prefers-reduced-motion: reduce) { .rnc-alert.swal2-show, .rnc-alert.swal2-hide, .rnc-alert-backdrop { animation: none !important; transition: none !important; } }
+
 /* Screen-reader-only text: read out, not shown (table captions, extra context for icon-only controls) */
 .rnc-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

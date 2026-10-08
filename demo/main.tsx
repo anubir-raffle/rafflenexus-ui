@@ -5,6 +5,7 @@ import '../styles/tokens.css';
 import '../styles/components.css';
 import './demo.css';
 import { InputsDemo } from './InputsDemo';
+import { AlertsDemo } from './AlertsDemo';
 import {
   Button, Icon, ICON_NAMES, VerifiedBadge, LedgerLine, ProofStat, JackpotFigure, JackpotTile, FlagshipRoster,
   PoweredBy, LeaderHero, RaffleBrand, NodeGraphic, NODE_NAMES, Odometer, TicketButton, tokens,
@@ -207,6 +208,10 @@ function App() {
 
       <Section title="Raffle Builder inputs (@rafflenexuscanada/design-system/inputs)" note="MUI fields for react-final-form with the app's own props: TextInput (text, number, password, dropdown), InputMasked, MaskedInput, DatePicker, TextArea and BriefToolTip. Leave a required field empty to see its error; switch on review mode and click a field to copy it.">
         <InputsDemo />
+      </Section>
+
+      <Section title="AlertBox (@rafflenexuscanada/design-system/alerts)" note="The Raffle Builder's SweetAlert helper with the same API (SweetAlert.confirm, .delete, .success, .error, .info, .loading), in the design system's look.">
+        <AlertsDemo />
       </Section>
 
       <Section title="Sidebar, Offcanvas and Table" note="An admin layout: the sidebar (collapsible), a table with sorting, search, row selection and pages, and an offcanvas from the left (the phone menu) or the right (filters).">
