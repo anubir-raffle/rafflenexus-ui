@@ -4,7 +4,7 @@ React components, design tokens and fonts for Raffle Nexus Canada: the "Canada's
 
 The full design system, with page concepts, guidelines and assets, lives in the RNC V2.1 design-system artifact on claude.ai. This package holds the parts you build with.
 
-> **Status: 0.1.0.** The brand direction is chosen by Marketing and pending sign-off from the CEO. Expect changes before 1.0.
+> **Status: 0.3.0.** The brand direction is chosen by Marketing and pending sign-off from the CEO. Expect changes before 1.0.
 
 ## Install
 
@@ -73,6 +73,68 @@ export function Hero() {
 
 Every component has TypeScript types with notes on each prop. Your editor shows them as you type.
 
+## Raffle Builder inputs (`/inputs`)
+
+A second entry point, `@rafflenexuscanada/design-system/inputs`, holds the Raffle Builder's form inputs: MUI fields for react-final-form, rebuilt from the app's `src/js/shared/` files **with the same props, names and defaults**, in the design system's look (the `BriefFormInputs` card). The main entry doesn't use MUI; only this one does.
+
+Install the peer dependencies (the app already has most of them):
+
+```sh
+npm install @mui/material @emotion/react @emotion/styled @mui/x-date-pickers moment react-final-form final-form react-hot-toast @react-input/mask
+```
+
+Import `styles.css` once (as above) and keep react-hot-toast's `<Toaster />` in the app: review mode shows its "Copied!" toast there.
+
+**Swapping them in without touching the brief form.** Replace the body of each file in `src/js/shared/` with a re-export, and every call site keeps working as written:
+
+```js
+// src/js/shared/TextInput.jsx
+export { TextInput as default } from '@rafflenexuscanada/design-system/inputs';
+// src/js/shared/InputMasked.jsx (a named export in the app)
+export { InputMasked } from '@rafflenexuscanada/design-system/inputs';
+// src/js/shared/TooltipBriefForm.jsx
+export { BriefToolTip as default } from '@rafflenexuscanada/design-system/inputs';
+```
+
+| Component | What it's for | Props (as in the app) |
+| --- | --- | --- |
+| `TextInput` | The hub: text, password, number, or a searchable dropdown (`type="dropdown"` renders `DropdownInput`). Spread the Field's `input` onto it. Forwards its ref to the `<input>`. | `disabled`, `disabledAll`, `value`, `label`, `error`, `type`, `helperText`, `input`, `decimal`, `min`, `max`, `options`, `meta`, `tooltip`, `placeholder`, `showPasswordToggle`, `...rest` to MUI `TextField` |
+| `DropdownInput` | MUI Autocomplete. The form value is the chosen option's `value`. | `disabled`, `disabledAll`, `value`, `input`, `options: { label, value }[]`, `meta`, `label`, `error`, `...rest` to `Autocomplete` (plus optional `helperText`, `tooltip`) |
+| `InputMasked` (named export) | Prefix and/or suffix inside the field ("https://", "$", "%"); spaces are removed. No `...rest`. | `input`, `label`, `maxLength`, `helperText`, `error`, `meta`, `pre`, `post`, `tooltip`, `disabled`, `disabledAll` |
+| `DatePicker` | MUI X date or date-time picker on moment. Stores `YYYY-MM-DD 00:00:00` (date only) or `DATEFORMAT_RAFFLE_NEXUS`. | `dateOnly`, `input`, `helperText`, `hideHelperText`, `label`, `meta`, `disabled`, `disableDates`, `small`, `tooltip`, `...props` to the picker |
+| `MaskedInput` | A masked field (`@react-input/mask`), rendered by TextInput. | `maskOptions`, `input`, `meta`, `placeholder`, `error`, `tooltip`, `label`, `disabledAll`, `disabled` |
+| `TextArea` | Multi-line counterpart to TextInput (unused in the app today). | `disabled`, `value`, `label`, `error`, `input`, `...rest` to MUI `TextField` |
+| `FinalFormError` | A field's validation message. | `meta`, `notTouched`, `inline` |
+| `BriefToolTip` (also `TooltipBriefForm`) | An info button that opens a tooltip; for headings. | `title`, `children`, `style` |
+| `DebouncingValidatingField` | A `<Field>` whose validation waits until typing stops. | `debounce` (500) + every `<Field>` prop |
+
+Also exported: `copyToClipboard(text)`, `DATEFORMAT_RAFFLE_NEXUS` (`'YYYY-MM-DD HH:mm:ss'`), and `rncInputsTheme` / `RncInputsTheme` (the MUI theme the inputs wrap themselves in, for other MUI parts of the app).
+
+**`disabledAll` is review mode, not `disabled`.** The value is locked but stays in full ink, and a click copies it (Clipboard API, `execCommand('copy')` fallback) with a "Copied!" toast. Dropdowns copy the option's label; InputMasked copies prefix + value + suffix; DatePicker copies in SQL format and does this when `disabled` (it has no `disabledAll`).
+
+**Where the rebuild differs from the app's files** (props are unchanged; raise anything that should go back):
+
+- Labels sit above the field (the design system's rule) instead of floating inside it, and the info button sits beside the label instead of inside the field. It's a real button ("About Support Email") that opens on hover, focus or tap.
+- Icons are the design system's Phosphor set (info, eye, calendar) instead of react-feather and MUI icons; `styled-components`, `react-feather`, `@mui/icons-material`, `framer-motion` (imported but unused), `prop-types`, `@mui/base` and `@mui/system` are no longer needed.
+- Dropdown: clearing it stores `null` instead of throwing (`newValue.value` on `null`); its error now follows the `error` prop or `meta`, and doesn't crash without `meta`; `helperText` shows under it (the app passed it to Autocomplete, which ignored it); its id is stable instead of random on every render.
+- Number fields: a wheel scroll over a focused field blurs it instead of calling `preventDefault()`, which React's passive wheel listeners ignore. The ref is forwarded for number fields too.
+- TextInput and TextArea fall back to `input.onChange` when no `onChange` is spread in.
+- DatePicker: restores the page's previous scroll style when it closes (the app forced `overflow: auto`); a `small` picker keeps its label for screen readers; the unused anchor element is gone.
+- TextArea is an MUI multiline field (from 4 rows) with a visible label; the app's version passed `label` and `error` to a bare textarea, where they did nothing. The "Empty" placeholder is gone.
+- FinalFormError keeps its `error inline` / `error d-block` classes and adds the design system's error style.
+
+**Kept as the app ships them, worth a look:**
+
+- `DATEFORMAT_RAFFLE_NEXUS` came from the app's `./utils`, which wasn't in the handoff. It's set to `'YYYY-MM-DD HH:mm:ss'`; confirm it matches.
+- InputMasked ignores its `error` prop and shows `meta.error` straight away, before the field is touched. With a `post` suffix, typing stops one character before `maxLength`; without one, `maxLength` does nothing.
+- Number fields with `decimal` send `"NaN"` when emptied (`parseFloat('').toFixed(2)`).
+- Date-only pickers show the error in place of the label.
+- MaskedInput passes `overwrite: true`, which `@react-input/mask` 2.x doesn't have, and its `_` pattern accepts `-` and `.`, which phone masks also use as literals, so editing an already-filled phone number can shift digits.
+- The dropdown's `autoComplete="off"` turns MUI's inline completion **on** (MUI reads any string as true).
+- Not ported: `ReactSelectAdapter`, `ReactPhoneNumberAdapter` (unused) and `NumberPicker` (a stub). A stepper should be designed rather than ported.
+
+The ES module build is for bundlers (webpack, Vite, Next.js): MUI 5's subpath imports don't load in plain Node ESM. The CommonJS build works in Node and Jest.
+
 ### Examples
 
 ```tsx
@@ -134,7 +196,7 @@ npm run build      # dist/: ESM, CommonJS, types, CSS, fonts, tokens.json
 
 **Tests run before every release.** GitHub Actions runs `npm test` on every pull request and before every publish; if anything fails, nothing is published.
 
-- **Unit tests** (`tests/`, Vitest + Testing Library in jsdom) check behaviour the way people use it: labels and errors are announced with their fields, the dropdown works by keyboard (arrows, Home/End, Escape returns focus) and closes on an outside click, the switch flips, the error summary takes focus and its links move to the field, jackpots read as the whole amount and count up once, and every animation stops under reduced motion.
+- **Unit tests** (`tests/`, Vitest + Testing Library in jsdom) check behaviour the way people use it: labels and errors are announced with their fields, the dropdown works by keyboard (arrows, Home/End, Escape returns focus) and closes on an outside click, the switch flips, the error summary takes focus and its links move to the field, jackpots read as the whole amount and count up once, and every animation stops under reduced motion. The Raffle Builder inputs are tested at a react-final-form call site written like the app's (`{...input}` spread, `meta`, `error`, `tooltip`, `disabledAll`): typing reaches the form, errors appear once touched, the dropdown stores the option's value, review mode copies (with the `execCommand` fallback), dates copy in SQL format and pasted date-times are stored.
 - **Smoke tests** (`scripts/smoke-test.mjs`) render every component from the built ES module and CommonJS files and, on Marketing's machine, check no client names appear anywhere.
 
 Add a unit test with every new component or behaviour change.

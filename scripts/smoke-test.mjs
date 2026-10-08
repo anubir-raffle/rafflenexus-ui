@@ -52,6 +52,27 @@ const require = createRequire(import.meta.url);
 const cjs = require('../dist/index.cjs');
 check('CommonJS build', typeof cjs.TicketButton === 'function' && typeof cjs.JackpotFigure === 'function');
 
+// The /inputs entry (MUI + react-final-form). Rendered from the CommonJS build: MUI 5's subpath imports
+// (@mui/material/TextField) need a bundler for ESM, as they do in the app itself.
+check('main entry has no MUI', !/@mui|@emotion|react-final-form/.test(readFileSync(join(root, 'dist/index.js'), 'utf8')));
+const IN = require('../dist/inputs.cjs');
+const noop = () => {};
+const inputCases = [
+  ['inputs: TextInput', h(IN.TextInput, { label: 'Support Email', tooltip: 'Shown to ticket buyers.', value: 'help@example.org', onChange: noop }), ['rnc-field-labelrow', 'aria-label="About Support Email"', 'value="help@example.org"', 'MuiOutlinedInput-root']],
+  ['inputs: TextInput review mode', h(IN.TextInput, { label: 'Support Email', value: 'help@example.org', disabledAll: true, onChange: noop }), ['is-review', 'disabled=""', 'cursor:copy']],
+  ['inputs: TextInput dropdown', h(IN.TextInput, { type: 'dropdown', label: 'Province', options: [{ label: 'Alberta', value: 'AB' }], value: 'AB', input: { value: 'AB', onChange: noop } }), ['role="combobox"', '>Province</label>']], // Autocomplete fills its text after mount
+  ['inputs: InputMasked', h(IN.InputMasked, { label: 'Organization URL', pre: 'https://', input: { value: 'example.org', onChange: noop } }), ['https://', 'value="example.org"']],
+  ['inputs: DatePicker', h(IN.DatePicker, { dateOnly: true, label: 'Draw date', input: { value: '2027-02-01 00:00:00', onChange: noop } }), ['February 01, 2027', 'Draw date']],
+  ['inputs: TextArea', h(IN.TextArea, { label: 'Prize description', onChange: noop }), ['<textarea', 'Prize description']],
+  ['inputs: FinalFormError', h(IN.FinalFormError, { meta: { error: 'Required' } }), ['rnc-field-error', 'Required']],
+];
+for (const [name, el, expect] of inputCases) {
+  try { const html = render(el); const missing = expect.filter((s) => !html.includes(s)); check(name, !missing.length, missing.length ? 'missing ' + missing.join(', ') : ''); }
+  catch (e) { check(name, false, e.message); }
+}
+check('inputs entry exports', ['TextInput', 'DropdownInput', 'InputMasked', 'DatePicker', 'MaskedInput', 'TextArea', 'FinalFormError', 'BriefToolTip', 'TooltipBriefForm', 'DebouncingValidatingField', 'copyToClipboard', 'rncInputsTheme']
+  .every((n) => IN[n] != null) && IN.DATEFORMAT_RAFFLE_NEXUS === 'YYYY-MM-DD HH:mm:ss');
+
 // The package and its repository are public: no client names may appear in either.
 // The names live in a git-ignored local file (see client-names.mjs), so this check runs on Marketing's machine.
 const clients = clientNamePattern();

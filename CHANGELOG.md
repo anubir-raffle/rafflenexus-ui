@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 (2026-10-08)
+
+- New entry point `@rafflenexuscanada/design-system/inputs`: the Raffle Builder's form inputs rebuilt from the app's `src/js/shared/` files with the same props and defaults: `TextInput` (text, password, number, dropdown), `DropdownInput`, `InputMasked`, `DatePicker`, `MaskedInput`, `TextArea`, `FinalFormError`, `BriefToolTip` (`TooltipBriefForm`) and `DebouncingValidatingField`, plus `copyToClipboard`, `DATEFORMAT_RAFFLE_NEXUS` and the MUI theme `rncInputsTheme`. MUI fields for react-final-form in the design system's look, with review mode (`disabledAll`: click to copy, "Copied!" toast). See the README for the differences from the app's files and the points to confirm.
+- MUI, Emotion, MUI X Date Pickers, moment, react-final-form, final-form, react-hot-toast and @react-input/mask are optional peer dependencies, needed only for `/inputs`. The main entry is unchanged and MUI-free.
+- Styles from the design system's new `BriefFormInputs` card: label row with an info button, tooltip panel, prefix/suffix fields, combobox list and review mode.
+- Icons: added `info`, `eye`, `eye-slash` and `copy`.
+- 31 new unit tests (82 in all) and smoke tests for the `/inputs` CommonJS build.
+
 ## 0.2.0 (2026-10-07)
 
 - New form elements: `TextField`, `TextArea`, `Select`, `Checkbox`, `RadioGroup`, `Switch` and `ErrorSummary`, with labels, hints and errors tied to each field.
