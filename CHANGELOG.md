@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.1 (2026-10-09)
+
+- Synced with the design system. Updated: icons, component styles.
+
 ## 0.4.0 (2026-10-08)
 
 - New entry point `@rafflenexuscanada/design-system/alerts`: the Raffle Builder's `SweetAlert` helper (SweetAlert2) with its existing API, in the design system's look (the `AlertBox` card). `SweetAlert.confirm`, `.delete`, `.success`, `.error`, `.info`, `.custom`, `.loading`, `.close`, `.update`, `isSweetAlertOpen()`, the "Don't show this again" checkbox, and `AlertBox` as another name. The app passes its `saveUserSettings` and `pushEscapeLayer` once with `configureSweetAlert`. Older tools find `/alerts` too (an `alerts/` folder and `typesVersions`).

@@ -1,6 +1,6 @@
 {
   "name": "@rafflenexuscanada/design-system",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Raffle Nexus Canada design system (RNC V2.1): React components, design tokens and fonts, plus MUI form inputs for react-final-form and SweetAlert2 alert dialogs.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "Raffle Nexus Canada",

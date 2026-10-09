@@ -12,16 +12,47 @@
 .rnc-fig { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 500; }
 
 /* Button */
-.rnc-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); font: 700 15px/20px var(--font-sans); padding: 12px 22px; border-radius: var(--radius-pill); border: 2px solid transparent; cursor: pointer; text-decoration: none; transition: transform .2s ease, background-color .2s ease; }
+/* One component for every action. Variants by job, three sizes, a loading state that keeps its width, icons beside the label.
+   Every hover change eases (colour, border, shadow, lift), and the lift is off under reduced motion. */
+.rnc-btn { --btn-h: 48px; position: relative; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: var(--btn-h); font: 700 15px/20px var(--font-sans); padding: 12px 22px; border-radius: var(--radius-pill); border: 2px solid transparent; cursor: pointer; text-decoration: none; white-space: nowrap; -webkit-tap-highlight-color: transparent; transition: transform .2s ease, background-color .2s ease, border-color .2s ease, color .2s ease, box-shadow .2s ease, opacity .2s ease; }
 .rnc-btn:hover { transform: translateY(-1px); }
-.rnc-btn-primary:hover { box-shadow: var(--shadow-2); }
+.rnc-btn:active { transform: translateY(0); box-shadow: none; }
 .rnc-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .rnc-btn-primary { background: var(--action); border-color: var(--action); color: var(--on-action); }
+.rnc-btn-primary:hover, .rnc-btn-danger:hover { box-shadow: var(--shadow-2); }
 .rnc-btn-secondary { background: transparent; border-color: var(--action); color: var(--action); }
+.rnc-btn-secondary:hover { background: var(--lead-soft); }
+.rnc-btn-ghost { background: transparent; border-color: transparent; color: var(--action); }
+.rnc-btn-ghost:hover { background: var(--surface-tint); transform: none; }
+.rnc-btn-link { --btn-h: 0px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--action); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.rnc-btn-link:hover { color: var(--ink); transform: none; }
+.rnc-btn-danger { background: var(--error); border-color: var(--error); color: #ffffff; }
+.rnc-btn-danger-ghost { background: transparent; border-color: var(--error); color: var(--error); }
+.rnc-btn-danger-ghost:hover { background: var(--error-soft); }
 .rnc-btn-stage { background: var(--on-stage); border-color: var(--on-stage); color: var(--stage); }
 .rnc-btn-stage-ghost { background: transparent; border-color: var(--stage-accent); color: var(--on-stage); }
+.rnc-btn-stage-ghost:hover { background: var(--stage-raised); }
 .rnc-btn-stage:focus-visible, .rnc-btn-stage-ghost:focus-visible { outline-color: var(--focus-stage); }
-@media (prefers-reduced-motion: reduce) { .rnc-btn { transition: none; } .rnc-btn:hover { transform: none; } }
+/* Sizes: 36px for table rows and toolbars, 48px by default, 56px for a page's one big action */
+.rnc-btn-sm { --btn-h: 36px; padding: 6px 14px; font-size: 14px; line-height: 20px; gap: 6px; }
+.rnc-btn-lg { --btn-h: 56px; padding: 15px 28px; font-size: 17px; line-height: 22px; }
+.rnc-btn-link.rnc-btn-sm, .rnc-btn-link.rnc-btn-lg { --btn-h: 0px; padding: 0; }
+.rnc-btn-full { display: flex; width: 100%; }
+/* Icons sit in 1.15em slots so a spinner can take an icon's place without moving the label */
+.rnc-btn-ico { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 1.15em; height: 1.15em; }
+.rnc-btn-ico > svg { display: block; width: 100%; height: 100%; }
+.rnc-btn-icon { width: var(--btn-h); padding: 0; }
+.rnc-btn-icon .rnc-btn-ico { width: 1.35em; height: 1.35em; }
+/* Loading: both labels share one grid cell, so the button is as wide as the longer one and never jumps */
+.rnc-btn-stack { display: inline-grid; gap: inherit; }
+.rnc-btn-stack > .rnc-btn-layer { grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center; gap: inherit; }
+.rnc-btn-stack > .rnc-btn-layer[aria-hidden="true"] { visibility: hidden; }
+.rnc-btn-spinner { box-sizing: border-box; width: 1em; height: 1em; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: rnc-spin .7s linear infinite; }
+@keyframes rnc-spin { to { transform: rotate(360deg); } }
+.rnc-btn[aria-busy="true"] { cursor: progress; }
+.rnc-btn[aria-busy="true"]:hover, .rnc-btn:disabled:hover, .rnc-btn[aria-disabled="true"]:hover { transform: none; box-shadow: none; }
+.rnc-btn:disabled, .rnc-btn[aria-disabled="true"]:not([aria-busy="true"]) { opacity: .5; cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) { .rnc-btn { transition: background-color .2s ease, border-color .2s ease, color .2s ease, box-shadow .2s ease, opacity .2s ease; } .rnc-btn:hover { transform: none; } .rnc-btn-spinner { animation-duration: 2.4s; } }
 
 /* Stage band */
 .rnc-stage { background: var(--stage); color: var(--on-stage); }
@@ -294,8 +325,8 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-sidebar-nav { flex: 1; min-height: 0; overflow-y: auto; padding: 8px 12px 16px; }
 .rnc-sidebar-section { margin: 16px 12px 6px; font: 600 12px/1.3 var(--font-sans); color: var(--ink-muted); }
 .rnc-sidebar-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.rnc-sidebar-item { display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; min-height: 44px; padding: 0 12px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ink-body); font: 500 15px/1.3 var(--font-sans); text-align: left; text-decoration: none; cursor: pointer; }
-.rnc-sidebar-item .rnc-icon, .rnc-sidebar-item .rnc-sidebar-icon { flex: none; color: var(--ink-muted); }
+.rnc-sidebar-item { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; box-sizing: border-box; min-height: 44px; padding: 0 12px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ink-body); font: 500 15px/1.3 var(--font-sans); text-align: left; text-decoration: none; cursor: pointer; transition: background-color .2s ease, color .2s ease; }
+.rnc-sidebar-item .rnc-icon, .rnc-sidebar-item .rnc-sidebar-icon { flex: none; color: var(--ink-muted); transition: color .2s ease; }
 .rnc-sidebar-item:hover { background: var(--surface-tint); color: var(--ink); }
 .rnc-sidebar-item:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; }
 .rnc-sidebar-item[aria-current="page"] { background: var(--action); color: var(--on-action); font-weight: 700; }
@@ -306,7 +337,44 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-sidebar-footer { padding: 16px 20px 20px; }
 .rnc-sidebar.is-collapsed .rnc-sidebar-logo { justify-content: center; padding-inline: 12px; }
 .rnc-sidebar.is-collapsed .rnc-sidebar-item { justify-content: center; padding: 0; }
-.rnc-sidebar.is-collapsed .rnc-sidebar-label, .rnc-sidebar.is-collapsed .rnc-sidebar-section, .rnc-sidebar.is-collapsed .rnc-sidebar-badge { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.rnc-sidebar.is-collapsed .rnc-sidebar-label, .rnc-sidebar.is-collapsed .rnc-sidebar-section, .rnc-sidebar.is-collapsed .rnc-sidebar-badge, .rnc-sidebar.is-collapsed .rnc-sidebar-desc, .rnc-sidebar.is-collapsed .rnc-sidebar-ext { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* Logo row with the collapse button. Collapsed, the button drops under the mark. */
+.rnc-sidebar-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-right: 12px; }
+.rnc-sidebar-head .rnc-sidebar-logo { flex: 1; min-width: 0; }
+.rnc-sidebar-toggle { display: grid; place-items: center; flex: none; width: 36px; height: 36px; padding: 0; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ink-muted); cursor: pointer; transition: background-color .2s ease, color .2s ease; }
+.rnc-sidebar-toggle:hover { background: var(--surface-tint); color: var(--ink); }
+.rnc-sidebar-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; }
+.rnc-sidebar.is-collapsed .rnc-sidebar-head { flex-direction: column; padding: 0 0 4px; }
+.rnc-sidebar.is-collapsed .rnc-sidebar-head .rnc-sidebar-logo { flex: none; width: 100%; }
+/* Item extras: a second line, an external-link mark, and a dot that stands in for the badge when collapsed */
+.rnc-sidebar-text { display: flex; flex-direction: column; min-width: 0; }
+.rnc-sidebar-desc { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 12px/1.35 var(--font-sans); color: var(--ink-muted); transition: color .2s ease; }
+.rnc-sidebar-item:has(.rnc-sidebar-desc) { min-height: 52px; padding-block: 6px; }
+.rnc-sidebar-item[aria-current="page"] .rnc-sidebar-desc { color: var(--on-action); opacity: .85; }
+.rnc-sidebar-ext { flex: none; margin-left: auto; color: var(--ink-muted); }
+.rnc-sidebar-badge + .rnc-sidebar-ext { margin-left: 0; }
+.rnc-sidebar-item[aria-current="page"] .rnc-sidebar-ext { color: var(--on-action); }
+.rnc-sidebar-dot { display: none; position: absolute; top: 9px; left: calc(50% + 5px); width: 9px; height: 9px; border-radius: 50%; background: var(--lead-fill); box-shadow: 0 0 0 2px var(--surface); }
+.rnc-sidebar.is-collapsed .rnc-sidebar-dot { display: block; }
+.rnc-sidebar-item[aria-current="page"] .rnc-sidebar-dot { background: var(--on-action); box-shadow: 0 0 0 2px var(--action); }
+/* The primary action, pinned above the footer: a full-width button, or an icon button when collapsed */
+.rnc-sidebar-action { padding: 12px 12px 4px; }
+.rnc-sidebar.is-collapsed .rnc-sidebar-action { display: flex; justify-content: center; padding-inline: 0; }
+.rnc-sidebar.is-collapsed .rnc-sidebar-footer { display: flex; justify-content: center; padding-inline: 8px; }
+/* A version chip for the footer ("What's new v1.5.5"); it stays visible when collapsed */
+.rnc-sidebar-version { flex: none; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--surface-tint); color: var(--ink-body); font: 500 12px/1.4 var(--font-mono); font-variant-numeric: tabular-nums; transition: background-color .2s ease; }
+.rnc-sidebar-item:hover .rnc-sidebar-version { background: var(--surface); }
+/* Tooltip for collapsed items: to the right with an arrow, on hover and on keyboard focus. Fixed, so the scrolling list can't clip it. */
+.rnc-sidebar-tip { position: fixed; z-index: 1100; transform: translateY(-50%); padding: 6px 10px; border-radius: 8px; background: var(--stage); color: var(--on-stage); font: 600 13px/1.3 var(--font-sans); white-space: nowrap; pointer-events: none; box-shadow: var(--shadow-2); animation: rnc-tip-in .15s ease; }
+.rnc-sidebar-tip::before { content: ""; position: absolute; top: 50%; right: 100%; margin-top: -6px; border: 6px solid transparent; border-right-color: var(--stage); }
+@keyframes rnc-tip-in { from { opacity: 0; } }
+/* Phones: the sidebar becomes a drawer from the left over a dimmed page */
+.rnc-sidebar-scrim { position: fixed; inset: 0; z-index: 1000; background: rgba(15, 42, 68, .48); animation: rnc-fade-in .2s ease; }
+.rnc-sidebar-drawer { position: fixed; inset: 0 auto 0 0; z-index: 1001; width: min(300px, 86vw); box-shadow: var(--shadow-3); animation: rnc-drawer-in .25s ease; }
+.rnc-sidebar-drawer .rnc-sidebar { width: 100%; border-right: 0; }
+@keyframes rnc-fade-in { from { opacity: 0; } }
+@keyframes rnc-drawer-in { from { transform: translateX(-100%); } }
+@media (prefers-reduced-motion: reduce) { .rnc-sidebar-scrim, .rnc-sidebar-drawer, .rnc-sidebar-tip { animation: none; } }
 
 /* Offcanvas: a panel that slides in from an edge over a dimmed page. Focus stays inside until it closes. */
 .rnc-offcanvas-backdrop { position: fixed; inset: 0; z-index: 1000; background: rgba(15, 42, 68, .48); }
@@ -370,6 +438,55 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-table-pager .rnc-btn { padding: 8px 16px; font-size: 14px; }
 .rnc-table-pager .rnc-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
 
+/* Scroll table (npm: @rafflenexuscanada/design-system/tables, ReactTableComponent): fills its parent, the header stays put,
+   the rows scroll and load more near the end. Flex rows like react-table v6, so the Raffle Builder's column widths carry over. */
+.rnc-rt { box-sizing: border-box; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-1); font: 400 14px/1.4 var(--font-sans); color: var(--ink); }
+.rnc-rt.h-100 { height: 100%; }
+.rnc-rt-scroll { position: relative; flex: 1 1 auto; min-height: 0; contain: inline-size; overflow-x: hidden; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.rnc-rt-scroll::-webkit-scrollbar { width: 8px; }
+.rnc-rt-scroll::-webkit-scrollbar-thumb { border-radius: 4px; background: var(--line); }
+.rnc-rt-thead { position: sticky; top: 0; z-index: 2; background: var(--lead-soft); }
+.rnc-rt-tr { display: flex; min-width: 0; }
+.rnc-rt-th, .rnc-rt-td { box-sizing: border-box; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.rnc-rt-th { display: flex; align-items: flex-end; padding: 10px 16px; color: var(--action); font: 600 13px/1.3 var(--font-sans); }
+.rnc-rt-th .rnc-table-sort { max-width: 100%; }
+.rnc-rt-filters .rnc-rt-th { padding-top: 0; }
+.rnc-rt-filter { box-sizing: border-box; width: 100%; height: 32px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: 400 13px/1 var(--font-sans); }
+.rnc-rt-filter:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.rnc-rt-td { display: flex; align-items: center; padding: 10px 16px; white-space: nowrap; }
+.rnc-rt-tbody .rnc-rt-tr { transition: background-color .2s ease; }
+.rnc-rt.-striped .rnc-rt-tbody .rnc-rt-tr:nth-child(even) { background: var(--ground); }
+.rnc-rt.-highlight .rnc-rt-tbody .rnc-rt-tr:hover { background: var(--lead-soft); }
+.rnc-rt-empty { display: grid; place-items: center; gap: 10px; min-height: 160px; padding: 32px 16px; color: var(--ink-muted); text-align: center; }
+.rnc-rt-spinner { box-sizing: border-box; width: 28px; height: 28px; border: 3px solid var(--action); border-right-color: transparent; border-left-color: transparent; border-radius: 50%; animation: rnc-spin .8s linear infinite; }
+.rnc-rt-more { display: flex; justify-content: center; padding: 14px; }
+.rnc-rt-more .rnc-rt-spinner { width: 20px; height: 20px; border-width: 2px; }
+.rnc-rt-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 16px; padding: 10px 16px; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-body); }
+@media (prefers-reduced-motion: reduce) { .rnc-rt-spinner { animation-duration: 2.4s; } }
+
+/* Avatar: a photo, else initials on a fixed colour picked from the name, else a person icon. Optional name and second line beside or under it. */
+.rnc-avatar { --av-size: 40px; display: inline-flex; align-items: center; gap: calc(var(--av-size) * .3); min-width: 0; max-width: 100%; font-family: var(--font-sans); vertical-align: middle; }
+.rnc-avatar.is-column { flex-direction: column; text-align: center; gap: calc(var(--av-size) * .2); }
+.rnc-avatar-pic { --av-bg: var(--lead-soft); --av-fg: var(--action); box-sizing: border-box; position: relative; display: grid; place-items: center; flex: none; width: var(--av-size); height: var(--av-size); overflow: hidden; border-radius: 50%; background: var(--av-bg); color: var(--av-fg); font: 600 calc(var(--av-size) * .4)/1 var(--font-sans); letter-spacing: .01em; user-select: none; }
+.rnc-avatar-pic.is-rounded { border-radius: calc(var(--av-size) * .25); }
+.rnc-avatar-pic.is-square { border-radius: 0; }
+.rnc-avatar-pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.rnc-avatar-pic .rnc-icon { width: 62%; height: 62%; }
+.rnc-avatar-pic.c0 { --av-bg: var(--lead-soft); --av-fg: var(--action); }
+.rnc-avatar-pic.c1 { --av-bg: var(--reward-soft); --av-fg: var(--reward); }
+.rnc-avatar-pic.c2 { --av-bg: var(--stage); --av-fg: var(--on-stage); }
+.rnc-avatar-pic.c3 { --av-bg: var(--action); --av-fg: var(--on-action); }
+.rnc-avatar-pic.c4 { --av-bg: var(--reward-fill); --av-fg: var(--ink); }
+.rnc-avatar-pic.c5 { --av-bg: var(--stage-raised); --av-fg: var(--stage-accent); }
+.rnc-avatar-pic.is-blank { --av-bg: var(--surface-tint); --av-fg: var(--ink-muted); }
+.rnc-avatar-text { display: flex; flex-direction: column; min-width: 0; max-width: 100%; }
+.rnc-avatar-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: clamp(13px, calc(var(--av-size) * .37), 24px); line-height: 1.3; color: var(--ink); }
+.rnc-avatar-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: clamp(12px, calc(var(--av-size) * .31), 18px); line-height: 1.35; color: var(--ink-muted); }
+.rnc-avatar-group { display: inline-flex; align-items: center; }
+.rnc-avatar-group .rnc-avatar-pic { box-shadow: 0 0 0 2px var(--surface); }
+.rnc-avatar-group > * + * { margin-left: calc(var(--av-size) * -.25); }
+.rnc-avatar-pic.is-more { --av-bg: var(--surface-tint); --av-fg: var(--ink); font: 500 calc(var(--av-size) * .34)/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+
 /* Alert box (npm: @rafflenexuscanada/design-system/alerts, on SweetAlert2): a modal that asks, confirms or reports one thing.
    Title in DM Sans with a state icon, body text, actions at the end (cancel, then confirm). */
 .rnc-alert-backdrop.swal2-backdrop-show, .rnc-alert-backdrop.swal2-noanimation, .rnc-alert-scrim { background: rgba(15, 42, 68, .48); }
@@ -385,8 +502,6 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-alert-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 12px; width: 100%; margin: 24px 0 0; padding: 0; }
 .rnc-alert-actions.is-loading { justify-content: flex-start; }
 .rnc-alert-actions .rnc-btn { margin: 0; }
-.rnc-btn-danger { background: var(--error); border-color: var(--error); color: #ffffff; }
-.rnc-btn-danger:hover { box-shadow: var(--shadow-2); }
 .rnc-alert-close { position: absolute; top: 14px; right: 14px; display: grid; place-items: center; width: 40px; height: 40px; margin: 0; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-muted); font: inherit; cursor: pointer; }
 .rnc-alert-close:hover { color: var(--ink); background: var(--surface-tint); }
 .rnc-alert-close:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; box-shadow: none; }
