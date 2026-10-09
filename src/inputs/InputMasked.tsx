@@ -128,8 +128,9 @@ export function InputMasked({
           ) : undefined,
         }}
       />
+      {/* Zero-sized and clipped, so a long value can't widen the page on phones; scrollWidth still reports the text's width. */}
       <span ref={measureRef} aria-hidden="true"
-        style={{ position: 'absolute', visibility: 'hidden', whiteSpace: 'pre', font: MEASURE_FONT, padding: 0, margin: 0, border: 0, pointerEvents: 'none' }} />
+        style={{ position: 'absolute', top: 0, left: 0, width: 0, height: 0, overflow: 'hidden', visibility: 'hidden', whiteSpace: 'pre', font: MEASURE_FONT, padding: 0, margin: 0, border: 0, pointerEvents: 'none' }} />
     </FieldFrame>
   );
 }

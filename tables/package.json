@@ -1,0 +1,9 @@
+{
+  "name": "@rafflenexuscanada/design-system/tables",
+  "private": true,
+  "description": "Fallback for tools that ignore package.json \"exports\" (webpack 4, Create React App 4, older Jest): resolves @rafflenexuscanada/design-system/tables.",
+  "main": "../dist/tables.cjs",
+  "module": "../dist/tables.js",
+  "types": "../dist/tables.d.ts",
+  "sideEffects": false
+}

@@ -44,11 +44,11 @@ export function Hero() {
 
 ## Components
 
-> **Looking for `TextInput`, `DatePicker`, `InputMasked` or `SweetAlert`?** They're in separate entry points, not this one: `import { TextInput } from '@rafflenexuscanada/design-system/inputs'` and `import { SweetAlert } from '@rafflenexuscanada/design-system/alerts'`. See [Raffle Builder inputs](#raffle-builder-inputs-inputs) and [Alert dialogs](#alert-dialogs-alerts). (`TextField` and `TextArea` below are the design system's simpler fields, with different props.)
+> **Looking for `TextInput`, `DatePicker`, `InputMasked`, the MUI `Switch`, `SweetAlert` or `ReactTableComponent`?** They're in separate entry points, not this one: `import { TextInput, Switch } from '@rafflenexuscanada/design-system/inputs'`, `import { SweetAlert } from '@rafflenexuscanada/design-system/alerts'` and `import { ReactTableComponent } from '@rafflenexuscanada/design-system/tables'`. See [Raffle Builder inputs](#raffle-builder-inputs-inputs), [Alert dialogs](#alert-dialogs-alerts) and [The Raffle Builder dashboard](#the-raffle-builder-dashboard-tables-buttons-avatars-sidebar). (`TextField` and `TextArea` below are the design system's simpler fields, with different props.)
 
 | Component | What it's for | Key props |
 | --- | --- | --- |
-| `Button` | Actions. Sentence-case labels that say what happens. | `variant`: `primary`, `secondary`, `stage`, `stage-ghost`; `href` renders a link |
+| `Button` | Every action, on a native `<button>` (or `<a>` with `href`). Sentence-case labels that say what happens. `type` defaults to `"button"`. While `loading`, a spinner takes the icon's place, clicks are ignored, focus stays and the width doesn't change. | `variant`: `primary`, `secondary`, `ghost`, `link`, `danger`, `danger-ghost`, `stage`, `stage-ghost`; `size` (`sm`, `md`, `lg`); `startIcon`, `endIcon` (icon name or element); `iconOnly` (with `aria-label`); `loading`, `loadingText`; `fullWidth`; `disabled`; `href`, `target`, `rel`; `as` (e.g. your router's `Link`); `ref` |
 | `TicketButton` | The buy action, shaped like a ticket. The stub tilts on hover; a hole punches through on click. | `label`, `stub` ("from $10" or the order total), `size` (`big`), `fullWidth`, `colors` (client colours), `href` |
 | `JackpotFigure` | Every jackpot figure: raised "$", tight tabular digits, perforation rule. | `amount`, `from` (counts up once from yesterday's figure), `growth`, `perforation` |
 | `JackpotTile` | A live jackpot as proof. | `program`, `amount`, `from`, `province`, `live`, `caption` |
@@ -69,8 +69,10 @@ export function Hero() {
 | `Switch` | On/off for settings that apply straight away. Use a Checkbox in a submitted form. | `label`, `checked`, `onChange`, `disabled` |
 | `ErrorSummary` | Shown after a failed submit: takes focus and links to each field with a problem. | `errors: { fieldId, message }[]`, `title`, `autoFocus` |
 | `Dropdown` | A button that opens a short menu of actions or links (arrow keys, Home/End, Escape, click outside). For a form choice, use Select. | `label`, `items: { label, href?, onSelect?, icon?, disabled? }[]`, `variant`, `align` |
-| `Sidebar` | An app's main navigation: logo on top, one icon per menu item, optional headed groups, collapsible to icons only. Works with your router's link component. | `logo`, `logoCollapsed`, `items` or `sections`, each item `{ label, href?, icon?, current?, badge?, onClick? }`, `collapsed`, `footer`, `linkComponent` |
+| `Sidebar` | An app's main navigation: logo on top, one icon per menu item, optional headed groups, a pinned main action and a footer. Collapses to icons (tooltips on hover and Tab, badges become dots); below 980px it's a drawer from the left. Works with your router's link component. | `logo`, `logoCollapsed`, `items` or `sections`, each item `{ label, href?, icon?, current?, badge?, onClick?, description?, external?, target? }`, `collapsed`, `onCollapsedChange`, `showCollapseToggle`, `primaryAction`, `footer` (content, or `({ collapsed }) => content`), `mobileOpen`, `onMobileOpenChange`, `mobileBreakpoint`, `linkComponent` |
 | `Offcanvas` | A panel that slides in from an edge (a modal dialog). Focus moves in and stays, the page doesn't scroll, Escape or a backdrop click closes it, focus returns afterwards. | `open`, `onClose`, `side` (`left`, `right`, `top`, `bottom`), `title`, `size`, `flush`, `closeOnBackdrop`, `closeOnEscape` |
+| `Avatar` | A person or organisation: the photo, else initials on a colour fixed to the name, else a person icon. MUI-style. | `alt`, `src`, `srcSet`, `size` (`xs` 20, `sm` 24, `md` 32, `lg` 40, `xl` 56, or pixels), `variant` (`circular`, `rounded`, `square`), `children`, `name`, `subtitle`, `layout` (`row`, `column`), `imgProps` |
+| `AvatarGroup` | Overlapping avatars with a "+3" count. | `max` (default 5), `total`, `size`, `variant`, `aria-label` |
 | `Table` | Data rows with TanStack Table (react-table) behaviour: pass `columns` and `data`; get sorting, search, row selection and pages. | `data`, `columns` (TanStack `ColumnDef`; `meta: { numeric: true }` right-aligns figures), `caption`, `searchable`, `pageSize`, `enableRowSelection`, `onRowSelectionChange`, `getRowId` |
 
 Every component has TypeScript types with notes on each prop. Your editor shows them as you type.
@@ -137,6 +139,10 @@ Also exported: `copyToClipboard(text)`, `DATEFORMAT_RAFFLE_NEXUS` (`'YYYY-MM-DD 
 
 The ES module build is for bundlers (webpack, Vite, Next.js): MUI 5's subpath imports don't load in plain Node ESM. The CommonJS build works in Node and Jest. Older tools that ignore package.json `exports` (webpack 4, Create React App 4, older Jest, TypeScript with `"moduleResolution": "node"`) find `/inputs` too, through the package's `inputs/` folder and `typesVersions` (0.3.1 and later).
 
+### Switch
+
+`Switch` in `/inputs` is MUI's `Switch` with the same props (`checked`, `onChange(event, checked)`, `disabled`, `inputProps`, `size`, `sx`…), styled like the design system's switch. Swap `import Switch from "@mui/material/Switch"` for `import { Switch } from '@rafflenexuscanada/design-system/inputs'`. Give it a name with MUI's `FormControlLabel` or `inputProps={{ 'aria-label': '…' }}`.
+
 ## Alert dialogs (`/alerts`)
 
 `@rafflenexuscanada/design-system/alerts` is the Raffle Builder's `SweetAlert` helper (SweetAlert2), with the same API, in the design system's look (the `AlertBox` card). Install `sweetalert2` and `sweetalert2-react-content` (the app has them), and import `styles.css` once.
@@ -182,6 +188,85 @@ Every call except `loading` and `custom` takes the same extras as the app: `chec
 
 <VerifiedBadge regulator="IGCO" licence="171012" />
 ```
+
+## The Raffle Builder dashboard (tables, buttons, avatars, sidebar)
+
+The second Raffle Builder handoff: its dashboard table as a drop-in, one `Button` for its three button systems, an `Avatar`, and the extended `Sidebar`. The look is in the design system's `ScrollTable`, `Button`, `Avatar` and `AppNavigation` cards.
+
+### Table: `@rafflenexuscanada/design-system/tables`
+
+`ReactTableComponent` takes the app's props and react-table v6 column files unchanged. Swap it in with one line:
+
+```js
+// src/js/shared/ReactTableComponent.jsx
+export { ReactTableComponent as default } from '@rafflenexuscanada/design-system/tables';
+```
+
+- **Props:** `columns`, `data`, `filterable` (default false), `loading`, `noDataText` (default "No records available"), `onScrollNearEnd`, `hasMoreData` (default false), and through `...props`: `className` (`-striped`, `-highlight`, `h-100`), `getTrProps(state, rowInfo)` (its `className` and `style` land on the row), `pageSize` / `defaultPageSize` (default 10000) and `showPagination` (default false), so every row shows, `defaultSorted`, `isLoadingMore`, `pagination`. It's wrapped in `React.memo`.
+- **Columns (v6 keys):** `Header` (text, element or function), `accessor` (a key or a dotted path like `"created_by.name"`, or a function with an `id`), `id`, `Cell({ value, original, row, index })`, `width` / `minWidth` / `maxWidth` (v6 sizing: `width` fixes a column, `minWidth` default 100 lets it grow), `sortable` (default true), `filterable`, `show`, `className`, `headerClassName`, `style`, `headerStyle`, `sortMethod`, `filterMethod`.
+- **Behaviour:** fills its parent with `h-100`; the header stays put and the rows scroll inside with a thin scrollbar; no sideways scroll. `onScrollNearEnd()` is called once the rows are 60% scrolled, 150ms after scrolling stops, only while `hasMoreData`. Appended rows don't move the scroll position (the rows are real DOM, so nothing needs restoring). No rows and `loading`: a spinner; no rows otherwise: `noDataText`. Sorting is v6's: click once for A to Z, again for Z to A, case-insensitive, empty values first.
+- **Built on TanStack Table** (already a dependency), not react-table v6, which hasn't been maintained since 2019. No new peer dependencies.
+- **Different from the app (please check):**
+  - `isLoadingMore` now shows a small spinner under the last row (v6 ignored it). Pass `false` to hide it.
+  - Column resizing isn't built in. `resizable` is accepted but ignored. Most columns set `resizable: false`; if the ones that don't need resizing, say so.
+  - The 60% point is measured as (scrollTop + visible height) ÷ total height. The original wrapper wasn't in the handoff bundle (only its README arrived), so confirm this matches, or send `ReactTableComponent.jsx` and the column files to check against.
+  - Sideways overflow is hidden as specified, so on a narrow phone the right-hand columns are cut off. Allowing sideways scroll there would be easy if you want it.
+  - Shift-click multi-column sorting (a v6 extra) isn't supported.
+  - For screen readers it's a proper ARIA table, and the scroll area takes keyboard focus so it scrolls with the arrow keys. Pass `aria-label` ("App builds") to name it.
+
+### Buttons
+
+`Button` replaces react-bootstrap's `Button`, MUI's `Button` and the hand-styled `className="btn …"` elements. The existing `variant`, `href` and `className` props still work. Variant mapping:
+
+| The app today | `Button` |
+| --- | --- |
+| `primary`, `success` (incl. "New Setup Form") | `primary` (green means verified in the design system, so there's no `success`) |
+| `secondary`, `outline-secondary`, `outline-primary`, `light` | `secondary` |
+| a quiet toolbar or table-row action | `ghost` |
+| `link`, `text` | `link` |
+| `danger` | `danger` |
+| `outline-danger` | `danger-ghost` |
+| `size="sm"` / `size="small"` | `size="sm"` (36px) |
+
+The modals' hand-built spinners become:
+
+```jsx
+<Button type="submit" loading={submitting} loadingText="Uploading…" startIcon={<Upload />}>Upload</Button>
+```
+
+Set `type="submit"` where a button should submit its form; the default is `"button"`. `iconOnly` buttons need an `aria-label` (a console warning in development says so).
+
+### Avatar
+
+The app keeps a small adapter for its 11 `<Avatar user={u} size={32} showName />` call sites:
+
+```jsx
+import { Avatar as DSAvatar } from '@rafflenexuscanada/design-system';
+export default function Avatar({ user, size, showName, ...rest }) {
+  // Use your user object's own field names for the photo and name.
+  return <DSAvatar src={user?.avatar} alt={user?.name} name={showName ? user?.name : undefined} size={size} {...rest} />;
+}
+```
+
+`AvatarGroup` can replace `MemberBubbles`: `<AvatarGroup max={4}>{members.map((m) => <Avatar key={m.id} alt={m.name} src={m.avatar} />)}</AvatarGroup>`.
+
+### Sidebar
+
+```jsx
+<Sidebar
+  logo={<img src={logoWhite} alt="Raffle Nexus" />} logoCollapsed={<img src={markWhite} alt="Raffle Nexus" height={30} />}
+  items={items} linkComponent={Link}
+  collapsed={collapsed} onCollapsedChange={setCollapsed}
+  primaryAction={{ label: 'New Setup Form', icon: 'plus', href: '/dashboard/setup-forms/new' }}
+  footer={({ collapsed }) => <WhatsNew compact={collapsed} />}
+  mobileOpen={menuOpen} onMobileOpenChange={setMenuOpen}
+/>
+```
+
+- Reveal is `{ label: 'Reveal', href: 'https://…', icon: 'drone', external: true, target: '_blank' }`: a plain link, never `Link`, read as "Reveal, opens in a new tab".
+- The Topbar can still expand a collapsed sidebar (`setCollapsed(false)`); the built-in chevron does the same through `onCollapsedChange`. Hide it with `showCollapseToggle={false}`.
+- Below `mobileBreakpoint` (980px) the sidebar renders nothing until `mobileOpen`, then a drawer from the left: focus moves in and stays, Escape, the close button, a tap outside or choosing an item calls `onMobileOpenChange(false)`, and focus returns to the menu button. Collapsing doesn't apply there.
+- Collapsed: each icon shows its label in a tooltip to the right (hover or Tab; Escape hides it) and a badge becomes a dot. The native `title` tooltip is gone, so there aren't two.
 
 ## Tokens
 

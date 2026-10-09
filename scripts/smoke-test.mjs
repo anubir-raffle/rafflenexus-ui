@@ -39,6 +39,12 @@ const cases = [
   ['Dropdown', h(DS.Dropdown, { label: 'Export', items: [{ label: 'CSV' }] }), ['aria-haspopup="menu"', 'role="menu"', 'hidden']],
   ['Sidebar', h(DS.Sidebar, { logo: 'RNC', items: [{ label: 'Dashboard', href: '/', icon: 'chart-line-up', current: true }, { label: 'Raffles', href: '/r', icon: 'ticket', badge: '3' }] }), ['rnc-sidebar', 'aria-current="page"', 'aria-label="Raffles, 3"', 'rnc-icon']],
   ['Offcanvas (closed renders nothing)', h('div', { 'data-x': '1' }, h(DS.Offcanvas, { open: false, onClose: () => {}, title: 'Menu' })), ['data-x="1"']],
+  ['Button loading (keeps its width)', h(DS.Button, { loading: true, loadingText: 'Saving…', startIcon: 'plus' }, 'Save'), ['aria-busy="true"', 'rnc-btn-stack', 'rnc-btn-spinner', 'Saving…', 'type="button"']],
+  ['Button icon-only, small, danger-ghost', h(DS.Button, { iconOnly: true, startIcon: 'x', 'aria-label': 'Remove', size: 'sm', variant: 'danger-ghost' }), ['rnc-btn-icon', 'rnc-btn-sm', 'rnc-btn-danger-ghost', 'aria-label="Remove"']],
+  ['Avatar initials', h(DS.Avatar, { alt: 'Priya Sharma' }), ['rnc-avatar-pic', 'role="img"', 'aria-label="Priya Sharma"', '>PS<', '--av-size:40px']],
+  ['Avatar with a name', h(DS.Avatar, { src: '/a.jpg', name: 'Ava Martin', subtitle: 'Admin', size: 'md' }), ['alt=""', 'rnc-avatar-name', 'Admin', '--av-size:32px']],
+  ['AvatarGroup', h(DS.AvatarGroup, { max: 2 }, h(DS.Avatar, { alt: 'A B' }), h(DS.Avatar, { alt: 'C D' }), h(DS.Avatar, { alt: 'E F' })), ['rnc-avatar-group', 'aria-label="2 more"', '+2']],
+  ['Sidebar with toggle, action, footer, external item', h(DS.Sidebar, { logo: 'RNC', onCollapsedChange: () => {}, primaryAction: { label: 'New setup form' }, footer: ({ collapsed }) => (collapsed ? 'v' : 'What’s new'), items: [{ label: 'Reveal', href: 'https://reveal.example.org', external: true, target: '_blank', icon: 'drone' }, { label: 'App builds', href: '/b', description: 'Admins only' }] }), ['rnc-sidebar-toggle', 'aria-label="Collapse menu"', 'rnc-btn-full', 'New setup form', 'What’s new', 'rnc-sidebar-ext', 'Reveal, opens in a new tab', 'rnc-sidebar-desc']],
   ['Table', h(DS.Table, { caption: 'Orders', data: [{ n: 'Ava', a: 50 }], columns: [{ accessorKey: 'n', header: 'Name' }, { accessorKey: 'a', header: 'Amount', meta: { numeric: true } }] }), ['rnc-table', 'aria-sort="none"', '>Ava<', 'is-num']],
 ];
 for (const [name, el, expect] of cases) {
@@ -47,7 +53,7 @@ for (const [name, el, expect] of cases) {
 }
 const hex = /^#[0-9a-f]{6}$/i;
 check('tokens', ['action', 'ink', 'stage', 'ground', 'reward', 'verified', 'focus'].every((k) => hex.test(DS.tokens.color[k])) && DS.tokens.font.display.startsWith('Newsreader') && DS.tokens.font.mono.includes('DM Mono'));
-check('icon names', DS.ICON_NAMES.length >= 24 && ['ticket', 'x', 'list'].every((n) => DS.ICON_NAMES.includes(n)));
+check('icon names', DS.ICON_NAMES.length >= 39 && ['ticket', 'x', 'list', 'user', 'plus', 'upload-simple', 'arrow-square-out', 'caret-left', 'caret-right'].every((n) => DS.ICON_NAMES.includes(n)));
 const require = createRequire(import.meta.url);
 const cjs = require('../dist/index.cjs');
 check('CommonJS build', typeof cjs.TicketButton === 'function' && typeof cjs.JackpotFigure === 'function');
@@ -70,7 +76,8 @@ for (const [name, el, expect] of inputCases) {
   try { const html = render(el); const missing = expect.filter((s) => !html.includes(s)); check(name, !missing.length, missing.length ? 'missing ' + missing.join(', ') : ''); }
   catch (e) { check(name, false, e.message); }
 }
-check('inputs entry exports', ['TextInput', 'DropdownInput', 'InputMasked', 'DatePicker', 'MaskedInput', 'TextArea', 'FinalFormError', 'BriefToolTip', 'TooltipBriefForm', 'DebouncingValidatingField', 'copyToClipboard', 'rncInputsTheme']
+check('inputs: Switch (MUI)', render(h(IN.Switch, { checked: true, onChange: noop, inputProps: { 'aria-label': 'Live' } })).includes('MuiSwitch-root'));
+check('inputs entry exports', ['TextInput', 'DropdownInput', 'InputMasked', 'DatePicker', 'MaskedInput', 'TextArea', 'FinalFormError', 'BriefToolTip', 'TooltipBriefForm', 'DebouncingValidatingField', 'copyToClipboard', 'rncInputsTheme', 'Switch']
   .every((n) => IN[n] != null) && IN.DATEFORMAT_RAFFLE_NEXUS === 'YYYY-MM-DD HH:mm:ss');
 // Tools that ignore "exports" (webpack 4, CRA 4, TypeScript moduleResolution "node") find /inputs through inputs/package.json and typesVersions.
 const legacy = JSON.parse(readFileSync(join(root, 'inputs/package.json'), 'utf8'));
@@ -87,6 +94,18 @@ check('inputs/ fallback for older tools', ['main', 'module', 'types'].every((k) 
   && require(join(root, 'inputs', legacy.main)).TextInput != null
   && pkgJson.files.includes('inputs') && pkgJson.files.includes('alerts') && pkgJson.typesVersions?.['*']?.inputs?.[0] === './dist/inputs.d.ts'
   && pkgJson.typesVersions?.['*']?.alerts?.[0] === './dist/alerts.d.ts');
+
+// The /tables entry: the Raffle Builder's react-table v6 wrapper, rendered from both builds with v6 column definitions.
+const TB = require('../dist/tables.cjs');
+const tbHtml = render(h(TB.ReactTableComponent, { className: '-striped -highlight h-100', 'aria-label': 'App builds', data: [{ id: 7, created_by: { name: 'Ava Martin' } }], columns: [{ Header: 'Build', accessor: 'id', width: 90 }, { Header: 'Uploaded by', accessor: 'created_by.name', Cell: ({ value, original }) => h('b', null, value + ' #' + original.id) }, { Header: '', id: 'actions', sortable: false }] }));
+check('tables: ReactTableComponent (CJS)', ['rnc-rt -striped -highlight h-100', 'role="table"', 'aria-label="App builds"', 'aria-sort="none"', '<b>Ava Martin #7</b>', 'max-width:90px'].every((x) => tbHtml.includes(x)), tbHtml.slice(0, 0));
+check('tables: default export and empty text', TB.default === TB.ReactTableComponent && render(h(TB.ReactTableComponent, { data: [], columns: [{ Header: 'A', accessor: 'a' }] })).includes('No records available'));
+const TBesm = await import('../dist/tables.js');
+check('tables: ESM build', typeof TBesm.ReactTableComponent === 'object' || typeof TBesm.ReactTableComponent === 'function');
+const legacyTables = JSON.parse(readFileSync(join(root, 'tables/package.json'), 'utf8'));
+check('tables/ fallback for older tools', ['main', 'module', 'types'].every((k) => statSync(join(root, 'tables', legacyTables[k])).isFile())
+  && require(join(root, 'tables', legacyTables.main)).ReactTableComponent != null
+  && pkgJson.files.includes('tables') && pkgJson.typesVersions?.['*']?.tables?.[0] === './dist/tables.d.ts' && pkgJson.exports['./tables']?.require === './dist/tables.cjs');
 
 // The package and its repository are public: no client names may appear in either.
 // The names live in a git-ignored local file (see client-names.mjs), so this check runs on Marketing's machine.

@@ -2,7 +2,7 @@
 // Import the styles once in your app:  import '@rafflenexuscanada/design-system/styles.css';
 // and the fonts if you self-host them: import '@rafflenexuscanada/design-system/fonts.css';
 
-export { Button, type ButtonProps, type ButtonVariant } from './components/Button';
+export { Button, type ButtonProps, type ButtonVariant, type ButtonSize } from './components/Button';
 export { Icon, type IconProps } from './components/Icon';
 export { VerifiedBadge, type VerifiedBadgeProps } from './components/VerifiedBadge';
 export { LedgerLine, type LedgerLineProps, type LedgerItem } from './components/LedgerLine';
@@ -26,9 +26,10 @@ export { Dropdown, type DropdownProps, type DropdownItem } from './components/Dr
 export type { FieldBaseProps } from './components/Field';
 
 // App layout and data
-export { Sidebar, type SidebarProps, type SidebarItem, type SidebarSection } from './components/Sidebar';
+export { Sidebar, type SidebarProps, type SidebarItem, type SidebarSection, type SidebarAction } from './components/Sidebar';
 export { Offcanvas, type OffcanvasProps } from './components/Offcanvas';
 export { Table, type TableProps, type TableColumnMeta } from './components/Table';
+export { Avatar, AvatarGroup, avatarInitials, avatarColour, AVATAR_SIZES, type AvatarProps, type AvatarGroupProps, type AvatarSize } from './components/Avatar';
 // TanStack Table helpers, re-exported so column definitions type-check without a second import.
 export { createColumnHelper, type ColumnDef, type SortingState, type Row } from '@tanstack/react-table';
 

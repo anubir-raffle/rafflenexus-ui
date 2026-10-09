@@ -6,6 +6,7 @@ import '../styles/components.css';
 import './demo.css';
 import { InputsDemo } from './InputsDemo';
 import { AlertsDemo } from './AlertsDemo';
+import { AvatarsDemo, ButtonsDemo, RaffleBuilderDemo } from './Handoff2Demo';
 import {
   Button, Icon, ICON_NAMES, VerifiedBadge, LedgerLine, ProofStat, JackpotFigure, JackpotTile, FlagshipRoster,
   PoweredBy, LeaderHero, RaffleBrand, NodeGraphic, NODE_NAMES, Odometer, TicketButton, tokens,
@@ -128,11 +129,8 @@ function App() {
         tiles={[{ program: 'Sample Hospital Lottery', amount: 2548700, from: 2531200, province: 'BC', caption: 'As shown on the lottery’s site · sample' }]}
       />
 
-      <Section title="Buttons">
-        <div className="rnc-row">
-          <Button>Talk to our lottery team</Button>
-          <Button variant="secondary" href="#">Book a call</Button>
-        </div>
+      <Section title="Buttons" note="One Button for every action: variants by job, three sizes, icons, icon-only, and a loading state that keeps its width. Press Upload.">
+        <ButtonsDemo />
       </Section>
       <Section title="Buttons on a stage band" stage>
         <div className="rnc-row">
@@ -212,6 +210,14 @@ function App() {
 
       <Section title="AlertBox (@rafflenexuscanada/design-system/alerts)" note="The Raffle Builder's SweetAlert helper with the same API (SweetAlert.confirm, .delete, .success, .error, .info, .loading), in the design system's look.">
         <AlertsDemo />
+      </Section>
+
+      <Section title="Raffle Builder frame: Sidebar and ReactTableComponent (@rafflenexuscanada/design-system/tables)" note="The sidebar with its collapse button, main action, what's new footer, an external link and a badge (a dot when collapsed; hover or Tab to an icon for its name). Beside it, the scroll table: react-table v6 columns, loads more at 60% scrolled, a row highlighted with getTrProps.">
+        <RaffleBuilderDemo />
+      </Section>
+
+      <Section title="Avatar" note="Photo, else initials on a colour fixed to the name, else a person icon. Sizes, shapes, a name beside or under it, and a group.">
+        <AvatarsDemo />
       </Section>
 
       <Section title="Sidebar, Offcanvas and Table" note="An admin layout: the sidebar (collapsible), a table with sorting, search, row selection and pages, and an offcanvas from the left (the phone menu) or the right (filters).">

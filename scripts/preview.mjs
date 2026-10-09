@@ -5,9 +5,7 @@
 //   npm run preview -- --no-open
 import { execSync, spawn } from 'node:child_process';
 import { createConnection } from 'node:net';
-import { readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 
 const PORT = 4180;
 const URL = `http://localhost:${PORT}/`;
@@ -27,23 +25,22 @@ if (ahead) {
 const dirty = sh('git status --porcelain');
 if (dirty) console.log(`\nUncommitted changes (in the preview, but release needs them committed):\n${dirty}`);
 
-// Reuse a preview server this folder started; replace one started from another checkout so it never shows a stale build.
-const STATE = join(tmpdir(), 'rnc-design-system-preview.json');
-const isListening = () => new Promise((done) => {
-  const s = createConnection(PORT, '127.0.0.1').on('connect', () => { s.end(); done(true); }).on('error', () => done(false));
+// Always serve this folder's build: stop any earlier demo preview on the port (from this or another checkout), then start
+// a fresh one. "localhost" can be IPv4 or IPv6, so both are checked. Anything else on the port is left alone and reported.
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const answers = (host) => new Promise((done) => {
+  const s = createConnection(PORT, host).on('connect', () => { s.end(); done(true); }).on('error', () => done(false));
 });
-let state = {};
-try { state = JSON.parse(readFileSync(STATE, 'utf8')); } catch { /* no server started yet */ }
-if (state.pid && state.cwd !== process.cwd()) {
-  try { process.kill(-state.pid); } catch { /* already gone */ }
-  await new Promise((r) => setTimeout(r, 500));
+const isListening = async () => (await answers('127.0.0.1')) || (await answers('::1'));
+for (const pid of sh(`lsof -ti tcp:${PORT} -sTCP:LISTEN`).split('\n').filter(Boolean)) {
+  const cmd = sh(`ps -o command= -p ${pid}`);
+  if (/vite(\.js)? preview/.test(cmd) && cmd.includes('demo/vite.config.ts')) { try { process.kill(Number(pid)); } catch { /* already gone */ } }
+  else { console.error(`\nPort ${PORT} is in use by another program (${cmd || 'pid ' + pid}). Close it and run npm run preview again.`); process.exit(1); }
 }
-if (!(await isListening())) {
-  const server = spawn('npx', ['vite', 'preview', '--config', 'demo/vite.config.ts', '--port', String(PORT), '--strictPort'], { detached: true, stdio: 'ignore' });
-  server.unref();
-  writeFileSync(STATE, JSON.stringify({ pid: server.pid, cwd: process.cwd() }));
-  for (let i = 0; i < 20 && !(await isListening()); i++) await new Promise((r) => setTimeout(r, 250));
-}
+for (let i = 0; i < 20 && (await isListening()); i++) await wait(150);
+spawn('npx', ['vite', 'preview', '--config', 'demo/vite.config.ts', '--port', String(PORT), '--strictPort'], { detached: true, stdio: 'ignore' }).unref();
+for (let i = 0; i < 40 && !(await isListening()); i++) await wait(250);
+if (!(await isListening())) { console.error(`\nThe preview server didn't start on port ${PORT}.`); process.exit(1); }
 
 if (!process.argv.includes('--no-open')) {
   try { execSync(process.platform === 'darwin' ? `open -a "Google Chrome" ${URL}` : `xdg-open ${URL}`, { stdio: 'ignore' }); } catch { /* the address is printed below */ }

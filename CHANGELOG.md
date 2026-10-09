@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.0 (2026-10-09)
+
+The second Raffle Builder handoff (Table, Avatar, Button, Sidebar), plus the MUI Switch.
+
+- New entry point `@rafflenexuscanada/design-system/tables`: `ReactTableComponent`, a drop-in for the Raffle Builder's react-table v6 wrapper (same props, v6 column definitions with dotted accessors, `getTrProps`, infinite scroll at 60% with a 150ms settle, fixed header, `-striped` / `-highlight` / `h-100`), built on TanStack Table. Also the default export. Older tools find it too (a `tables/` folder and `typesVersions`). The `ScrollTable` card.
+- `Button` grew into the full component: variants `ghost`, `link`, `danger`, `danger-ghost` (plus `primary`, `secondary`, `stage`, `stage-ghost`), `size` (`sm`, `md`, `lg`), `startIcon` / `endIcon`, `iconOnly`, `loading` / `loadingText` (spinner in the icon slot, clicks ignored, focus kept, width held), `fullWidth`, `as`, `target` / `rel`, and a forwarded `ref`. A disabled or loading link drops its `href`. Existing props work as before.
+- New `Avatar` and `AvatarGroup` (MUI-style `alt`, `src`, `srcSet`, `variant`, `children`; sizes `xs`–`xl` or pixels; optional `name` and `subtitle`; initials on a colour fixed to the name; a person icon; the `Avatar` card).
+- `Sidebar` additions: a collapse button (`onCollapsedChange`, `showCollapseToggle`), `primaryAction`, `footer` as a function of `{ collapsed }`, items with `description`, `external` and `target`, a phone drawer below 980px (`mobileOpen`, `onMobileOpenChange`, `mobileBreakpoint`), tooltips for collapsed items on hover and keyboard focus (replacing the native `title`), and a dot for badges when collapsed. Existing props work as before.
+- `Switch` in `/inputs`: MUI's Switch with the same props, in the design system's look.
+- Fixed: `InputMasked`'s hidden measuring element could widen the page on phones (sideways scrolling); it's now zero-sized.
+- `npm run preview` always restarts its server, so it never shows another checkout's build.
+- Icons: added `user`, `plus`, `upload-simple`, `arrow-square-out`, `caret-left` and `caret-right` (39 in all).
+- Includes 0.4.1 (synced styles), which wasn't published on its own.
+
 ## 0.4.1 (2026-10-09)
 
 - Synced with the design system. Updated: icons, component styles.

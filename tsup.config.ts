@@ -1,8 +1,8 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  // Three entry points: the main one stays free of MUI and SweetAlert2; /inputs and /alerts need their peer dependencies.
-  entry: { index: 'src/index.ts', inputs: 'src/inputs/index.ts', alerts: 'src/alerts/index.ts' },
+  // Four entry points: the main one stays free of MUI and SweetAlert2; /inputs and /alerts need their peer dependencies; /tables needs none.
+  entry: { index: 'src/index.ts', inputs: 'src/inputs/index.ts', alerts: 'src/alerts/index.ts', tables: 'src/tables/index.ts' },
   format: ['esm', 'cjs'],
   dts: true,
   sourcemap: true,

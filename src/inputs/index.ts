@@ -10,6 +10,7 @@ export { InputMasked, type InputMaskedProps } from './InputMasked';
 export { DatePicker, DATEFORMAT_RAFFLE_NEXUS, type DatePickerProps } from './DatePicker';
 export { MaskedInput, type MaskedInputProps } from './MaskedInput';
 export { TextArea, type TextAreaProps } from './TextArea';
+export { Switch, type SwitchProps } from './Switch';
 export {
   FinalFormError, BriefToolTip, TooltipBriefForm, DebouncingValidatingField,
   type FinalFormErrorProps, type BriefToolTipProps, type DebouncingValidatingFieldProps,

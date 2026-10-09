@@ -35,11 +35,16 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: 'Settings' })).toHaveAttribute('href', '/settings');
   });
 
-  it('keeps labels for screen readers and tooltips when collapsed, and swaps the logo', () => {
+  it('keeps labels for screen readers and tooltips when collapsed, and swaps the logo', async () => {
     render(<Sidebar logo="Full logo" logoCollapsed="Mark" items={items} collapsed footer="Signed in" />);
     const nav = screen.getByRole('navigation');
     expect(nav).toHaveClass('is-collapsed');
-    expect(screen.getByRole('link', { name: 'Raffles, 3' })).toHaveAttribute('title', 'Raffles');
+    const raffles = screen.getByRole('link', { name: 'Raffles, 3' });
+    expect(raffles).not.toHaveAttribute('title'); // the styled tooltip replaces the native one, so it doesn't show twice
+    await userEvent.hover(raffles);
+    expect(document.querySelector('.rnc-sidebar-tip')).toHaveTextContent('Raffles');
+    await userEvent.unhover(raffles);
+    expect(document.querySelector('.rnc-sidebar-tip')).toBeNull();
     expect(screen.getByText('Mark')).toBeInTheDocument();
     expect(screen.queryByText('Signed in')).not.toBeInTheDocument();
   });
