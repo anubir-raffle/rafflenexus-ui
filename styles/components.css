@@ -487,6 +487,52 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-avatar-group > * + * { margin-left: calc(var(--av-size) * -.25); }
 .rnc-avatar-pic.is-more { --av-bg: var(--surface-tint); --av-fg: var(--ink); font: 500 calc(var(--av-size) * .34)/1 var(--font-mono); font-variant-numeric: tabular-nums; }
 
+/* Status pill: where a record stands, in a word. Tone by meaning: neutral (not started), progress (blue, with an optional mono figure), review (gold: waiting on someone), success (green: done), error (red). The word carries the meaning; colour backs it up. */
+.rnc-status { --st-bg: var(--surface-tint); --st-fg: var(--ink-body); box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; height: 28px; max-width: 100%; padding: 0 12px; border-radius: var(--radius-pill); background: var(--st-bg); color: var(--st-fg); font: 600 13px/1 var(--font-sans); white-space: nowrap; vertical-align: middle; }
+.rnc-status.is-sm { height: 24px; padding: 0 10px; gap: 5px; font-size: 12px; }
+.rnc-status.is-progress { --st-bg: var(--lead-soft); --st-fg: var(--action); }
+.rnc-status.is-review { --st-bg: var(--reward-soft); --st-fg: var(--reward); }
+.rnc-status.is-success { --st-bg: var(--verified-soft); --st-fg: var(--verified); }
+.rnc-status.is-error { --st-bg: var(--error-soft); --st-fg: var(--error); }
+.rnc-status .rnc-icon { flex: none; width: 16px; height: 16px; }
+.rnc-status.is-sm .rnc-icon { width: 14px; height: 14px; }
+.rnc-status-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.rnc-status-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.rnc-status-value { font: 500 1em/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* Filter chips: the filters in force, each removable, with "Clear all" after them. Sit in the toolbar between search and the Filter button. */
+.rnc-chips { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-width: 0; }
+.rnc-chip { box-sizing: border-box; display: inline-flex; align-items: center; gap: 2px; height: 36px; max-width: 100%; padding: 0 4px 0 14px; border-radius: var(--radius-pill); background: var(--lead-soft); color: var(--action); font: 500 14px/1 var(--font-sans); }
+.rnc-chip-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 4px; }
+.rnc-chip-value { font-weight: 600; }
+.rnc-chip-remove { display: grid; place-items: center; flex: none; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: inherit; cursor: pointer; transition: background-color .2s ease; }
+.rnc-chip-remove:hover { background: var(--surface); }
+.rnc-chip-remove:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.rnc-chip-remove .rnc-icon { width: 14px; height: 14px; }
+.rnc-chip.is-disabled { padding-right: 14px; background: var(--surface-tint); color: var(--ink-muted); }
+.rnc-chips-clear { height: 36px; padding: 0 12px; border: 0; border-radius: var(--radius-pill); background: transparent; color: var(--action); font: 500 14px/1 var(--font-sans); cursor: pointer; transition: background-color .2s ease; }
+.rnc-chips-clear:hover { background: var(--surface-tint); }
+.rnc-chips-clear:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* Step timeline: a record's steps on one line, dates under them. Green joins the steps reached; a blue ring marks the step it's waiting on ("Up next"); a red diamond marks a late step. In a table, put the step names once in the header (rnc-steps-labels) and leave them out of the rows. */
+.rnc-steps, .rnc-steps-labels { --steps-n: 4; display: grid; grid-template-columns: repeat(var(--steps-n), minmax(0, 1fr)); min-width: 0; }
+.rnc-steps { margin: 0; padding: 0; list-style: none; font: 400 13px/1.25 var(--font-sans); color: var(--ink-body); }
+.rnc-steps-labels { font: 600 13px/1.2 var(--font-sans); white-space: nowrap; }
+.rnc-steps-labels > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.rnc-step { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rnc-step-track { display: flex; align-items: center; height: 14px; }
+.rnc-step-node { box-sizing: border-box; flex: none; width: 12px; height: 12px; border: 2px solid color-mix(in srgb, var(--ink-muted) 45%, var(--surface)); border-radius: 50%; background: var(--surface); }
+.rnc-step.is-done .rnc-step-node { border-color: var(--verified); background: var(--verified); }
+.rnc-step.is-late .rnc-step-node { width: 11px; height: 11px; margin: 0 .5px; border-color: var(--error); border-radius: 2px; background: var(--error); transform: rotate(45deg); }
+.rnc-step.is-next .rnc-step-node { border-color: var(--action); }
+.rnc-step-line { flex: 1; height: 2px; margin: 0 4px; border-radius: 2px; background: var(--line); }
+.rnc-step-line.is-reached { background: var(--verified); }
+.rnc-step-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; color: var(--ink-muted); }
+.rnc-step-date { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+.rnc-step.is-late .rnc-step-date { color: var(--error); }
+.rnc-step-empty { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-muted); }
+.rnc-step.is-next .rnc-step-empty { font-weight: 500; color: var(--action); }
+
 /* Alert box (npm: @rafflenexuscanada/design-system/alerts, on SweetAlert2): a modal that asks, confirms or reports one thing.
    Title in DM Sans with a state icon, body text, actions at the end (cancel, then confirm). */
 .rnc-alert-backdrop.swal2-backdrop-show, .rnc-alert-backdrop.swal2-noanimation, .rnc-alert-scrim { background: rgba(15, 42, 68, .48); }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1 (2026-10-14)
+
+- Synced with the design system. Updated: component styles.
+
 ## 0.5.0 (2026-10-09)
 
 The second Raffle Builder handoff (Table, Avatar, Button, Sidebar), plus the MUI Switch.
