@@ -515,7 +515,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-chips-clear:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* Step timeline: a record's steps on one line, dates under them. Green joins the steps reached; a blue ring marks the step it's waiting on ("Up next"); a red diamond marks a late step. In a table, put the step names once in the header (rnc-steps-labels) and leave them out of the rows. */
-.rnc-steps, .rnc-steps-labels { --steps-n: 4; display: grid; grid-template-columns: repeat(var(--steps-n), minmax(0, 1fr)); min-width: 0; }
+.rnc-steps, .rnc-steps-labels { --steps-n: 4; box-sizing: border-box; display: grid; grid-template-columns: repeat(var(--steps-n), minmax(0, 1fr)); width: 100%; min-width: 0; }
 .rnc-steps { margin: 0; padding: 0; list-style: none; font: 400 13px/1.25 var(--font-sans); color: var(--ink-body); }
 .rnc-steps-labels { font: 600 13px/1.2 var(--font-sans); white-space: nowrap; }
 .rnc-steps-labels > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }

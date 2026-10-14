@@ -30,6 +30,11 @@ export { Sidebar, type SidebarProps, type SidebarItem, type SidebarSection, type
 export { Offcanvas, type OffcanvasProps } from './components/Offcanvas';
 export { Table, type TableProps, type TableColumnMeta } from './components/Table';
 export { Avatar, AvatarGroup, avatarInitials, avatarColour, AVATAR_SIZES, type AvatarProps, type AvatarGroupProps, type AvatarSize } from './components/Avatar';
+export { StatusPill, type StatusPillProps, type StatusTone } from './components/StatusPill';
+export { FilterChip, FilterChipGroup, type FilterChipProps, type FilterChipGroupProps } from './components/FilterChip';
+export {
+  StepTimeline, StepTimelineLabels, stepStates, type StepTimelineProps, type StepTimelineLabelsProps, type TimelineStep, type StepState,
+} from './components/StepTimeline';
 // TanStack Table helpers, re-exported so column definitions type-check without a second import.
 export { createColumnHelper, type ColumnDef, type SortingState, type Row } from '@tanstack/react-table';
 

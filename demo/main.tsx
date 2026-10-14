@@ -7,6 +7,7 @@ import './demo.css';
 import { InputsDemo } from './InputsDemo';
 import { AlertsDemo } from './AlertsDemo';
 import { AvatarsDemo, ButtonsDemo, RaffleBuilderDemo } from './Handoff2Demo';
+import { SetupFormsDemo } from './Handoff3Demo';
 import {
   Button, Icon, ICON_NAMES, VerifiedBadge, LedgerLine, ProofStat, JackpotFigure, JackpotTile, FlagshipRoster,
   PoweredBy, LeaderHero, RaffleBrand, NodeGraphic, NODE_NAMES, Odometer, TicketButton, tokens,
@@ -216,6 +217,9 @@ function App() {
         <RaffleBuilderDemo />
       </Section>
 
+      <Section title="StatusPill, FilterChipGroup and StepTimeline" note="All setup forms as the Raffle Builder shows it: remove a filter chip (focus moves to the next one, or back to search), status pills in five tones, and the step timeline with its names once in the header. Below: every pill tone, and a timeline on its own.">
+        <SetupFormsDemo />
+      </Section>
       <Section title="Avatar" note="Photo, else initials on a colour fixed to the name, else a person icon. Sizes, shapes, a name beside or under it, and a group.">
         <AvatarsDemo />
       </Section>

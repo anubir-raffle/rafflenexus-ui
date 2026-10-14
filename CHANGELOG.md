@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0 (2026-10-14)
+
+The third Raffle Builder handoff: status pills, filter chips and the step timeline.
+
+- New `StatusPill`: where a record stands, in a word. Tones `neutral`, `progress`, `review`, `success` and `error`; an optional icon or dot; a figure in the mono face (`value="44%"`); sizes `md` 28px and `sm` 24px. The `StatusPill` card.
+- New `FilterChip` and `FilterChipGroup`: the filters in force, each removable (named "Remove filter: Status: In progress"), then "Clear all". After a removal, focus moves to the next chip, or to `returnFocusRef` when none are left, and the removal is announced. A chip without `onRemove` is fixed (grey, no ×). The `FilterChips` card.
+- New `StepTimeline` and `StepTimelineLabels`: a record's steps on one line with dates under them (done, late, up next, not set), states worked out from the dates unless passed; step names once in a table header on the same tracks. An ordered list; each step reads in full to screen readers. The `StepTimeline` card.
+- Includes 0.5.1 (synced styles), which wasn't published on its own.
+
 ## 0.5.1 (2026-10-14)
 
 - Synced with the design system. Updated: component styles.

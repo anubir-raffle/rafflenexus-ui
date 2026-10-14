@@ -74,6 +74,11 @@ export function Hero() {
 | `Avatar` | A person or organisation: the photo, else initials on a colour fixed to the name, else a person icon. MUI-style. | `alt`, `src`, `srcSet`, `size` (`xs` 20, `sm` 24, `md` 32, `lg` 40, `xl` 56, or pixels), `variant` (`circular`, `rounded`, `square`), `children`, `name`, `subtitle`, `layout` (`row`, `column`), `imgProps` |
 | `AvatarGroup` | Overlapping avatars with a "+3" count. | `max` (default 5), `total`, `size`, `variant`, `aria-label` |
 | `Table` | Data rows with TanStack Table (react-table) behaviour: pass `columns` and `data`; get sorting, search, row selection and pages. | `data`, `columns` (TanStack `ColumnDef`; `meta: { numeric: true }` right-aligns figures), `caption`, `searchable`, `pageSize`, `enableRowSelection`, `onRowSelectionChange`, `getRowId` |
+| `StatusPill` | Where a record stands, in a word, on a tinted pill. Five tones by meaning; an optional icon or dot; a figure in the mono face. | `children` (the label), `tone` (`neutral`, `progress`, `review`, `success`, `error`), `value` ("44%"), `icon` (a name or an element), `dot`, `size` (`md` 28, `sm` 24) |
+| `FilterChip` | One filter in force, with a × to remove it. No `onRemove`: a fixed grey chip. | `label`, `value`, `onRemove`, `removeLabel` |
+| `FilterChipGroup` | The chips in a named group, then "Clear all". Moves focus to the next chip after a removal, or to `returnFocusRef` when none are left, and says each removal in a live region. Renders nothing with no chips. | `children` (FilterChips), `onClearAll`, `clearAllLabel`, `returnFocusRef`, `label` ("Active filters"), `announce` |
+| `StepTimeline` | A record's steps on one line with dates under them: done, late, up next, not set. States are worked out from the dates unless you pass them. | `steps: { label, date?, state? }[]`, `showLabels`, `formatDate`, `emptyText`, `nextText`, `lateText`, `aria-label` |
+| `StepTimelineLabels` | The step names once, for a table header, on the same tracks as the timelines in the rows. | `labels`, `srLabel` ("Timeline") |
 
 Every component has TypeScript types with notes on each prop. Your editor shows them as you type.
 
@@ -267,6 +272,40 @@ export default function Avatar({ user, size, showName, ...rest }) {
 - The Topbar can still expand a collapsed sidebar (`setCollapsed(false)`); the built-in chevron does the same through `onCollapsedChange`. Hide it with `showCollapseToggle={false}`.
 - Below `mobileBreakpoint` (980px) the sidebar renders nothing until `mobileOpen`, then a drawer from the left: focus moves in and stays, Escape, the close button, a tap outside or choosing an item calls `onMobileOpenChange(false)`, and focus returns to the menu button. Collapsing doesn't apply there.
 - Collapsed: each icon shows its label in a tooltip to the right (hover or Tab; Escape hides it) and a badge becomes a dot. The native `title` tooltip is gone, so there aren't two.
+
+## Status, filters and the step timeline
+
+The third Raffle Builder handoff, for All setup forms and the other dashboard tables. The look is in the design system's `StatusPill`, `FilterChips` and `StepTimeline` cards.
+
+```jsx
+import { StatusPill, FilterChip, FilterChipGroup, StepTimeline, StepTimelineLabels } from '@rafflenexuscanada/design-system';
+
+// Toolbar: search, the filters in force, then the Filter button
+<input ref={searchRef} type="search" aria-label="Search setup forms" />
+<FilterChipGroup returnFocusRef={searchRef} onClearAll={clearFilters}>
+  {hideArchived && <FilterChip label="Hide archived" onRemove={() => setHideArchived(false)} />}
+  {status && <FilterChip label="Status" value={status} onRemove={() => setStatus(null)} />}
+</FilterChipGroup>
+
+// Columns (react-table v6, for ReactTableComponent)
+{ Header: 'Status', accessor: 'status', width: 180,
+  Cell: ({ original }) => <StatusPill tone="progress" value={`${original.progress}%`}>In progress</StatusPill> },
+{ id: 'timeline', width: 368, sortable: false, accessor: 'created_at',
+  Header: () => <StepTimelineLabels labels={['Created', 'Started', 'Submitted', 'Completed']} />,
+  Cell: ({ original }) => <StepTimeline showLabels={false} steps={[
+    { label: 'Created', date: original.created_at && new Date(original.created_at) },
+    { label: 'Started', date: original.started_at && new Date(original.started_at), state: original.started_late ? 'late' : undefined },
+    { label: 'Submitted', date: original.submitted_at && new Date(original.submitted_at) },
+    { label: 'Completed', date: original.completed_at && new Date(original.completed_at) },
+  ]} /> },
+```
+
+- **Status tones** by meaning: Not started `neutral`, In progress `progress` (pass the percentage as `value`), Ready for QA `review`, Completed `success`, anything failed `error`. Icons that fit: `clock`, `warning`, `check-circle`, `x-circle`; or `dot`. The app's pulse and anchor icons aren't in the set, so they're left out.
+- **Filter chips** go between search and the Filter button. Render a chip only while its filter is on; the group hides itself when there are none. Keep the chips' `key`s stable so focus lands on the right one after a removal.
+- **Timeline states:** a date means `done`; the first step without one is `next` ("Up next"); later ones `pending` ("Not set"). Pass `state: 'late'` for the red ones (a red diamond, the date in red, and "late" for screen readers). Dates can be `Date`s (shown "May 18, 2026"; change it with `formatDate`) or your own strings. Give the column 368px for "Mon DD" dates, 440px with the year, and the status column 180px so "In progress 100%" fits.
+- **Please check:**
+  - What does red mean on a step: reached after its deadline, or past its deadline and not reached? `late` assumes the first. If it's the second, we'd show the red on a step with no date ("Overdue").
+  - The red dashed line between steps: is it "today"? It isn't built yet; it's easy to add once we know.
 
 ## Tokens
 
