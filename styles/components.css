@@ -536,6 +536,72 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-step-empty { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-muted); }
 .rnc-step.is-next .rnc-step-empty { font-weight: 500; color: var(--action); }
 
+/* Wizard (npm: @rafflenexuscanada/design-system/wizard, on react-final-form): one form in steps. A card with a header, the step bar,
+   the step's fields and a footer with the save status and Back / Next / Review / Submit. Steps say their state in words and an icon. */
+.rnc-wizard { display: grid; gap: 12px; min-width: 0; font-family: var(--font-sans); color: var(--ink-body); }
+.rnc-wizard-notice { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px 12px; font-size: 15px; }
+.rnc-wizard-deadline { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-body); }
+.rnc-wizard-deadline strong { color: var(--ink); font-weight: 700; }
+.rnc-wizard-deadline .rnc-icon { width: 20px; height: 20px; color: var(--ink-muted); }
+.rnc-wizard-deadline.is-overdue, .rnc-wizard-deadline.is-overdue strong, .rnc-wizard-deadline.is-overdue .rnc-icon { color: var(--error); }
+.rnc-wizard-overdue { flex-basis: 100%; margin: 0; text-align: right; font-size: 14px; color: var(--ink-body); }
+.rnc-wizard-card { min-width: 0; border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-2); }
+.rnc-wizard-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px; padding: 24px 28px 20px; }
+.rnc-wizard-titles { min-width: 0; }
+.rnc-wizard-title { margin: 0; font: 600 28px/1.15 var(--font-display); letter-spacing: -0.01em; color: var(--ink); text-wrap: balance; }
+.rnc-wizard-subtitle { margin: 6px 0 0; font-size: 15px; color: var(--ink-muted); }
+.rnc-wizard-logos { display: flex; align-items: center; gap: 16px; }
+.rnc-wizard-logos img { display: block; height: 44px; width: auto; max-width: 160px; object-fit: contain; }
+.rnc-wizard-logos img + img { padding-left: 16px; border-left: 1px solid var(--line); }
+/* Step bar: sideways scroll on narrow screens; the current step is underlined in action (error when it's incomplete) */
+.rnc-wizard-progress { margin: 0; padding: 0 28px 4px; font-size: 13px; color: var(--ink-muted); }
+.rnc-wizard-steps { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; scrollbar-color: var(--line) transparent; background: var(--ground); }
+.rnc-wizard-steps ol { display: flex; gap: 4px; min-width: max-content; margin: 0; padding: 12px 20px 0; list-style: none; }
+.rnc-wizard-steps li { flex: 1 1 0; min-width: 104px; }
+.rnc-wizard-step { position: relative; display: grid; justify-items: center; gap: 8px; width: 100%; box-sizing: border-box; padding: 6px 8px 16px; border: 0; border-radius: var(--radius-sm) var(--radius-sm) 0 0; background: none; color: var(--ink-body); font: 600 13px/1.25 var(--font-sans); text-align: center; cursor: pointer; transition: background-color .2s ease, color .2s ease; }
+.rnc-wizard-step:hover { background: var(--surface-tint); color: var(--ink); }
+.rnc-wizard-step:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.rnc-wizard-step::after { content: ""; position: absolute; left: 50%; bottom: 0; width: 44px; height: 4px; margin-left: -22px; border-radius: var(--radius-pill); background: transparent; transition: background-color .2s ease; }
+.rnc-wizard-step[aria-current="step"] { color: var(--ink); font-weight: 700; }
+.rnc-wizard-step[aria-current="step"]::after { background: var(--action); }
+.rnc-wizard-step-dot { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--lead-soft); color: var(--action); transition: background-color .2s ease; }
+.rnc-wizard-step-dot .rnc-icon { width: 16px; height: 16px; }
+.rnc-wizard-step.is-complete .rnc-wizard-step-dot { background: var(--action); color: var(--on-action); }
+.rnc-wizard-step.is-incomplete { color: var(--error); }
+.rnc-wizard-step.is-incomplete .rnc-wizard-step-dot { background: var(--error-soft); color: var(--error); }
+.rnc-wizard-step.is-incomplete[aria-current="step"]::after { background: var(--error); }
+.rnc-wizard-step.is-review .rnc-wizard-step-dot { background: var(--stage); color: var(--on-stage); }
+.rnc-wizard-step.is-locked { color: var(--ink-muted); cursor: not-allowed; }
+.rnc-wizard-step.is-locked .rnc-wizard-step-dot { background: var(--surface-tint); color: var(--ink-muted); }
+.rnc-wizard-step.is-locked:hover { background: none; color: var(--ink-muted); }
+.rnc-wizard-blocked { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 12px 28px; background: var(--error-soft); color: var(--ink); font-size: 15px; }
+.rnc-wizard-blocked .rnc-icon { flex: none; width: 20px; height: 20px; margin-top: 1px; color: var(--error); }
+.rnc-wizard-body { padding: 28px; min-width: 0; }
+.rnc-wizard-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; padding: 16px 28px; border-radius: 0 0 var(--radius-lg) var(--radius-lg); background: var(--ground); }
+.rnc-wizard-save { display: inline-flex; align-items: center; gap: 8px; min-height: 24px; font-size: 14px; color: var(--ink-muted); }
+.rnc-wizard-save .rnc-btn-spinner { width: 14px; height: 14px; color: var(--action); }
+.rnc-wizard-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-left: auto; }
+/* Sections inside a step: a heading (with an optional info button), an explainer line, then the fields. Space separates them, not rules. */
+.rnc-wizard-section + .rnc-wizard-section { margin-top: 40px; }
+.rnc-wizard-section-head { display: flex; align-items: center; gap: 4px; min-height: 28px; }
+.rnc-wizard-section-title { margin: 0; font: 600 20px/1.3 var(--font-sans); color: var(--ink); }
+.rnc-wizard-section.is-md .rnc-wizard-section-title { font-size: 17px; }
+.rnc-wizard-section.is-sm .rnc-wizard-section-title { font-size: 15px; color: var(--ink-body); }
+.rnc-wizard-section-desc { margin: 4px 0 0; font-size: 14px; line-height: 1.5; color: var(--ink-muted); max-width: 68ch; }
+.rnc-wizard-section-body { display: grid; gap: 20px; margin-top: 16px; min-width: 0; }
+@media (max-width: 640px) {
+  .rnc-wizard-head { padding: 20px 16px 16px; }
+  .rnc-wizard-title { font-size: 23px; }
+  .rnc-wizard-logos img { height: 36px; }
+  .rnc-wizard-progress { padding-inline: 16px; }
+  .rnc-wizard-steps ol { padding-inline: 8px; }
+  .rnc-wizard-blocked { padding-inline: 16px; }
+  .rnc-wizard-body { padding: 20px 16px; }
+  .rnc-wizard-foot { padding: 14px 16px; }
+  .rnc-wizard-actions { width: 100%; }
+  .rnc-wizard-actions > * { flex: 1 1 0; }
+}
+
 /* Alert box (npm: @rafflenexuscanada/design-system/alerts, on SweetAlert2): a modal that asks, confirms or reports one thing.
    Title in DM Sans with a state icon, body text, actions at the end (cancel, then confirm). */
 .rnc-alert-backdrop.swal2-backdrop-show, .rnc-alert-backdrop.swal2-noanimation, .rnc-alert-scrim { background: rgba(15, 42, 68, .48); }
