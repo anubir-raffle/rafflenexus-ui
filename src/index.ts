@@ -23,7 +23,10 @@ export { Select, type SelectProps, type SelectOption } from './components/Select
 export { Checkbox, RadioGroup, Switch, type CheckboxProps, type RadioGroupProps, type RadioOption, type SwitchProps } from './components/Choices';
 export { ErrorSummary, type ErrorSummaryProps, type ErrorSummaryItem } from './components/ErrorSummary';
 export { Dropdown, type DropdownProps, type DropdownItem } from './components/Dropdown';
-export type { FieldBaseProps } from './components/Field';
+export { CopyButton, copyText, type CopyButtonProps, type FieldBaseProps } from './components/Field';
+export { RichTextArea, RichText, sanitizeRichText, richTextLength, richTextToPlain, type RichTextAreaProps, type RichTextProps } from './components/RichTextArea';
+export { DomainField, domainUrl, type DomainFieldProps, type DomainType } from './components/DomainField';
+export { SegmentedControl, type SegmentedControlProps, type SegmentedOption } from './components/Segmented';
 
 // App layout and data
 export { Sidebar, type SidebarProps, type SidebarItem, type SidebarSection, type SidebarAction } from './components/Sidebar';

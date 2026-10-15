@@ -361,11 +361,12 @@ Wizard.Page = DSWizard.Page;
   )}
   header={(v) => <WizardHeader title={v.name} subtitle={v.client?.name} logo={v.logo?.cropped} />}
   aside={(v) => <QaChecks values={v} />}
-  preview={(v, step) => step.label === 'Website' ? (
-    <WizardPreview url={`${v.sub_domain}.rafflenexus.com`}>
-      <WizardSitePreview org={v.client?.name} heading={v.heading} subheading={v.subheading} cause={v.cause} colour={v.colour} image={v.slides?.[0]?.src} />
+  preview={(v, step) => step.label === 'Review' ? null : (
+    <WizardPreview url={domainUrl(v.sub_domain_type, v.sub_domain).replace('https://', '')} device={device} onDeviceChange={setDevice}>
+      <WizardSitePreview org={v.client?.name} logo={v.logo?.cropped} heading={v.heading} subheading={v.subheading} cause={<RichText html={v.cause} />}
+        colour={v.colour} slides={v.slides?.map((s) => s.src)} packs={…} dates={…} prizes={…} licence={…} />
     </WizardPreview>
-  ) : null}
+  )}
 >
   <Wizard.Page label="Website" summary={(v) => `${v.sub_domain}.rafflenexus.com`} description="We use this to build your raffle site and help it show up in search." validate={validation.branding}>…</Wizard.Page>
   …
@@ -373,7 +374,9 @@ Wizard.Page = DSWizard.Page;
 ```
 
 - **V2 props:** `layout` (`v1` default, `v2`), `toolbar(values)`, `aside(values)` (under the steps; moves below the step on phones), `preview(values, { label, index })` (return null for steps without one), `railLabel`. Pages add `summary(values)` and `description`.
-- **V2 parts:** `WizardToolbar` (`back` URL or function, `product`, `mark`, `crumb`, `status`, `actions`), `WizardPreview` (`url`, `label`, `hint`, children), `WizardSitePreview` (`org`, `heading`, `subheading`, `cause`, `colour`, `accent`, `image`, `cta`; text scales with the preview's width).
+- **V2 parts:** `WizardToolbar` (`back` URL or function, `product`, `mark`, `crumb`, `status`, `actions`), `WizardPreview` and `WizardSitePreview` (below).
+- **The live preview shows the real site.** `WizardPreview` lays its children out at a real desktop width (1280) or phone width (390) and scales them to fit, in a browser frame or a phone frame, with a Desktop / Mobile switch. Props: `url`, `label`, `hint`, `device` / `defaultDevice` / `onDeviceChange` (keep `device` in your state so it stays put across steps), `devices` (false hides the switch), `desktopWidth`, `mobileWidth`. `WizardSitePreview` draws the standard raffle site for the chosen device: header with logo and Order tickets, the hero on the client's colour with the first slide (a progress bar per slide), Choose a pack, Important dates, Prizes, Where the money goes and the licensed-raffle footer. Props: `org`, `logo`, `logoAlt`, `heading`, `subheading`, `cause`, `colour`, `accent`, `slides` (or `image`), `packs: { label, price, note }[]`, `dates: { when, what }[]`, `prizes: { title, value }[]`, `licence`, `cta`, `emptyHeading`. Your own markup or an iframe works too; `usePreviewDevice()` tells it which device it's on. Nothing in the preview is clickable, and screen readers hear it as one image.
+- **The step bar on phones** scrolls sideways: the edge with more steps fades and shows an arrow (tap it to scroll), a mouse can drag the row, and the current step comes to the middle.
 - Same behaviour and props as V1 otherwise; switching is one prop.
 
 - **`Wizard` props, as today:** `onSubmit` (last visible step; the form resets afterwards), `initialValues`, `onSave({ values, active })` (every value or focus change), `lastSaved`, `isSaving`, `disabledAll` (no submit button), `isQaPage` (Review hidden; Complete form on the last step when `briefStatus` is 2), `briefStatus`, `user` (accepted, unused).
@@ -394,11 +397,18 @@ The steps of a builder are made of a few repeating patterns. These live in the m
 | `SortableList` | Reorder by dragging a grip (the row lifts, the others make room, it settles where it's dropped) or with Move earlier / Move later. Each move is announced; Escape cancels a drag. | `items`, `getKey`, `onReorder(items)`, `renderItem(item, { grip, moves, index, total, handle, moveEarlier, moveLater, isDragging })`, `itemLabel`, `disabled` |
 | `ExpandableRow` | A row that opens smoothly to edit what it holds (a ticket pack, a prize). | `title`, `meta`, `open` / `defaultOpen`, `onOpenChange`, `actions`, children |
 | `UploadTile` | Choose or drop a file; lights up while a file is dragged over; checks size and dimensions in words; Replace and Remove. | `label`, `hint`, `src`, `alt`, `onFile(file, dataUrl)`, `onRemove`, `minWidth`, `minHeight`, `maxBytes`, `error`, `accept` |
+| `RichTextArea` | A larger text box with bold, italic, bulleted and numbered lists (toolbar and Ctrl/⌘ shortcuts). The value is clean HTML (p, strong, em, ul, ol, li, br); pasted text comes in plain. Counts the text against `maxLength` and stops there. Show the value with `<RichText html={…} />`; `sanitizeRichText`, `richTextLength` and `richTextToPlain` help with saving, validating and previews. For the cause and prize descriptions. | `label`, `hint`, `error`, `value`, `onChange(html)`, `onBlur`, `maxLength`, `showCount`, `minHeight`, `placeholder`, `review`, `disabled` |
+| `DomainField` | The site's web address: a segmented choice between a Raffle Nexus address (`https://` + name + `.rafflenexus.com`) and the client's own domain, matching the app's `sub_domain_type` (`rn` / `own`). Tidies pasted addresses (drops https://, www., paths and, for rn, the Raffle Nexus domain). When narrow, `https://` drops away. `domainUrl(type, value)` gives the full address. | `label`, `type`, `onTypeChange`, `value`, `onChange`, `onBlur`, `error`, `hint` (or `rnHint` / `ownHint`), `suffix`, `review` |
+| `SegmentedControl` | Two or three options side by side, one chosen; radio buttons underneath, so arrow keys move between them. | `options: { value, label, disabled }[]`, `value`, `onChange`, `aria-label` |
 | `WizardReview` (`/wizard`) | The Review step: a card per section with what it says, what's missing and an Edit link to its step. | `sections: { label, step, complete, summary, issues }[]`, `onEdit` (pass the page's `changePage`) |
 
-**Motion that explains what happened.** Changing steps slides the content in from the side you moved towards and its sections follow one after another; in V2 the rail's white card glides to the current step; a step's circle pops when it becomes complete or Review unlocks; the save status fades between Saving… and Last saved. Lists animate adding, removing and reordering as above, and a new pack or prize opens with its first field focused. Everything is instant under reduced motion.
+**Character limits.** `TextField`, `TextArea` and `RichTextArea` (and `/inputs` `TextInput` and `TextArea`) take `maxLength`: the field stops at the limit and says how many characters are left under it, darker when close and red at the limit; screen readers hear the count with the field and once it's close. `showCount={false}` keeps the limit without the count. The app's own limits: raffle name 5 to 80, the cause 30 to 1500.
 
-**Lists in react-final-form: edit items by id, not by index.** A `<Field name="ticket_packs[0].name">` keeps its field state when rows are removed or reordered, so values can land on the wrong row. Keep each item's fields controlled and write the whole array through a mutator, as the app's `setTicketPacks` / `setPrizes` / `setSlides` do: `onChange={(e) => mutators.setTicketPacks(packs.map((p) => p.id === id ? { ...p, price: e.target.value } : p))}`. The demo's `ItemText` shows the pattern.
+**Read-only fields have a Copy button inside.** `review` on `TextField`, `TextArea`, `RichTextArea` and `DomainField` makes the field read-only, keeps the value in full ink and puts a Copy button in the field (it turns into a check and says "Copied"). In `/inputs`, review mode (`disabledAll`, and a disabled `DatePicker` with a value) gets the same button beside the click-to-copy and its "Copied!" toast. `CopyButton` and `copyText` are exported for your own fields.
+
+**Motion that explains what happened.** Changing steps slides the content in from the side you moved towards and its sections follow one after another; in V2 the rail's white card glides to the current step; a step's circle pops when it becomes complete or Review unlocks; the save status fades between Saving… and Last saved. Lists animate adding, removing and reordering as above (measured inside each list, so lists inside lists, like a licence's packs, stay still while the outer list moves), and a new pack or prize opens with its first field focused. Dropdown menus fade in under their button, which no longer lifts on click. Everything is instant under reduced motion.
+
+**Lists in react-final-form: edit items by id, not by index.** A `<Field name="ticket_packs[0].name">` keeps its field state when rows are removed or reordered, so values can land on the wrong row. Keep each item's fields controlled and write the whole array through a mutator, as the app's `setTicketPacks` / `setPrizes` / `setSlides` do (the demo's licences each hold their own packs, like `ticket_pack_groups`): `onChange={(e) => mutators.setTicketPacks(packs.map((p) => p.id === id ? { ...p, price: e.target.value } : p))}`. The demo's `ItemText` shows the pattern.
 
 **react-final-form 7.** Its fields reset to their initial value when they mount again, which would lose what people typed once they leave a step. The Wizard keeps every field it has seen registered until it unmounts, so values survive step changes on 6 and 7 alike.
 

@@ -1,9 +1,9 @@
-import type { CSSProperties, MouseEventHandler, ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type MouseEventHandler, type ReactNode } from 'react';
 // Named imports throughout: default imports from MUI subpaths break in CommonJS (Jest).
 import { Tooltip } from '@mui/material';
 import { toast } from 'react-hot-toast';
 import { Icon } from '../components/Icon';
-import { useFieldId } from '../components/Field';
+import { CharCount, useFieldId } from '../components/Field';
 import { cx } from '../utils';
 import { RncInputsTheme } from './theme';
 
@@ -102,12 +102,33 @@ export function FieldFrame({ id, label, hideLabel, tooltip, review, copyable, on
             {tooltip ? <FieldTip title={tooltip} label={label} /> : null}
           </div>
         ) : null}
-        <div onClick={onCopyClick} style={{ width: '100%', cursor: copyable ? 'copy' : 'default' }}>
+        <div className="rnc-mui-control" onClick={onCopyClick} style={{ width: '100%', cursor: copyable ? 'copy' : 'default' }}>
           {children}
+          {copyable && onCopyClick ? <FieldCopyButton label={label} onCopy={onCopyClick} /> : null}
         </div>
       </div>
     </RncInputsTheme>
   );
+}
+
+/** The Copy button inside a read-only field. It copies through the field's own copy (so the "Copied!" toast shows) and turns into a check. */
+function FieldCopyButton({ label, onCopy }: { label?: ReactNode; onCopy: MouseEventHandler<HTMLDivElement> }) {
+  const [done, setDone] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const name = typeof label === 'string' && label ? label : 'value';
+  return (
+    <button type="button" className={cx('rnc-affix-btn', 'rnc-copy-btn', 'rnc-mui-copy', done && 'is-done')} aria-label={`Copy ${name}`}
+      onClick={(e) => { e.stopPropagation(); onCopy(e as unknown as MouseEvent<HTMLDivElement>); setDone(true); clearTimeout(timer.current); timer.current = setTimeout(() => setDone(false), 1600); }}>
+      <Icon name={done ? 'check' : 'copy'} size={20} />
+    </button>
+  );
+}
+
+/** "72 characters left" for an MUI field's helper line, beside whatever else it says. */
+export function withCount(helper: ReactNode, id: string, length: number, maxLength?: number, show = true): ReactNode {
+  if (!maxLength || !show) return helper;
+  return <span className="rnc-field-foot"><span style={{ flex: 1, minWidth: 0 }}>{helper || null}</span><CharCount id={id} length={length} max={maxLength} /></span>;
 }
 
 /** The message under a field: the helper text when given, otherwise the error once the field has been touched. */

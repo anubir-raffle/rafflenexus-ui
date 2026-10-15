@@ -237,11 +237,11 @@ describe('Wizard layout v2 (the Raffle Builder of RNC V2.1)', () => {
     ) : null)} />);
     expect(screen.getByText('Live preview')).toBeInTheDocument();
     expect(screen.getByText('sample.rafflenexus.com')).toHaveClass('rnc-wizard-browser-url');
-    expect(container.querySelector('.rnc-wizard-site')).toHaveStyle('--site-colour: #126ab5');
+    expect(container.querySelector('.rnc-wsite')).toHaveStyle('--site-colour: #126ab5');
     await userEvent.type(screen.getByLabelText('Raffle name'), ' 2026');
-    expect(container.querySelector('.rnc-wizard-site-title')).toHaveTextContent('Sample Lottery 2026');
+    expect(container.querySelector('.rnc-wsite-title')).toHaveTextContent('Sample Lottery 2026');
     await userEvent.clear(screen.getByLabelText('Raffle name'));
-    expect(container.querySelector('.rnc-wizard-site-title')).toHaveTextContent('Add a main heading');
+    expect(container.querySelector('.rnc-wsite-title')).toHaveTextContent('Add a main heading');
     await userEvent.click(step(/^Dates/));
     expect(screen.queryByText('Live preview')).toBeNull();
     expect(container.querySelector('.rnc-wizard-split')).toBeNull();

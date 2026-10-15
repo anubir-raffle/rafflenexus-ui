@@ -63,7 +63,8 @@ export function UploadTile({
   return (
     <div className="rnc-upload">
       <span className="rnc-field-label" id={`${id}-l`}>{label}</span>
-      {hint ? <span className="rnc-field-hint" id={`${id}-h`}>{hint}</span> : null}
+      {/* Always four parts (label, hint, tile, message), so tiles side by side line up on a shared grid. */}
+      {hint ? <span className="rnc-field-hint" id={`${id}-h`}>{hint}</span> : <span aria-hidden="true" />}
       <div
         className={cx('rnc-upload-zone', over && 'is-over', src && 'has-file')}
         onDragOver={(e) => { if (disabled) return; e.preventDefault(); setOver(true); }}
@@ -77,7 +78,7 @@ export function UploadTile({
         </span>
         <input ref={input} className="rnc-upload-input" type="file" accept={accept} tabIndex={-1} aria-hidden="true" onChange={(e) => { void take(e.target.files?.[0]); e.target.value = ''; }} />
       </div>
-      {shown ? <p className="rnc-field-error" role="alert">{shown}</p> : null}
+      <div className="rnc-upload-msg" role="alert">{shown ? <p className="rnc-field-error">{shown}</p> : null}</div>
     </div>
   );
 }

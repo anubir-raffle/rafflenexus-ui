@@ -10,6 +10,13 @@ const ENTER_MS = 1300;
 const SETTLE = 'transform .3s cubic-bezier(.2, .8, .2, 1)';
 
 type Key = string | number;
+/** Where an item sits inside its list. Relative to the list, so the whole list moving (an outer list animating, the page
+ *  scrolling, a field above growing) isn't mistaken for the item moving. */
+type Spot = { left: number; top: number };
+const spot = (el: HTMLElement): Spot => {
+  const r = el.getBoundingClientRect(); const base = el.parentElement?.getBoundingClientRect();
+  return { left: r.left - (base?.left ?? 0), top: r.top - (base?.top ?? 0) };
+};
 interface Entry<T> { key: Key; item: T; leaving?: boolean; at?: number }
 
 /**
@@ -22,8 +29,8 @@ function useListMotion<T>(items: T[], getKey: (item: T, index: number) => Key) {
   const [entering, setEntering] = useState<Set<Key>>(new Set());
   const prevItems = useRef<{ key: Key; item: T }[] | null>(null);
   const nodes = useRef(new Map<Key, HTMLElement>());
-  const rects = useRef(new Map<Key, DOMRect>());
-  const override = useRef<Map<Key, DOMRect> | null>(null);
+  const rects = useRef(new Map<Key, Spot>());
+  const override = useRef<Map<Key, Spot> | null>(null);
 
   // Work out who arrived and who left since the last render
   const keyString = keys.join('\u0001');
@@ -47,8 +54,8 @@ function useListMotion<T>(items: T[], getKey: (item: T, index: number) => Key) {
   useIsoLayoutEffect(() => {
     const old = override.current ?? rects.current;
     override.current = null;
-    const fresh = new Map<Key, DOMRect>();
-    nodes.current.forEach((el, k) => fresh.set(k, el.getBoundingClientRect()));
+    const fresh = new Map<Key, Spot>();
+    nodes.current.forEach((el, k) => fresh.set(k, spot(el)));
     if (!prefersReducedMotion()) {
       fresh.forEach((r, k) => {
         const o = old.get(k); const el = nodes.current.get(k);
@@ -73,7 +80,12 @@ function useListMotion<T>(items: T[], getKey: (item: T, index: number) => Key) {
     entries.splice(Math.min(entries.length, Math.max(0, l.at ?? entries.length)), 0, l);
   });
   const ref = (key: Key) => (el: HTMLElement | null) => { if (el) nodes.current.set(key, el); else nodes.current.delete(key); };
-  const measure = (map: Map<Key, DOMRect>) => { override.current = map; };
+  // Callers hand in on-screen rects (where rows were mid-drag); keep them relative to the list, like the rest.
+  const measure = (map: Map<Key, DOMRect>) => {
+    const rel = new Map<Key, Spot>();
+    map.forEach((r, k) => { const base = nodes.current.get(k)?.parentElement?.getBoundingClientRect(); rel.set(k, { left: r.left - (base?.left ?? 0), top: r.top - (base?.top ?? 0) }); });
+    override.current = rel;
+  };
   return { entries, entering, ref, nodes, measure };
 }
 

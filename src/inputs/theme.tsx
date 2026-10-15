@@ -99,7 +99,11 @@ export const rncInputsTheme = createTheme({
           '& .MuiOutlinedInput-root .MuiAutocomplete-input': { padding: '7px 5px' },
           '& .MuiAutocomplete-endAdornment .MuiIconButton-root': { color: 'var(--ink-body)' },
         },
-        paper: { marginTop: 6, border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-3)', background: 'var(--surface)' },
+        paper: {
+          marginTop: 6, border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-3)', background: 'var(--surface)',
+          // Fades in just under the field instead of appearing at once (rnc-menu-in is in styles.css)
+          '@media (prefers-reduced-motion: no-preference)': { animation: 'rnc-menu-in .16s cubic-bezier(.2, .8, .2, 1) both' },
+        },
         listbox: {
           padding: 6,
           '& .MuiAutocomplete-option': {

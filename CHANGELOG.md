@@ -9,8 +9,14 @@ The Raffle Builder's setup form wizard, plus the 0.6.x fixes.
 - Builder parts in the main entry: `AnimatedList` (added items grow in, removed ones fold away, the rest glide), `SortableList` (drag by a grip or Move earlier / later, announced, Escape cancels), `ExpandableRow`, `UploadTile` (choose or drop, size checks in words, Replace and Remove); and `WizardReview` in `/wizard`.
 - Wizard motion: step content slides in by direction with sections following, the V2 rail's card glides to the current step, step circles pop when a step completes or Review unlocks, the save status fades. All off under reduced motion.
 - The Wizard keeps fields registered across steps, so react-final-form 7 no longer resets a remounted field to its initial value.
+- Live preview of the real site: `WizardPreview` lays the site out at 1280 or 390 wide and scales it to fit, with a Desktop / Mobile switch (`device`, `defaultDevice`, `onDeviceChange`, `devices`); `WizardSitePreview` draws the standard raffle site (header, hero with slides, Choose a pack, Important dates, Prizes, Where the money goes, footer) for either device, with new props `logo`, `slides`, `packs`, `dates`, `prizes`, `licence`. `usePreviewDevice` for your own preview.
+- Step bar on phones: fades and arrows where there are more steps, mouse drag, the current step centred.
+- New fields in the main entry: `RichTextArea` (bold, italic, lists; clean HTML; `RichText`, `sanitizeRichText`, `richTextLength`, `richTextToPlain`), `DomainField` (Raffle Nexus address or own domain, `rn` / `own`, `domainUrl`), `SegmentedControl`, `CopyButton` and `copyText`.
+- `maxLength` with a characters-left count on `TextField`, `TextArea`, `RichTextArea` and `/inputs` `TextInput` and `TextArea` (`showCount={false}` hides it).
+- `review` on `TextField`, `TextArea`, `RichTextArea` and `DomainField`: read-only with a Copy button inside. `/inputs` fields in review mode (and a disabled `DatePicker`) get the Copy button too; `/inputs` `TextArea` takes `disabledAll`.
+- Upload tiles side by side line up (label, hint, tile and message share rows). List animations measure inside each list, so nested lists stay still. The dropdown button no longer lifts on click and its menu fades in; the `/inputs` dropdown list fades in too.
 - `final-form-arrays` (3 or 4) is an optional peer dependency, needed only for `/wizard`.
-- Icons: added `check`, `dots-six-vertical`, `trash`, `arrow-up`, `arrow-down` and `image` (62).
+- Icons: added `check`, `dots-six-vertical`, `trash`, `arrow-up`, `arrow-down`, `image`, `text-b`, `text-italic`, `list-numbers` and `monitor` (66).
 - Includes the design-system syncs 0.6.5 to 0.6.9 (the Wizard's styles), which weren't published on their own.
 
 ## 0.6.5 (2026-10-15)

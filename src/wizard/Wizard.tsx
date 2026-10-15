@@ -1,12 +1,12 @@
 import {
-  Children, isValidElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement, type ReactNode,
+  Children, isValidElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactElement, type ReactNode,
 } from 'react';
 import { Form, FormSpy } from 'react-final-form';
 import arrayMutators from 'final-form-arrays';
 import type { FormApi, Mutator } from 'final-form';
 import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
-import { cx } from '../utils';
+import { cx, useReducedMotion } from '../utils';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Values = Record<string, any>;
@@ -121,12 +121,61 @@ function KeepFieldState({ form }: { form: FormApi<any> }) {
 
 export function WizardSteps({ steps, current, onSelect, label = 'Form steps', layout = 'v1' }: { steps: WizardStep[]; current: number; onSelect: (index: number) => void; label?: string; layout?: 'v1' | 'v2' }) {
   const nav = useRef<HTMLElement>(null);
+  const track = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLOListElement>(null);
   const rail = layout === 'v2';
+  const reduce = useReducedMotion();
+
+  // When the steps scroll sideways (narrow screens): fades and arrows show there's more, the current step comes to the
+  // middle, and a mouse can drag the row (touch already can).
+  const [edges, setEdges] = useState({ back: false, more: false });
+  const readEdges = useCallback(() => {
+    const t = track.current; if (!t) return;
+    const back = t.scrollLeft > 2; const more = t.scrollLeft + t.clientWidth < t.scrollWidth - 2;
+    setEdges((e) => (e.back === back && e.more === more ? e : { back, more }));
+  }, []);
   useEffect(() => {
-    const el = nav.current?.querySelector<HTMLElement>('[aria-current="step"]');
-    if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  }, [current]);
+    const t = track.current; if (!t) return;
+    readEdges();
+    t.addEventListener('scroll', readEdges, { passive: true });
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(readEdges) : null;
+    ro?.observe(t); if (list.current) ro?.observe(list.current);
+    return () => { t.removeEventListener('scroll', readEdges); ro?.disconnect(); };
+  }, [readEdges]);
+  useEffect(() => {
+    const t = track.current; const el = t?.querySelector<HTMLElement>('[aria-current="step"]');
+    if (!t || !el || t.scrollWidth <= t.clientWidth) return;
+    const li = el.closest('li') as HTMLElement | null ?? el;
+    const left = li.offsetLeft - (t.clientWidth - li.offsetWidth) / 2;
+    if (typeof t.scrollTo === 'function') t.scrollTo({ left, behavior: reduce ? 'auto' : 'smooth' }); else t.scrollLeft = left;
+  }, [current, reduce]);
+  const nudge = (dir: 1 | -1) => {
+    const t = track.current; if (!t) return;
+    const by = dir * Math.max(120, t.clientWidth * 0.7);
+    if (typeof t.scrollBy === 'function') t.scrollBy({ left: by, behavior: reduce ? 'auto' : 'smooth' }); else t.scrollLeft += by;
+  };
+  const drag = useRef<{ x: number; left: number; moved: boolean } | null>(null);
+  const dragProps = {
+    onPointerDown: (e: ReactPointerEvent<HTMLDivElement>) => {
+      const t = track.current;
+      if (e.pointerType !== 'mouse' || e.button !== 0 || !t || t.scrollWidth <= t.clientWidth) return;
+      drag.current = { x: e.clientX, left: t.scrollLeft, moved: false };
+    },
+    onPointerMove: (e: ReactPointerEvent<HTMLDivElement>) => {
+      const d = drag.current; const t = track.current; if (!d || !t) return;
+      const dx = e.clientX - d.x;
+      if (!d.moved && Math.abs(dx) > 5) { d.moved = true; t.setPointerCapture?.(e.pointerId); t.classList.add('is-dragging'); }
+      if (d.moved) t.scrollLeft = d.left - dx;
+    },
+    onPointerUp: (e: ReactPointerEvent<HTMLDivElement>) => {
+      const d = drag.current; const t = track.current; drag.current = null;
+      if (!t) return;
+      t.classList.remove('is-dragging'); t.releasePointerCapture?.(e.pointerId);
+      // A drag isn't a click on the step under the pointer.
+      if (d?.moved) t.addEventListener('click', (c) => { c.stopPropagation(); c.preventDefault(); }, { capture: true, once: true });
+    },
+    onPointerCancel: () => { drag.current = null; track.current?.classList.remove('is-dragging'); },
+  };
 
   // V2: one white card under the current step that glides to the next one (instead of jumping)
   const [marker, setMarker] = useState<{ style: CSSProperties; ready: boolean } | null>(null);
@@ -162,7 +211,9 @@ export function WizardSteps({ steps, current, onSelect, label = 'Form steps', la
   const words: Record<WizardStepState, string> = { complete: 'complete', incomplete: 'not complete', review: 'ready', locked: 'available once every section is complete' };
   const icons: Record<WizardStepState, 'check' | 'x' | 'eye'> = { complete: 'check', incomplete: 'x', review: 'eye', locked: 'eye' };
   return (
-    <nav className={cx('rnc-wizard-steps', rail && 'is-rail', rail && marker && 'has-marker')} aria-label={label} ref={nav}>
+    <nav className={cx('rnc-wizard-steps', rail && 'is-rail', rail && marker && 'has-marker', edges.back && 'can-back', edges.more && 'can-more')} aria-label={label} ref={nav}>
+      <button type="button" className="rnc-wizard-steps-arrow is-back" tabIndex={-1} aria-hidden="true" onClick={() => nudge(-1)}><Icon name="caret-left" size={18} /></button>
+      <div className="rnc-wizard-steps-track" ref={track} {...dragProps}>
       <ol ref={list}>
         {rail && marker ? <span className={cx('rnc-wizard-rail-marker', marker.ready && 'is-ready')} style={marker.style} aria-hidden="true" /> : null}
         {steps.map((s, i) => (
@@ -182,6 +233,8 @@ export function WizardSteps({ steps, current, onSelect, label = 'Form steps', la
           </li>
         ))}
       </ol>
+      </div>
+      <button type="button" className="rnc-wizard-steps-arrow is-more" tabIndex={-1} aria-hidden="true" onClick={() => nudge(1)}><Icon name="caret-right" size={18} /></button>
     </nav>
   );
 }

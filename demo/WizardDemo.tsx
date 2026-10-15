@@ -1,72 +1,131 @@
 import { useRef, useState } from 'react';
 import { Field } from 'react-final-form';
+import moment, { type Moment } from 'moment';
 import {
-  Wizard, WizardDeadline, WizardHeader, WizardPreview, WizardReview, WizardSection, WizardSitePreview, WizardToolbar, type WizardMutators,
+  Wizard, WizardDeadline, WizardHeader, WizardPreview, WizardReview, WizardSection, WizardSitePreview, WizardToolbar,
+  type PreviewDevice, type WizardMutators, type WizardSiteDate,
 } from '../src/wizard';
-import { AnimatedList, Button, ExpandableRow, Icon, SortableList, StatusPill, TextField, UploadTile } from '../src';
+import {
+  AnimatedList, Button, DomainField, ExpandableRow, Icon, RichText, RichTextArea, SortableList, StatusPill, TextField, UploadTile,
+  domainUrl, richTextLength, richTextToPlain, type DomainType,
+} from '../src';
+import { DatePicker } from '../src/inputs';
 
 // A sample brief, the way the Raffle Builder's setup form holds it. Every name and figure is made up.
 type Slide = { id: string; src: string; alt: string };
 type Pack = { id: string; name: string; tickets: string; price: string };
+/** A licence and the ticket packs it covers (the app's ticket_pack_groups). */
+type Licence = { id: string; licence_number: string; ticket_packs: Pack[] };
 type Prize = { id: string; title: string; value: string; description: string };
 type Early = { id: string; date: string; prize: string };
 type Brief = {
-  name?: string; sub_domain?: string; heading?: string; subheading?: string; cause?: string; logo?: string; sharing_image?: string; support_email?: string;
+  name?: string; sub_domain?: string; sub_domain_type: DomainType; heading?: string; subheading?: string; cause?: string; logo?: string; sharing_image?: string; support_email?: string;
   slides: Slide[]; sales_open?: string; sales_close?: string; draw_at?: string; draw_location?: string; early_draws: Early[];
-  licence_number?: string; ticket_packs: Pack[]; prizes: Prize[]; client: { name: string; province: string };
+  ticket_pack_groups: Licence[]; prizes: Prize[]; client: { name: string; province: string };
 };
 
 const tile = (label: string, a: string, b: string) => `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="650" height="500"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="650" height="500" fill="url(#g)"/><text x="40" y="440" font-family="Arial" font-weight="700" font-size="44" fill="#fff">${label}</text></svg>`)}`;
 let seq = 100;
 const uid = (p: string) => `${p}-${++seq}`;
 const money = (v: string) => { const n = Number(String(v).replace(/[^0-9.]/g, '')); return n ? `$${n.toLocaleString('en-CA')}` : '$0'; };
+/** Dates are stored the app's way ("YYYY-MM-DD HH:mm:ss") and shown in words. */
+const when = (v?: string) => (v ? moment(v).format('MMM D, YYYY, h:mm A') : '');
+const day = (v?: string) => (v ? moment(v) : null);
+
+// Character limits, from the app's validation where it has one (name 5 to 80, cause 30 to 1500).
+const LIMIT = { name: 80, heading: 90, subheading: 160, cause: 1500, alt: 150, location: 80, licence: 20, pack: 40, prize: 80, prizeText: 1000, earlyPrize: 80 };
 
 const START: Brief = {
-  name: 'Sample Hospital Lottery', sub_domain: 'samplehospital', heading: 'Win a lakeside home and support hospital care',
-  subheading: 'Every ticket helps buy equipment for the hospital.', cause: 'Your ticket funds new equipment for the emergency department.',
+  name: 'Sample Hospital Lottery', sub_domain: 'samplehospital', sub_domain_type: 'rn', heading: 'Win a lakeside home and support hospital care',
+  subheading: 'Every ticket helps buy equipment for the hospital.',
+  cause: '<p>Your ticket funds <strong>new equipment</strong> for the emergency department.</p><ul><li>Two new ultrasound machines</li><li>A quieter, faster triage area</li></ul>',
   support_email: 'lottery@example.org',
   slides: [
     { id: 's1', src: tile('Grand prize home', '#126ab5', '#0c3f75'), alt: 'The lakeside grand prize home' },
     { id: 's2', src: tile('Early bird: a new car', '#2b7a3d', '#174a24'), alt: 'The early bird car prize' },
     { id: 's3', src: tile('50/50 jackpot', '#8a6410', '#5a400a'), alt: '' },
   ],
-  sales_open: 'September 29, 2026', sales_close: 'October 17, 2026', draw_at: '', draw_location: 'Foundation office',
-  early_draws: [{ id: 'e1', date: 'October 3, 2026', prize: '$5,000 cash' }],
-  licence_number: '000000',
-  ticket_packs: [{ id: 'p1', name: 'Single ticket', tickets: '1', price: '25' }, { id: 'p2', name: 'Pack of 3', tickets: '3', price: '60' }],
-  prizes: [{ id: 'z1', title: 'Lakeside home', value: '1250000', description: 'A four-bedroom home by the lake, fully furnished.' }],
+  sales_open: '2026-09-29 09:00:00', sales_close: '2026-10-17 23:59:00', draw_at: '', draw_location: 'Foundation office',
+  early_draws: [{ id: 'e1', date: '2026-10-03 12:00:00', prize: '$5,000 cash' }],
+  ticket_pack_groups: [{
+    id: 'g1', licence_number: '000000',
+    ticket_packs: [{ id: 'p1', name: 'Single ticket', tickets: '1', price: '25' }, { id: 'p2', name: 'Pack of 3', tickets: '3', price: '60' }],
+  }],
+  prizes: [{ id: 'z1', title: 'Lakeside home', value: '1250000', description: '<p>A four-bedroom home by the lake, <em>fully furnished</em>.</p>' }],
   client: { name: 'Sample Hospital Foundation', province: 'BC' },
 };
 
 const set = (field: string) => (args: unknown[], state: any, utils: any) => utils.changeValue(state, field, () => args[0]); // eslint-disable-line @typescript-eslint/no-explicit-any
-const MUTATORS = { setSlides: set('slides'), setPacks: set('ticket_packs'), setPrizes: set('prizes'), setEarlyDraws: set('early_draws'), setLogo: set('logo'), setSharingImage: set('sharing_image') };
+const MUTATORS = {
+  setSlides: set('slides'), setLicences: set('ticket_pack_groups'), setPrizes: set('prizes'), setEarlyDraws: set('early_draws'),
+  setLogo: set('logo'), setSharingImage: set('sharing_image'), setSubDomainType: set('sub_domain_type'),
+};
 
+// The app's rules for the web address: a Raffle Nexus name, or a whole domain.
+const RN_NAME = /^[a-zA-Z0-9-_]+$/;
+const OWN_DOMAIN = /^(?:[a-zA-Z0-9-_]+\.)?[a-zA-Z0-9-_]+\.[a-zA-Z]{2,}$/;
+const addressError = (v: Brief) => {
+  if (!v.sub_domain) return 'Choose a web address';
+  if (v.sub_domain_type === 'rn' && !RN_NAME.test(v.sub_domain)) return 'Use only letters, numbers, hyphens and underscores in the address';
+  if (v.sub_domain_type === 'own' && !OWN_DOMAIN.test(v.sub_domain)) return 'Enter a domain like lottery.example.org';
+  return undefined;
+};
 const errs = {
-  website: (v: Brief) => ({ ...(!v.name && { name: 'Enter the raffle name' }), ...(!v.sub_domain && { sub_domain: 'Choose a web address' }), ...(!v.heading && { heading: 'Write a main heading' }), ...(!v.logo && { logo: 'Add your logo' }) }),
+  website: (v: Brief) => ({
+    ...(!v.name ? { name: 'Enter the raffle name' } : v.name.length < 5 && { name: 'Use at least 5 characters for the raffle name' }),
+    ...(addressError(v) && { sub_domain: addressError(v) }),
+    ...(!v.heading && { heading: 'Write a main heading' }),
+    ...(!richTextLength(v.cause) ? { cause: 'Say what the raffle supports' } : richTextLength(v.cause) < 30 && { cause: 'Write at least 30 characters about the cause' }),
+    ...(!v.logo && { logo: 'Add your logo' }),
+  }),
   slides: (v: Brief) => ({ ...(!v.slides.length && { slides: 'Add at least one slide' }), ...(v.slides.some((s) => !s.alt) && { slides_alt: 'Describe every slide (alt text)' }) }),
-  dates: (v: Brief) => ({ ...(!v.sales_close && { sales_close: 'Enter when sales close' }), ...(!v.draw_at && { draw_at: 'Enter the draw date' }) }),
-  licences: (v: Brief) => ({ ...(!v.licence_number && { licence_number: 'Enter the licence number' }), ...(!v.ticket_packs.length && { ticket_packs: 'Add a ticket pack' }), ...(v.ticket_packs.some((p) => !p.price || !p.tickets) && { pack_fields: 'Give every pack a price and a number of tickets' }) }),
+  dates: (v: Brief) => ({
+    ...(!v.sales_close && { sales_close: 'Enter when sales close' }), ...(!v.draw_at && { draw_at: 'Enter the draw date' }),
+    ...(v.early_draws.some((d) => !d.date || !d.prize) && { early: 'Give every early draw a date and a prize' }),
+  }),
+  licences: (v: Brief) => {
+    const g = v.ticket_pack_groups;
+    const packs = g.flatMap((l) => l.ticket_packs);
+    const repeats = g.some((l) => new Set(l.ticket_packs.map((p) => p.tickets).filter(Boolean)).size < l.ticket_packs.filter((p) => p.tickets).length);
+    return {
+      ...(!g.length && { licences: 'Add a licence' }),
+      ...(g.some((l) => !l.licence_number) && { licence_number: 'Enter every licence number' }),
+      ...(g.some((l) => !l.ticket_packs.length) && { packs: 'Give every licence at least one ticket pack' }),
+      ...(packs.some((p) => !p.price || !p.tickets) && { pack_fields: 'Give every pack a price and a number of tickets' }),
+      ...(repeats && { repeats: 'Two packs in one licence have the same number of tickets' }),
+    };
+  },
   prizes: (v: Brief) => ({ ...(!v.prizes.length && { prizes: 'Add a prize' }), ...(v.prizes.some((p) => !p.title || !p.value) && { prize_fields: 'Give every prize a title and a value' }) }),
 };
 const messages = (o: Record<string, string | false | undefined>) => Object.values(o).filter(Boolean) as string[];
-const grid = (min: number) => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${min}px), 1fr))`, gap: 16 });
+const grid = (min: number) => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${min}px), 1fr))`, gap: 16, alignItems: 'start' });
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
-function Text({ name, label, hint, readOnly, id }: { name: string; label: string; hint?: string; readOnly?: boolean; id?: string }) {
+function Text({ name, label, hint, readOnly, id, maxLength, type, inputMode }: { name: string; label: string; hint?: string; readOnly?: boolean; id?: string; maxLength?: number; type?: string; inputMode?: 'email' | 'numeric' | 'text' }) {
   return (
     <Field name={name}>
-      {({ input, meta }) => <TextField id={id} label={label} hint={hint} error={meta.error && (meta.touched || input.value === '') ? meta.error : undefined} disabled={readOnly} {...input} />}
+      {({ input, meta }) => <TextField id={id} label={label} hint={hint} maxLength={maxLength} type={type} inputMode={inputMode} error={meta.error && (meta.touched || input.value === '') ? meta.error : undefined} review={readOnly} {...input} />}
     </Field>
   );
 }
 /** A field for one item in a list. It edits the item by id through a mutator (like the app's setTicketPacks), so removing or
  *  reordering rows never mixes their values up. Its error shows once someone leaves it empty. */
-function ItemText({ id, label, value, onValue, readOnly, required }: { id?: string; label: string; value: string; onValue: (v: string) => void; readOnly?: boolean; required?: string }) {
+function ItemText({ id, label, hint, value, onValue, readOnly, required, maxLength, inputMode }: { id?: string; label: string; hint?: string; value: string; onValue: (v: string) => void; readOnly?: boolean; required?: string; maxLength?: number; inputMode?: 'numeric' | 'decimal' | 'text' }) {
   const [left, setLeft] = useState(false);
-  return <TextField id={id} label={label} value={value} disabled={readOnly} onChange={(e) => onValue(e.target.value)} onBlur={() => setLeft(true)} error={required && left && !value ? required : undefined} />;
+  return <TextField id={id} label={label} hint={hint} value={value} review={readOnly} maxLength={maxLength} inputMode={inputMode} onChange={(e) => onValue(e.target.value)} onBlur={() => setLeft(true)} error={required && left && !value ? required : undefined} />;
 }
 const patch = <T extends { id: string }>(list: T[], id: string, change: Partial<T>) => list.map((x) => (x.id === id ? { ...x, ...change } : x));
 /** Focus a field once it exists (after an item is added and its row opens). */
 const focusSoon = (id: string) => setTimeout(() => document.getElementById(id)?.focus(), 60);
+
+/** A date picker for react-final-form (the app's /inputs DatePicker), with its error once the field is touched. */
+function DateField({ name, label, readOnly, helperText, disableDates }: { name: string; label: string; readOnly?: boolean; helperText?: string; disableDates?: (d: Moment) => boolean }) {
+  return (
+    <Field name={name}>
+      {({ input, meta }) => <DatePicker input={input} meta={meta.touched ? meta : null} label={label} helperText={helperText} disabled={readOnly} disableDates={disableDates} />}
+    </Field>
+  );
+}
 
 function Slides({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   return (
@@ -79,10 +138,10 @@ function Slides({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
             <div className="rnc-sort-row">
               {t.grip}
               <span className="rnc-sort-pos" aria-hidden="true">{t.index + 1}</span>
-              <img src={s.src} alt="" style={{ width: 'clamp(72px, 12vw, 120px)', aspectRatio: '13 / 10', objectFit: 'cover', borderRadius: 8, flex: 'none' }} />
+              <img src={s.src} alt="" style={{ width: 'clamp(64px, 12vw, 120px)', aspectRatio: '13 / 10', objectFit: 'cover', borderRadius: 8, flex: 'none' }} />
               <div className="rnc-sort-body">
                 {t.index > -1 ? (
-                  <TextField label={`Alt text for slide ${t.index + 1}`} value={s.alt} disabled={ro} error={s.alt ? undefined : 'Describe what the slide shows'}
+                  <TextField label={`Alt text for slide ${t.index + 1}`} value={s.alt} review={ro} maxLength={LIMIT.alt} error={s.alt ? undefined : 'Describe what the slide shows'}
                     onChange={(e) => m.setSlides(patch(v.slides, s.id, { alt: e.target.value }))} />
                 ) : null}
               </div>
@@ -102,28 +161,58 @@ function Slides({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   );
 }
 
-function Packs({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
+/** One licence's ticket packs: open a pack to edit it, add or remove packs. */
+function Packs({ licence, setPacks, ro }: { licence: Licence; setPacks: (packs: Pack[]) => void; ro: boolean }) {
   const [open, setOpen] = useState<string | null>(null);
-  const add = () => { const id = uid('p'); m.setPacks([...v.ticket_packs, { id, name: '', tickets: '', price: '' }]); setOpen(id); focusSoon(`${id}-name`); };
+  const packs = licence.ticket_packs;
+  const add = () => { const id = uid('p'); setPacks([...packs, { id, name: '', tickets: '', price: '' }]); setOpen(id); focusSoon(`${id}-name`); };
   return (
-    <WizardSection title="Ticket packs" description="What buyers choose from. Open a pack to edit it.">
-      <AnimatedList aria-label="Ticket packs" items={v.ticket_packs} getKey={(p) => p.id} renderItem={(p, i) => (
+    <div style={{ display: 'grid', gap: 12 }}>
+      <p className="rnc-field-label" style={{ margin: 0 }}>Ticket packs for this licence</p>
+      <AnimatedList aria-label={`Ticket packs for licence ${licence.licence_number || 'without a number'}`} items={packs} getKey={(p) => p.id} renderItem={(p, i) => (
         <ExpandableRow
-          title={p.name || 'New pack'} meta={p.price ? `${money(p.price)} · ${p.tickets || 0} ticket${p.tickets === '1' ? '' : 's'}` : 'No price yet'}
+          title={p.name || 'New pack'} meta={p.price ? `${money(p.price)} · ${plural(Number(p.tickets) || 0, 'ticket')}` : 'No price yet'}
           open={open === p.id} onOpenChange={(o) => setOpen(o ? p.id : null)}
-          actions={!ro && i > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${p.name || 'this pack'}`} onClick={() => m.setPacks(v.ticket_packs.filter((x) => x.id !== p.id))} /> : null}
+          actions={!ro && i > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${p.name || 'this pack'}`} onClick={() => setPacks(packs.filter((x) => x.id !== p.id))} /> : null}
         >
           {i > -1 ? (
-            <div style={grid(180)}>
-              <ItemText id={`${p.id}-name`} label="Pack name" value={p.name} readOnly={ro} required="Name the pack" onValue={(x) => m.setPacks(patch(v.ticket_packs, p.id, { name: x }))} />
-              <ItemText label="Tickets in the pack" value={p.tickets} readOnly={ro} required="Enter how many tickets" onValue={(x) => m.setPacks(patch(v.ticket_packs, p.id, { tickets: x }))} />
-              <ItemText label="Price ($)" value={p.price} readOnly={ro} required="Enter the price" onValue={(x) => m.setPacks(patch(v.ticket_packs, p.id, { price: x }))} />
+            <div style={grid(170)}>
+              <ItemText id={`${p.id}-name`} label="Pack name" value={p.name} readOnly={ro} maxLength={LIMIT.pack} required="Name the pack" onValue={(x) => setPacks(patch(packs, p.id, { name: x }))} />
+              <ItemText label="Tickets in the pack" value={p.tickets} readOnly={ro} inputMode="numeric" required="Enter how many tickets" onValue={(x) => setPacks(patch(packs, p.id, { tickets: x.replace(/\D/g, '') }))} />
+              <ItemText label="Price ($)" value={p.price} readOnly={ro} inputMode="decimal" required="Enter the price" onValue={(x) => setPacks(patch(packs, p.id, { price: x.replace(/[^0-9.]/g, '') }))} />
             </div>
           ) : null}
         </ExpandableRow>
       )} />
-      {!ro ? <div><Button variant="secondary" startIcon="plus" onClick={add}>Add a ticket pack</Button></div> : null}
-    </WizardSection>
+      {!ro ? <div><Button variant="secondary" size="sm" startIcon="plus" onClick={add}>Add a ticket pack</Button></div> : null}
+    </div>
+  );
+}
+
+/** Every licence the raffle sells under, each with its own ticket packs. Add a licence; remove one while there's more than one. */
+function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
+  const list = v.ticket_pack_groups;
+  const add = () => { const id = uid('g'); m.setLicences([...list, { id, licence_number: '', ticket_packs: [] }]); focusSoon(`${id}-number`); };
+  return (
+    <>
+      <AnimatedList aria-label="Licences" className="demo-licences" items={list} getKey={(g) => g.id} renderItem={(g, i) => (
+        <WizardSection title={i > -1 ? `Licence ${i + 1}` : 'Licence'} description={i === 0 ? 'Your gaming licence from the provincial regulator, and the ticket packs it covers.' : undefined}>
+          {i > -1 ? (
+            <>
+              <div style={grid(240)}>
+                <ItemText id={`${g.id}-number`} label="Licence number" hint="As it appears on your licence." value={g.licence_number} readOnly={ro} maxLength={LIMIT.licence}
+                  required="Enter the licence number" onValue={(x) => m.setLicences(patch(list, g.id, { licence_number: x }))} />
+              </div>
+              <Packs licence={g} ro={ro} setPacks={(packs) => m.setLicences(patch(list, g.id, { ticket_packs: packs }))} />
+              {!ro && list.length > 1 ? (
+                <div><Button variant="danger-ghost" size="sm" startIcon="trash" onClick={() => m.setLicences(list.filter((x) => x.id !== g.id))}>Remove licence {i + 1}</Button></div>
+              ) : null}
+            </>
+          ) : null}
+        </WizardSection>
+      )} />
+      {!ro ? <div style={{ marginTop: 20 }}><Button variant="secondary" startIcon="plus" onClick={add}>Add a licence</Button></div> : null}
+    </>
   );
 }
 
@@ -142,10 +231,13 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                 actions={!ro && t.index > -1 ? <>{t.moves}<Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${p.title || 'this prize'}`} onClick={() => m.setPrizes(v.prizes.filter((x) => x.id !== p.id))} /></> : null}
               >
                 {t.index > -1 ? (
-                  <div style={grid(220)}>
-                    <ItemText id={`${p.id}-title`} label="Prize title" value={p.title} readOnly={ro} required="Give the prize a title" onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { title: x }))} />
-                    <ItemText label="Value ($)" value={p.value} readOnly={ro} required="Enter the prize's value" onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { value: x }))} />
-                    <ItemText label="Description" value={p.description} readOnly={ro} onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { description: x }))} />
+                  <div style={{ display: 'grid', gap: 16 }}>
+                    <div style={grid(220)}>
+                      <ItemText id={`${p.id}-title`} label="Prize title" value={p.title} readOnly={ro} maxLength={LIMIT.prize} required="Give the prize a title" onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { title: x }))} />
+                      <ItemText label="Value ($)" value={p.value} readOnly={ro} inputMode="decimal" required="Enter the prize's value" onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { value: x.replace(/[^0-9.]/g, '') }))} />
+                    </div>
+                    <RichTextArea label="Description" hint="What winners get. Shown on the prizes page." value={p.description} review={ro} maxLength={LIMIT.prizeText} minHeight={140}
+                      onChange={(html) => m.setPrizes(patch(v.prizes, p.id, { description: html }))} />
                   </div>
                 ) : null}
               </ExpandableRow>
@@ -159,16 +251,23 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
 }
 
 function EarlyDraws({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
-  const add = () => { const id = uid('e'); m.setEarlyDraws([...v.early_draws, { id, date: '', prize: '' }]); focusSoon(`${id}-date`); };
+  const add = () => { const id = uid('e'); m.setEarlyDraws([...v.early_draws, { id, date: '', prize: '' }]); };
+  const outside = (d: Moment) => (!!v.sales_open && d.isBefore(moment(v.sales_open), 'day')) || (!!v.sales_close && d.isAfter(moment(v.sales_close), 'day'));
   return (
-    <WizardSection title="Early draws" size="md" description="Extra draws before the main one, each with its own prize.">
+    <WizardSection title="Early draws" size="md" description="Extra draws while sales are open, each with its own prize.">
       <AnimatedList aria-label="Early draws" items={v.early_draws} getKey={(d) => d.id} renderItem={(d, i) => (
-        <div className="rnc-sort-row" style={{ alignItems: 'flex-end' }}>
-          <span className="rnc-sort-pos" aria-hidden="true" style={{ marginBottom: 10 }}>{i > -1 ? i + 1 : ''}</span>
-          <div className="rnc-sort-body" style={{ ...grid(200), gap: 12 }}>
-            {i > -1 ? <><ItemText id={`${d.id}-date`} label={`Early draw ${i + 1} date`} value={d.date} readOnly={ro} required="Enter the date" onValue={(x) => m.setEarlyDraws(patch(v.early_draws, d.id, { date: x }))} /><ItemText label="Prize" value={d.prize} readOnly={ro} required="Enter the prize" onValue={(x) => m.setEarlyDraws(patch(v.early_draws, d.id, { prize: x }))} /></> : null}
+        <div className="rnc-sort-row" style={{ alignItems: 'flex-start' }}>
+          <span className="rnc-sort-pos" aria-hidden="true" style={{ marginTop: 36 }}>{i > -1 ? i + 1 : ''}</span>
+          <div className="rnc-sort-body" style={{ ...grid(220), gap: 12 }}>
+            {i > -1 ? (
+              <>
+                <DatePicker label={`Early draw ${i + 1}`} disabled={ro} disableDates={outside}
+                  input={{ name: `early-${d.id}`, value: d.date, onChange: (x: string | null) => m.setEarlyDraws(patch(v.early_draws, d.id, { date: x ?? '' })) }} />
+                <ItemText label="Prize" value={d.prize} readOnly={ro} maxLength={LIMIT.earlyPrize} required="Enter the prize" onValue={(x) => m.setEarlyDraws(patch(v.early_draws, d.id, { prize: x }))} />
+              </>
+            ) : null}
           </div>
-          {!ro && i > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove early draw ${i + 1}`} onClick={() => m.setEarlyDraws(v.early_draws.filter((x) => x.id !== d.id))} /> : null}
+          {!ro && i > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove early draw ${i + 1}`} style={{ marginTop: 32 }} onClick={() => m.setEarlyDraws(v.early_draws.filter((x) => x.id !== d.id))} /> : null}
         </div>
       )} />
       {!ro ? <div><Button variant="secondary" startIcon="plus" onClick={add}>Add an early draw</Button></div> : null}
@@ -176,20 +275,49 @@ function EarlyDraws({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) 
   );
 }
 
-/** The Raffle Builder's setup form with every step built out: uploads, a sortable slideshow, ticket packs and prizes to add, open and remove, and a review. */
+const address = (v: Brief) => (v.sub_domain ? domainUrl(v.sub_domain_type, v.sub_domain).replace('https://', '') : '');
+
+/** Everything the raffle site shows, from the brief so far. */
+function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice; onDevice: (d: PreviewDevice) => void }) {
+  const first = v.ticket_pack_groups[0];
+  const dates = [
+    v.sales_open ? { at: v.sales_open, what: 'Sales open' } : null,
+    ...v.early_draws.filter((d) => d.date).map((d, i) => ({ at: d.date, what: `Early draw ${i + 1}${d.prize ? `: ${d.prize}` : ''}` })),
+    v.sales_close ? { at: v.sales_close, what: 'Sales close' } : null,
+    v.draw_at ? { at: v.draw_at, what: `Main draw${v.draw_location ? `, ${v.draw_location}` : ''}` } : null,
+  ].filter(Boolean).sort((a, b) => moment(a!.at).valueOf() - moment(b!.at).valueOf()).map((d): WizardSiteDate => ({ when: when(d!.at), what: d!.what }));
+  const numbers = v.ticket_pack_groups.map((g) => g.licence_number).filter(Boolean);
+  return (
+    <WizardPreview url={address(v) || 'your-raffle.rafflenexus.com'} device={device} onDeviceChange={onDevice}>
+      <WizardSitePreview
+        org={v.client.name} logo={v.logo} logoAlt={`${v.client.name} logo`} heading={v.heading} subheading={v.subheading}
+        cause={richTextLength(v.cause) ? <RichText html={v.cause} /> : undefined} colour="#0c3f75" accent="#126ab5"
+        slides={v.slides.map((s) => s.src)}
+        packs={(first?.ticket_packs ?? []).filter((p) => p.price).map((p) => ({ label: plural(Number(p.tickets) || 0, 'ticket'), note: p.name, price: money(p.price) }))}
+        dates={dates}
+        prizes={v.prizes.filter((p) => p.title).map((p) => ({ title: p.title, value: p.value ? money(p.value) : undefined }))}
+        licence={numbers.length ? `${v.client.province} Gaming Event Licence #${numbers.join(', #')}` : undefined}
+      />
+    </WizardPreview>
+  );
+}
+
+/** The Raffle Builder's setup form with every step built out: uploads, a sortable slideshow, licences with their ticket packs, prizes to add, open and remove, and a review. */
 export function WizardDemo() {
   const [mode, setMode] = useState<'normal' | 'qa' | 'readonly'>('normal');
   const [layout, setLayout] = useState<'v1' | 'v2'>('v2');
+  // Phones start on the phone preview
+  const [device, setDevice] = useState<PreviewDevice>(() => (typeof window !== 'undefined' && window.innerWidth < 720 ? 'mobile' : 'desktop'));
   const [saving, setSaving] = useState(false);
   const [submitted, setSubmitted] = useState('');
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const save = () => { setSaving(true); clearTimeout(timer.current); timer.current = setTimeout(() => setSaving(false), 700); };
   const ro = mode === 'readonly';
   const checks = (v: Brief) => [
-    ['Web address, heading and logo set', !messages(errs.website(v)).length],
+    ['Web address, heading, cause and logo set', !messages(errs.website(v)).length],
     ['Every slide has alt text', !messages(errs.slides(v)).length],
     ['Sales close and the draw date set', !messages(errs.dates(v)).length],
-    ['Every pack has a price and tickets', !messages(errs.licences(v)).length],
+    ['Every licence has a number and priced packs', !messages(errs.licences(v)).length],
     ['Every prize has a title and a value', !messages(errs.prizes(v)).length],
   ] as const;
   return (
@@ -235,26 +363,34 @@ export function WizardDemo() {
             ))}
           </>
         )}
-        preview={(v, step) => (step.label === 'Website' ? (
-          <WizardPreview url={`${v.sub_domain || 'your-raffle'}.rafflenexus.com`}>
-            <WizardSitePreview org={v.client.name} heading={v.heading} subheading={v.subheading} cause={v.cause} colour="#126ab5" accent="#0c3f75" image={v.slides[0]?.src} />
-          </WizardPreview>
-        ) : null)}
+        preview={(v, step) => (/^(Review|Rules)/.test(step.label) ? null : <SitePreview v={v} device={device} onDevice={setDevice} />)}
       >
-        <Wizard.Page label="Website" summary={(v) => (v.sub_domain ? `${v.sub_domain}.rafflenexus.com` : 'Web address missing')} description="We use this to build your raffle site and help it show up in search." validate={errs.website}>
+        <Wizard.Page label="Website" summary={(v) => address(v) || 'Web address missing'} description="We use this to build your raffle site and help it show up in search." validate={errs.website}>
           {(m, v) => (
             <>
               <WizardSection title="Name and address">
-                <Text name="name" label="Raffle name" readOnly={ro} />
-                <Text name="sub_domain" label="Web address" hint="Letters, numbers and hyphens." readOnly={ro} />
+                <Text name="name" label="Raffle name" hint="5 to 80 characters." maxLength={LIMIT.name} readOnly={ro} />
+                <Field name="sub_domain">
+                  {({ input, meta }) => (
+                    <DomainField label="Web address" type={v.sub_domain_type} onTypeChange={(t) => m.setSubDomainType(t)}
+                      value={input.value ?? ''} onChange={input.onChange} onBlur={input.onBlur} review={ro}
+                      error={meta.error && (meta.touched || !input.value) ? meta.error : undefined} />
+                  )}
+                </Field>
               </WizardSection>
               <WizardSection title="Headline and story" description="The top of your raffle site.">
-                <Text name="heading" label="Main heading" readOnly={ro} />
-                <Text name="subheading" label="Subheading" readOnly={ro} />
-                <Text name="cause" label="The cause" readOnly={ro} />
+                <Text name="heading" label="Main heading" maxLength={LIMIT.heading} readOnly={ro} />
+                <Text name="subheading" label="Subheading" maxLength={LIMIT.subheading} readOnly={ro} />
+                <Field name="cause">
+                  {({ input, meta }) => (
+                    <RichTextArea label="The cause" hint="What the raffle supports, in a few short paragraphs or a list. At least 30 characters." maxLength={LIMIT.cause}
+                      value={input.value} onChange={input.onChange} onBlur={input.onBlur} review={ro} minHeight={200}
+                      error={meta.error && (meta.touched || !richTextLength(input.value)) ? meta.error : undefined} />
+                  )}
+                </Field>
               </WizardSection>
               <WizardSection title="Branding" description="Drop a file on a tile, or choose one.">
-                <div style={grid(220)}>
+                <div style={{ ...grid(200), alignItems: 'stretch' }}>
                   <UploadTile label="Logo" hint="PNG or SVG, on a clear background." src={v.logo} alt="Your logo" disabled={ro} error={v.logo ? undefined : 'Add your logo'}
                     onFile={(_f, url) => m.setLogo(url)} onRemove={() => m.setLogo(undefined)} />
                   <UploadTile label="Sharing image" hint="Shown when the site is shared, 1200 × 630." src={v.sharing_image} alt="Sharing image" disabled={ro}
@@ -262,42 +398,38 @@ export function WizardDemo() {
                 </div>
               </WizardSection>
               <WizardSection title="Support contact" description="Shown on your site so buyers can reach you.">
-                <Text name="support_email" label="Support email" readOnly={ro} />
+                <Text name="support_email" label="Support email" type="email" inputMode="email" readOnly={ro} />
               </WizardSection>
             </>
           )}
         </Wizard.Page>
-        <Wizard.Page label="Slideshow" summary={(v) => `${v.slides.length} slide${v.slides.length === 1 ? '' : 's'}`} description="These slides rotate on your raffle site." validate={errs.slides}>
+        <Wizard.Page label="Slideshow" summary={(v) => plural(v.slides.length, 'slide')} description="These slides rotate on your raffle site." validate={errs.slides}>
           {(m, v) => <Slides v={v} m={m} ro={ro} />}
         </Wizard.Page>
-        <Wizard.Page label="Dates" summary={(v) => (v.draw_at ? `Draw ${v.draw_at}` : 'Draw date missing')} description="When ticket sales open and close, and when the draws happen." validate={errs.dates}>
+        <Wizard.Page label="Dates" summary={(v) => (v.draw_at ? `Draw ${moment(v.draw_at).format('MMM D')}` : 'Draw date missing')} description="When ticket sales open and close, and when the draws happen." validate={errs.dates}>
           {(m, v) => (
             <>
-              <WizardSection title="Ticket sales" description="*All dates are in Pacific time, local to British Columbia.">
-                <div style={grid(220)}>
-                  <Text name="sales_open" label="Sales open" readOnly={ro} />
-                  <Text name="sales_close" label="Sales close" readOnly={ro} />
+              <WizardSection title="Ticket sales" description="All dates and times are in Pacific time, local to British Columbia.">
+                <div style={grid(240)}>
+                  <DateField name="sales_open" label="Sales open" readOnly={ro} disableDates={(d) => !!v.sales_close && d.isAfter(day(v.sales_close)!, 'day')} />
+                  <DateField name="sales_close" label="Sales close" readOnly={ro} helperText="For a midnight deadline, set 11:59 PM on the day."
+                    disableDates={(d) => !!v.sales_open && d.isBefore(day(v.sales_open)!, 'day')} />
                 </div>
               </WizardSection>
               <WizardSection title="Main draw" description="It must come after sales close.">
-                <div style={grid(220)}>
-                  <Text name="draw_at" label="Draw date" readOnly={ro} />
-                  <Text name="draw_location" label="Draw location" readOnly={ro} />
+                <div style={grid(240)}>
+                  <DateField name="draw_at" label="Draw date and time" readOnly={ro} disableDates={(d) => !!v.sales_close && d.isBefore(day(v.sales_close)!, 'day')} />
+                  <Text name="draw_location" label="Draw location" maxLength={LIMIT.location} readOnly={ro} />
                 </div>
               </WizardSection>
               <EarlyDraws v={v} m={m} ro={ro} />
             </>
           )}
         </Wizard.Page>
-        <Wizard.Page label="Licences and tickets" summary={(v) => `1 licence, ${v.ticket_packs.length} pack${v.ticket_packs.length === 1 ? '' : 's'}`} description="Your gaming licence and the ticket packs it covers." validate={errs.licences}>
-          {(m, v) => (
-            <>
-              <WizardSection title="Licence"><Text name="licence_number" label="Licence number" hint="From your provincial regulator." readOnly={ro} /></WizardSection>
-              <Packs v={v} m={m} ro={ro} />
-            </>
-          )}
+        <Wizard.Page label="Licences and tickets" summary={(v) => `${plural(v.ticket_pack_groups.length, 'licence')}, ${plural(v.ticket_pack_groups.reduce((n, g) => n + g.ticket_packs.length, 0), 'pack')}`} description="Each gaming licence the raffle sells under, and the ticket packs it covers." validate={errs.licences}>
+          {(m, v) => <Licences v={v} m={m} ro={ro} />}
         </Wizard.Page>
-        <Wizard.Page label="Prizes" summary={(v) => `${v.prizes.length} prize${v.prizes.length === 1 ? '' : 's'}`} description="Every prize, with a value and a description." validate={errs.prizes}>
+        <Wizard.Page label="Prizes" summary={(v) => plural(v.prizes.length, 'prize')} description="Every prize, with a value and a description." validate={errs.prizes}>
           {(m, v) => <Prizes v={v} m={m} ro={ro} />}
         </Wizard.Page>
         <Wizard.Page label="Rules of play" hide={(v) => ['BC', 'AB', 'MB'].includes(v.client.province)}>
@@ -306,10 +438,10 @@ export function WizardDemo() {
         <Wizard.Page<Brief> label="Review and submit" summary={() => 'Check and submit'} description="Check each section. Edit anything from its step, then submit." hide={() => mode === 'qa'}>
           {(_m, v, changePage) => (
             <WizardReview onEdit={changePage} sections={[
-              { label: 'Website', step: 0, complete: !messages(errs.website(v)).length, summary: `${v.name}, at ${v.sub_domain}.rafflenexus.com.`, issues: messages(errs.website(v)) },
-              { label: 'Slideshow', step: 1, complete: !messages(errs.slides(v)).length, summary: `${v.slides.length} slides.`, issues: messages(errs.slides(v)) },
-              { label: 'Dates', step: 2, complete: !messages(errs.dates(v)).length, summary: `Sales ${v.sales_open} to ${v.sales_close}. Draw ${v.draw_at || 'not set'}.`, issues: messages(errs.dates(v)) },
-              { label: 'Licences and tickets', step: 3, complete: !messages(errs.licences(v)).length, summary: v.ticket_packs.map((p) => `${p.name || 'New pack'} ${money(p.price)}`).join(' · '), issues: messages(errs.licences(v)) },
+              { label: 'Website', step: 0, complete: !messages(errs.website(v)).length, summary: `${v.name}, at ${address(v) || 'no address yet'}. ${richTextToPlain(v.cause).split('\n')[0]}`, issues: messages(errs.website(v)) },
+              { label: 'Slideshow', step: 1, complete: !messages(errs.slides(v)).length, summary: `${plural(v.slides.length, 'slide')}.`, issues: messages(errs.slides(v)) },
+              { label: 'Dates', step: 2, complete: !messages(errs.dates(v)).length, summary: `Sales ${when(v.sales_open) || 'not set'} to ${when(v.sales_close) || 'not set'}. Draw ${when(v.draw_at) || 'not set'}.`, issues: messages(errs.dates(v)) },
+              { label: 'Licences and tickets', step: 3, complete: !messages(errs.licences(v)).length, summary: v.ticket_pack_groups.map((g) => `#${g.licence_number || '(no number)'}: ${g.ticket_packs.map((p) => `${p.name || 'New pack'} ${money(p.price)}`).join(', ') || 'no packs'}`).join('. '), issues: messages(errs.licences(v)) },
               { label: 'Prizes', step: 4, complete: !messages(errs.prizes(v)).length, summary: v.prizes.map((p) => p.title || 'New prize').join(', '), issues: messages(errs.prizes(v)) },
             ]} />
           )}

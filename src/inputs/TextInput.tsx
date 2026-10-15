@@ -2,7 +2,7 @@ import { forwardRef, useState, type ReactNode, type WheelEvent } from 'react';
 import { IconButton, InputAdornment, TextField } from '@mui/material';
 import { Icon } from '../components/Icon';
 import { DropdownInput, type DropdownOption } from './DropdownInput';
-import { copyToClipboard, FieldFrame, helperFor, useFieldId, type FinalFormInput, type FinalFormMeta } from './shared';
+import { copyToClipboard, FieldFrame, helperFor, useFieldId, withCount, type FinalFormInput, type FinalFormMeta } from './shared';
 
 export interface TextInputProps {
   /** An ordinary disabled field. */
@@ -31,6 +31,9 @@ export interface TextInputProps {
   placeholder?: string;
   /** Password fields: a show/hide button at the end of the field. */
   showPasswordToggle?: boolean;
+  /** The most characters allowed (text fields). Shows how many are left under the field; `showCount={false}` hides that. */
+  maxLength?: number;
+  showCount?: boolean;
   /** Called with the new value (not the event). Spread `{...input}` to wire it to react-final-form. */
   onChange?: (value: any) => void; // eslint-disable-line @typescript-eslint/no-explicit-any
   /** Everything else goes to the underlying MUI TextField (or Autocomplete for dropdowns). */
@@ -59,6 +62,8 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(function T
   tooltip = null,
   placeholder = '',
   showPasswordToggle = false,
+  maxLength,
+  showCount = true,
   ...rest
 }, ref) {
   const [showPassword, setShowPassword] = useState(false);
@@ -135,6 +140,7 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(function T
   }
 
   const passwordToggle = type === 'password' && showPasswordToggle;
+  const counted = !!maxLength && showCount && !disabledAll;
   return (
     <FieldFrame {...frame}>
       <TextField
@@ -143,7 +149,8 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(function T
         error={Boolean(error)}
         fullWidth
         type={passwordToggle ? (showPassword ? 'text' : 'password') : type}
-        helperText={helper}
+        helperText={withCount(helper, `${id}-count`, String(currentValue).length, maxLength, counted)}
+        inputProps={{ ...rest.inputProps, ...(maxLength ? { maxLength } : null), ...(counted ? { 'aria-describedby': `${id}-count` } : null) }}
         value={currentValue}
         autoComplete="false"
         disabled={isDisabled}
