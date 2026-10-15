@@ -659,6 +659,36 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
   .rnc-wizard.is-v2 .rnc-wizard-section { padding: 18px 16px; }
   .rnc-wizard-page-title { font-size: 25px; }
 }
+/* Wizard motion: it answers what people do. The step's content slides in from the side they moved towards and its sections follow one
+   after another; the rail's white card glides to the current step; a step's circle pops when its state changes (done, or Review unlocking);
+   the save status and the Review message fade in. Nothing starts hidden for long, and all of it is off under reduced motion. */
+.rnc-wizard-steps ol { position: relative; }
+.rnc-wizard-rail-marker { position: absolute; top: 0; left: 0; z-index: 0; border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-2); pointer-events: none; }
+.rnc-wizard-steps.has-marker .rnc-wizard-step { position: relative; z-index: 1; }
+.rnc-wizard-steps.has-marker .rnc-wizard-step[aria-current="step"] { background: none; box-shadow: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .rnc-wizard-rail-marker.is-ready { transition: transform .34s cubic-bezier(.2, .8, .2, 1), width .34s cubic-bezier(.2, .8, .2, 1), height .34s cubic-bezier(.2, .8, .2, 1); }
+  .rnc-wizard-enter.is-forward { animation: rnc-wz-in-fwd .28s cubic-bezier(.2, .8, .2, 1) both; }
+  .rnc-wizard-enter.is-back { animation: rnc-wz-in-back .28s cubic-bezier(.2, .8, .2, 1) both; }
+  .rnc-wizard-enter.is-moved .rnc-wizard-section { animation: rnc-wz-rise .36s cubic-bezier(.2, .8, .2, 1) both; }
+  .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(2) { animation-delay: .05s; }
+  .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(3) { animation-delay: .1s; }
+  .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(4) { animation-delay: .15s; }
+  .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(n+5) { animation-delay: .2s; }
+  .rnc-wizard-enter.is-moved .rnc-wizard-browser { animation: rnc-wz-rise .4s .08s cubic-bezier(.2, .8, .2, 1) both; }
+  .rnc-wizard-step-dot.is-pop { animation: rnc-wz-pop .42s cubic-bezier(.3, 1.6, .5, 1); }
+  .rnc-wizard-blocked { animation: rnc-wz-drop .24s ease-out both; }
+  .rnc-wizard-save-msg { animation: rnc-wz-fade .22s ease both; }
+}
+@media (prefers-reduced-motion: reduce) { .rnc-wizard-save-msg { animation: rnc-wz-fade .2s ease both; } }
+.rnc-wizard-save-msg { display: inline-flex; align-items: center; gap: 8px; }
+@keyframes rnc-wz-in-fwd { from { opacity: 0; transform: translateX(24px); } }
+@keyframes rnc-wz-in-back { from { opacity: 0; transform: translateX(-24px); } }
+@keyframes rnc-wz-rise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes rnc-wz-pop { 0% { transform: scale(.6); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+@keyframes rnc-wz-drop { from { opacity: 0; transform: translateY(-6px); } }
+@keyframes rnc-wz-fade { from { opacity: 0; } }
+
 /* V2 live preview (the preview slot): the step's sections on the left, the raffle site as it will look on the right, updating as people type.
    Sticks while the sections scroll; below 1200px it moves under them. */
 .rnc-wizard-split { display: grid; grid-template-columns: minmax(0, 1fr) clamp(320px, 44%, 720px); gap: clamp(20px, 2.4vw, 36px); align-items: start; }
@@ -694,6 +724,77 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-wizard-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 @container rnc-wizard (max-width: 860px) { .rnc-wizard-topbar { padding: 10px 16px; } .rnc-wizard-crumb { flex-basis: 100%; order: 3; } }
 @media (prefers-reduced-motion: reduce) { .rnc-wizard-track > span { transition: none; } }
+
+/* Lists that change (AnimatedList, SortableList): an added item grows in, a removed one fades and folds away, and the rest glide to
+   their new places, so people see what changed. Sortable rows have a grip to drag by and Move earlier / Move later for the keyboard;
+   while dragging, the row lifts and the others make room. All of it is instant under reduced motion. */
+.rnc-alist { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; min-width: 0; }
+.rnc-alist-item { position: relative; min-width: 0; }
+.rnc-alist-item.is-leaving { pointer-events: none; }
+.rnc-sort-row { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 10px 12px; border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-1); transition: box-shadow .2s ease, background-color .2s ease; }
+.rnc-alist-item.is-dragging { z-index: 5; }
+.rnc-alist-item.is-dragging .rnc-sort-row { box-shadow: var(--shadow-3); background: var(--surface); cursor: grabbing; }
+.rnc-sort-grip { display: grid; place-items: center; flex: none; width: 32px; height: 44px; padding: 0; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ink-muted); cursor: grab; touch-action: none; transition: background-color .2s ease, color .2s ease; }
+.rnc-sort-grip:hover { background: var(--surface-tint); color: var(--ink); }
+.rnc-sort-grip:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; }
+.rnc-sort-grip svg { width: 16px; height: 22px; }
+.rnc-sort-body { flex: 1; min-width: 0; }
+.rnc-sort-moves { display: flex; flex: none; gap: 4px; }
+.rnc-sort-pos { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--surface-tint); font: 600 12px/1 var(--font-sans); color: var(--ink); }
+@media (prefers-reduced-motion: no-preference) {
+  .rnc-alist-item.is-entering { animation: rnc-list-in .34s cubic-bezier(.2, .8, .2, 1) both; }
+  .rnc-alist-item.is-entering > * { animation: rnc-list-flash 1.2s ease .1s both; }
+  .rnc-alist-item.is-leaving { animation: rnc-list-out .22s ease-in both; }
+  .rnc-alist-item.is-dragging .rnc-sort-row { transform: scale(1.015); }
+}
+@keyframes rnc-list-in { from { opacity: 0; transform: translateY(-10px) scale(.98); } }
+@keyframes rnc-list-out { to { opacity: 0; transform: scale(.96); } }
+@keyframes rnc-list-flash { from { box-shadow: 0 0 0 3px var(--lead-soft), var(--shadow-1); } }
+
+/* Expandable row (ExpandableRow): a ticket pack, a prize, a licence. The head says what it is; it opens smoothly to edit. */
+.rnc-xrow { min-width: 0; border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-1); }
+.rnc-xrow-head { display: flex; align-items: center; gap: 8px 12px; min-width: 0; padding: 6px 8px 6px 6px; }
+.rnc-xrow-toggle { display: flex; flex: 1; align-items: center; gap: 12px; min-width: 0; min-height: 44px; padding: 6px 10px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; transition: background-color .2s ease; }
+.rnc-xrow-toggle:hover { background: var(--surface-tint); }
+.rnc-xrow-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; }
+.rnc-xrow-chev { flex: none; color: var(--ink-muted); transition: transform .22s ease; }
+.rnc-xrow.is-open .rnc-xrow-chev { transform: rotate(90deg); }
+.rnc-xrow-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 15px/1.3 var(--font-sans); }
+.rnc-xrow-meta { margin-left: auto; padding-left: 12px; white-space: nowrap; font: 500 13px/1.3 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+.rnc-xrow-actions { display: flex; flex: none; gap: 4px; }
+.rnc-xrow-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .26s cubic-bezier(.2, .8, .2, 1); }
+.rnc-xrow.is-open .rnc-xrow-panel { grid-template-rows: 1fr; }
+.rnc-xrow-panel > div { min-height: 0; overflow: hidden; }
+.rnc-xrow-inner { display: grid; gap: 16px; padding: 4px 16px 18px; }
+.rnc-xrow:not(.is-open) .rnc-xrow-panel > div { visibility: hidden; transition: visibility 0s .26s; }
+@media (prefers-reduced-motion: reduce) { .rnc-xrow-panel, .rnc-xrow-chev { transition: none; } }
+
+/* Upload tile (UploadTile): choose or drop a file. The tile lights up while a file is dragged over it; the image fades in; Replace and Remove. */
+.rnc-upload { display: grid; gap: 8px; min-width: 0; }
+.rnc-upload-zone { position: relative; display: grid; place-items: center; gap: 8px; min-height: 148px; padding: 16px; box-sizing: border-box; border: 2px dashed var(--line); border-radius: var(--radius-md); background: var(--ground); color: var(--ink-body); text-align: center; font-size: 14px; transition: border-color .2s ease, background-color .2s ease, transform .2s ease; }
+.rnc-upload-zone.is-over { border-color: var(--action); background: var(--lead-soft); }
+.rnc-upload-zone.has-file { border-style: solid; border-color: var(--line); background: var(--surface); }
+.rnc-upload-zone img { display: block; max-width: 100%; max-height: 120px; object-fit: contain; }
+.rnc-upload-zone .rnc-icon { width: 28px; height: 28px; color: var(--action); }
+.rnc-upload-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.rnc-upload-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .rnc-upload-zone.is-over { transform: scale(1.015); }
+  .rnc-upload-zone img { animation: rnc-wz-fade .3s ease both; }
+}
+
+/* Review (WizardReview): one card per section with what it says and anything still missing, and an Edit link back to its step. */
+.rnc-review { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 16px; }
+.rnc-review-card { display: grid; gap: 10px; align-content: start; min-width: 0; padding: 20px; border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-1); }
+.rnc-review-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rnc-review-title { display: flex; align-items: center; gap: 10px; margin: 0; font: 600 16px/1.3 var(--font-sans); color: var(--ink); }
+.rnc-review-dot { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--verified-soft); color: var(--verified); }
+.rnc-review-dot .rnc-icon { width: 14px; height: 14px; }
+.rnc-review-card.is-incomplete .rnc-review-dot { background: var(--error-soft); color: var(--error); }
+.rnc-review-body { margin: 0; font-size: 14px; line-height: 1.5; color: var(--ink-body); overflow-wrap: anywhere; }
+.rnc-review-issues { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; font-size: 14px; color: var(--ink); }
+.rnc-review-issues li { display: flex; gap: 8px; align-items: flex-start; }
+.rnc-review-issues .rnc-icon { flex: none; width: 16px; height: 16px; margin-top: 2px; color: var(--error); }
 
 /* Alert box (npm: @rafflenexuscanada/design-system/alerts, on SweetAlert2): a modal that asks, confirms or reports one thing.
    Title in DM Sans with a state icon, body text, actions at the end (cancel, then confirm). */
