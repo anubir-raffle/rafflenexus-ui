@@ -404,7 +404,7 @@ export function WizardDemo() {
           {(m, v) => (
             <>
               <WizardSection title="Name and address">
-                <Text name="name" label="Raffle name" hint="5 to 80 characters." maxLength={LIMIT.name} readOnly={ro} />
+                <Text name="name" label="Raffle name" maxLength={LIMIT.name} readOnly={ro} />
                 <Field name="sub_domain">
                   {({ input, meta }) => (
                     <DomainField label="Web address" type={v.sub_domain_type} onTypeChange={(t) => m.setSubDomainType(t)}
