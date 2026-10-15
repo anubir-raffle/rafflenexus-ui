@@ -142,20 +142,19 @@ export interface WizardReviewSection {
 /** The Review step: one card per section with what it says and what's missing, and an Edit link back to its step. */
 export function WizardReview({ sections, onEdit, editLabel = 'Edit' }: { sections: WizardReviewSection[]; onEdit: (step: number) => void; editLabel?: string }) {
   return (
-    <div className="rnc-review">
+    // One list, a row per section (Miguel, 2026-10-16: "display Review and submit section as a list").
+    <ul className="rnc-review">
       {sections.map((s, i) => (
-        <section key={i} className={cx('rnc-review-card', !s.complete && 'is-incomplete')}>
-          <div className="rnc-review-head">
-            <h3 className="rnc-review-title">
-              <span className="rnc-review-dot" aria-hidden="true"><Icon name={s.complete ? 'check' : 'x'} size={14} /></span>
-              {s.label}<span className="rnc-sr-only">{s.complete ? ', complete' : ', not complete'}</span>
-            </h3>
-            <button type="button" className="rnc-btn rnc-btn-link" aria-label={typeof s.label === 'string' ? `${editLabel} ${s.label}` : undefined} onClick={() => onEdit(s.step)}>{editLabel}</button>
+        <li key={i} className={cx('rnc-review-item', !s.complete && 'is-incomplete')}>
+          <span className="rnc-review-dot" aria-hidden="true"><Icon name={s.complete ? 'check' : 'x'} size={14} /></span>
+          <div className="rnc-review-main">
+            <h3 className="rnc-review-title">{s.label}<span className="rnc-sr-only">{s.complete ? ', complete' : ', not complete'}</span></h3>
+            {s.summary ? <p className="rnc-review-body">{s.summary}</p> : null}
+            {s.issues?.length ? <ul className="rnc-review-issues">{s.issues.map((t, j) => <li key={j}><Icon name="x-circle" size={16} />{t}</li>)}</ul> : null}
           </div>
-          {s.summary ? <p className="rnc-review-body">{s.summary}</p> : null}
-          {s.issues?.length ? <ul className="rnc-review-issues">{s.issues.map((t, j) => <li key={j}><Icon name="x-circle" size={16} />{t}</li>)}</ul> : null}
-        </section>
+          <button type="button" className="rnc-btn rnc-btn-link rnc-review-edit" aria-label={typeof s.label === 'string' ? `${editLabel} ${s.label}` : undefined} onClick={() => onEdit(s.step)}>{editLabel}</button>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

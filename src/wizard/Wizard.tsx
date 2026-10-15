@@ -163,7 +163,11 @@ export function WizardSteps({ steps, current, onSelect, label = 'Form steps', la
   const place = useCallback(() => {
     const ol = list.current; const el = ol?.querySelector<HTMLElement>('[aria-current="step"]');
     if (!ol || !el) return;
-    const style: CSSProperties = { transform: `translate(${el.offsetLeft}px, ${el.offsetTop}px)`, width: el.offsetWidth, height: el.offsetHeight };
+    // Measured against the list itself: each step's <li> is positioned (for the connecting line), so offsetTop would be 0 for
+    // every step and the card would never leave the first one (Miguel, 2026-10-16: "clicking next doesn't highlight the next tab").
+    const r = el.getBoundingClientRect(); const o = ol.getBoundingClientRect();
+    const x = r.left - o.left - ol.clientLeft; const y = r.top - o.top - ol.clientTop;
+    const style: CSSProperties = { transform: `translate(${x}px, ${y}px)`, width: el.offsetWidth, height: el.offsetHeight };
     setMarker((m) => ({ style, ready: !!m }));
   }, []);
   useIsoLayoutEffect(() => { if (rail) place(); }, [rail, current, steps.length, place]);

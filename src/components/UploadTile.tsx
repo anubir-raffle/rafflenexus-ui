@@ -17,6 +17,11 @@ export interface UploadTileProps {
   /** The file's name, shown for a "file". */
   fileName?: ReactNode;
   alt?: string;
+  /**
+   * How big the chosen picture or video shows. "sm" (default) is a thumbnail. "lg" fills the tile's width at 4:3, cropped the way
+   * a site shows a photo, for pictures people need to judge (a cause photo).
+   */
+  preview?: 'sm' | 'lg';
   /** Default "image/*". Add video types (e.g. "image/*,video/mp4,video/webm") to take videos too. */
   accept?: string;
   /**
@@ -47,7 +52,7 @@ const sizeOf = (url: string) => new Promise<{ w: number; h: number }>((resolve) 
 
 /** Choose or drop a file. The tile lights up while a file is dragged over it, checks the size, and shows the image (or plays back the video) with Replace and Remove. */
 export function UploadTile({
-  label, hint, src, kind, fileName, alt = '', accept = 'image/*', onFile, onRemove, minWidth, minHeight, maxBytes, error, disabled,
+  label, hint, src, kind, fileName, alt = '', preview = 'sm', accept = 'image/*', onFile, onRemove, minWidth, minHeight, maxBytes, error, disabled,
   chooseLabel = 'Choose a file', replaceLabel = 'Replace', removeLabel = 'Remove',
 }: UploadTileProps) {
   const id = useId();
@@ -72,7 +77,7 @@ export function UploadTile({
   const drop = (e: DragEvent) => { e.preventDefault(); setOver(false); void take(e.dataTransfer.files?.[0]); };
   const shown = error ?? problem;
   return (
-    <div className="rnc-upload">
+    <div className={cx('rnc-upload', preview === 'lg' && 'is-lg')}>
       <span className="rnc-field-label" id={`${id}-l`}>{label}</span>
       {/* Always four parts (label, hint, tile, message), so tiles side by side line up on a shared grid. */}
       {hint ? <span className="rnc-field-hint" id={`${id}-h`}>{hint}</span> : <span aria-hidden="true" />}

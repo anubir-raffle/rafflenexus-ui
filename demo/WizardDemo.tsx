@@ -43,6 +43,10 @@ type Brief = {
 const tile = (label: string, a: string, b: string) => `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="650" height="500"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="650" height="500" fill="url(#g)"/><text x="40" y="440" font-family="Arial" font-weight="700" font-size="44" fill="#fff">${label}</text></svg>`)}`;
 /** A made-up sponsor logo: the name set in a box. */
 const badge = (name: string, colour: string) => `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="320" height="120"><rect x="4" y="4" width="312" height="112" rx="14" fill="none" stroke="${colour}" stroke-width="6"/><text x="160" y="70" text-anchor="middle" font-family="Arial" font-weight="700" font-size="26" fill="${colour}">${name}</text></svg>`)}`;
+/** A made-up logo: a cross in a circle beside the raffle's name. */
+const LOGO = `data:image/svg+xml;utf8,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="640" height="200"><circle cx="100" cy="100" r="84" fill="#0c3f75"/><path d="M84 52h32v32h32v32h-32v32H84v-32H52V84h32z" fill="#ffffff"/><text x="210" y="92" font-family="Arial" font-weight="700" font-size="54" fill="#0c3f75">Sample Hospital</text><text x="212" y="148" font-family="Arial" font-weight="400" font-size="40" fill="#126ab5">Lottery</text></svg>')}`;
+/** A made-up picture at any size, for the share image and the cause photo. */
+const art = (label: string, w: number, h: number, a: string, b: string) => `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="${w}" height="${h}" fill="url(#g)"/><text x="${Math.round(w * 0.06)}" y="${Math.round(h * 0.86)}" font-family="Arial" font-weight="700" font-size="${Math.round(h * 0.09)}" fill="#fff">${label}</text></svg>`)}`;
 let seq = 100;
 const uid = (p: string) => `${p}-${++seq}`;
 const money = (v: string) => { const n = Number(String(v).replace(/[^0-9.]/g, '')); return n ? `$${n.toLocaleString('en-CA')}` : '$0'; };
@@ -58,12 +62,15 @@ const START: Brief = {
   subheading: 'Every ticket helps buy equipment for the hospital.',
   cause: '<p>Your ticket funds <strong>new equipment</strong> for the emergency department.</p><ul><li>Two new ultrasound machines</li><li>A quieter, faster triage area</li></ul>',
   support_email: 'lottery@example.org',
+  logo: LOGO,
+  sharing_image: art('Win a lakeside home', 1200, 630, '#126ab5', '#0c3f75'),
+  cause_media: { kind: 'image', src: art('The emergency department', 1600, 1200, '#2f7fa8', '#13324f'), name: 'emergency-department.jpg' },
   slides: [
     { id: 's1', src: tile('Grand prize home', '#126ab5', '#0c3f75'), alt: 'The lakeside grand prize home' },
     { id: 's2', src: tile('Early bird: a new car', '#2b7a3d', '#174a24'), alt: 'The early bird car prize' },
-    { id: 's3', src: tile('50/50 jackpot', '#8a6410', '#5a400a'), alt: '' },
+    { id: 's3', src: tile('50/50 jackpot', '#8a6410', '#5a400a'), alt: 'The 50/50 jackpot' },
   ],
-  sales_open: '2026-11-02 09:00:00', sales_close: '2026-12-18 23:59:00', draw_at: '', draw_location: 'Foundation office',
+  sales_open: '2026-11-02 09:00:00', sales_close: '2026-12-18 23:59:00', draw_at: '2026-12-19 12:00:00', draw_location: 'Foundation office',
   early_draws: [{ id: 'e1', date: '2026-11-20 12:00:00', prize: '$5,000 cash' }],
   ticket_pack_groups: [{
     id: 'g1', licence_number: '000000',
@@ -71,13 +78,14 @@ const START: Brief = {
   }],
   prizes: [{ id: 'z1', title: 'Lakeside home', value: '1250000', description: '<p>A four-bedroom home by the lake, <em>fully furnished</em>.</p>',
     sponsor: { name: 'Sample Builders', logo: badge('SAMPLE BUILDERS', '#3b4656'), description: 'Built and furnished by Sample Builders.' } }],
-  support_socials: { facebook: 'samplehospital', instagram: 'samplehospital' },
+  support_socials: { facebook: 'samplehospital', instagram: 'samplehospital', twitter: 'samplehospital', youtube: '@samplehospital', linkedin: 'company/samplehospital' },
   sponsors: [
     { id: 'sp1', logo: badge('SAMPLE CREDIT UNION', '#13324f'), alt: 'Sample Credit Union', tier: 't1' },
     { id: 'sp2', logo: badge('SAMPLE MOTORS', '#7e0c20'), alt: 'Sample Motors', tier: 't2' },
     { id: 'sp3', logo: badge('SAMPLE GROCERS', '#2b7a3d'), alt: 'Sample Grocers', tier: 't2' },
+    { id: 'sp4', logo: badge('SAMPLE PRINT CO.', '#5a400a'), alt: 'Sample Print Co.', tier: 't3' },
   ],
-  sponsors_tiered: false,
+  sponsors_tiered: true,
   sponsor_tiers: [{ id: 't1', name: 'Gold sponsors' }, { id: 't2', name: 'Silver sponsors' }, { id: 't3', name: 'Bronze sponsors' }],
   presenting_sponsor: 'sp1', presenting_label: 'Presented by',
   client: { name: 'Sample Hospital Foundation', province: 'BC' },
@@ -330,13 +338,16 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                     {/* Optional: the prize's own sponsor, shown as "Sponsored by" on the prize (Miguel, 2026-10-16). */}
                     <fieldset style={{ display: 'grid', gap: 16, margin: 0, padding: 0, border: 0 }}>
                       <legend className="rnc-field-label" style={{ marginBottom: 12 }}>Prize sponsor (optional)</legend>
+                      {/* Name and description on one side, the logo on the other, so neither column leaves a gap. */}
                       <div style={grid(220)}>
-                        <ItemText label="Sponsor name" value={p.sponsor.name} readOnly={ro} maxLength={LIMIT.prize} check={() => prizeSponsorError(p)} onValue={(x) => setSponsor(p, { name: x })} />
+                        <div style={{ display: 'grid', gap: 16, alignContent: 'start', minWidth: 0 }}>
+                          <ItemText label="Sponsor name" value={p.sponsor.name} readOnly={ro} maxLength={LIMIT.prize} check={() => prizeSponsorError(p)} onValue={(x) => setSponsor(p, { name: x })} />
+                          <TextArea label="About the sponsor" hint="One or two lines, shown with the prize." value={p.sponsor.description} readOnly={ro} maxLength={300}
+                            onChange={(e) => setSponsor(p, { description: e.target.value })} />
+                        </div>
                         <UploadTile label="Sponsor logo" hint="At least 400 px wide. PNG or SVG on a clear background." src={p.sponsor.logo} alt={`${p.sponsor.name || 'Sponsor'} logo`} disabled={ro}
                           onFile={(_f, url) => setSponsor(p, { logo: url })} onRemove={() => setSponsor(p, { logo: undefined })} />
                       </div>
-                      <TextArea label="About the sponsor" hint="One or two lines, shown with the prize." value={p.sponsor.description} readOnly={ro} maxLength={300}
-                        onChange={(e) => setSponsor(p, { description: e.target.value })} />
                     </fieldset>
                   </div>
                 ) : null}
@@ -571,7 +582,7 @@ export function WizardDemo() {
                 </Field>
                 {/* Optional: shown beside the cause text on the site (Miguel, 2026-10-16). */}
                 <UploadTile label="Cause photo or video (optional)" hint="Shown beside the cause. A photo at 1600 × 1200 (at least 800 × 600) or a short video in MP4 or WebM up to 50 MB."
-                  accept="image/*,video/mp4,video/webm" minWidth={800} minHeight={600} maxBytes={50 * 1024 * 1024} src={v.cause_media?.src} kind={v.cause_media?.kind} alt="The cause photo" disabled={ro}
+                  accept="image/*,video/mp4,video/webm" minWidth={800} minHeight={600} maxBytes={50 * 1024 * 1024} src={v.cause_media?.src} kind={v.cause_media?.kind} preview="lg" alt="The cause photo" disabled={ro}
                   onFile={(f, url) => m.setCauseMedia({ kind: f.type.startsWith('video/') ? 'video' : 'image', src: url, name: f.name })} onRemove={() => m.setCauseMedia(undefined)} />
               </WizardSection>
               <WizardSection title="Branding" description="Your logo, the image shown when the site is shared, and the site's colours.">
@@ -588,7 +599,8 @@ export function WizardDemo() {
                 <Text name="support_email" label="Support email" type="email" inputMode="email" readOnly={ro} />
               </WizardSection>
               <WizardSection title="Social media (optional)" description="Linked in your site's footer. Enter the account name, or paste the whole address.">
-                <div style={grid(220)}>
+                {/* One account per row (Miguel, 2026-10-16: "display as a list"). */}
+                <div style={{ display: 'grid', gap: 16, maxWidth: 560 }}>
                   {SOCIALS.map((x) => (
                     <Field key={x.key} name={`support_socials.${x.key}`} parse={(raw: string) => toHandle(raw ?? '', x)} validate={socialError}>
                       {({ input, meta }) => <TextField label={x.label} hint={`${x.host}your-account`} review={ro} maxLength={100} {...input} value={input.value ?? ''}

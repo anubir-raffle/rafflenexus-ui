@@ -144,6 +144,13 @@ describe('UploadTile', () => {
     url.mockRestore();
   });
 
+  it('preview="lg" shows the picture at the tile\'s full width (a thumbnail by default)', () => {
+    const { container, rerender } = render(<UploadTile label="Cause" src="data:image/png;base64,AAAA" onFile={() => {}} />);
+    expect(container.querySelector('.rnc-upload')).not.toHaveClass('is-lg');
+    rerender(<UploadTile label="Cause" preview="lg" src="data:image/png;base64,AAAA" onFile={() => {}} />);
+    expect(container.querySelector('.rnc-upload')).toHaveClass('is-lg');
+  });
+
   it('refuses a file that is too large, in words', async () => {
     const onFile = vi.fn();
     const { container } = render(<UploadTile label="Slide" onFile={onFile} maxBytes={1024 * 1024} />);
@@ -154,13 +161,14 @@ describe('UploadTile', () => {
 });
 
 describe('WizardReview', () => {
-  it('a card per section with its state, summary and what is missing; Edit goes to the step', async () => {
+  it('a list with a row per section: its state, summary and what is missing; Edit goes to the step', async () => {
     const onEdit = vi.fn();
     render(<WizardReview onEdit={onEdit} sections={[
       { label: 'Website', step: 0, complete: true, summary: 'Sample Lottery, at sample.rafflenexus.com.' },
       { label: 'Dates', step: 2, complete: false, issues: ['Enter the draw date'] },
     ]} />);
-    const dates = screen.getByRole('heading', { name: 'Dates, not complete' }).closest('section')!;
+    expect(screen.getAllByRole('listitem').filter((li) => li.classList.contains('rnc-review-item'))).toHaveLength(2);
+    const dates = screen.getByRole('heading', { name: 'Dates, not complete' }).closest('li')!;
     expect(dates).toHaveClass('is-incomplete');
     expect(within(dates).getByText('Enter the draw date')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Website, complete' })).toBeInTheDocument();
