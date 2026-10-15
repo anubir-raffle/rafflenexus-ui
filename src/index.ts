@@ -26,6 +26,7 @@ export { Dropdown, type DropdownProps, type DropdownItem } from './components/Dr
 export { CopyButton, copyText, type CopyButtonProps, type FieldBaseProps } from './components/Field';
 export { RichTextArea, RichText, sanitizeRichText, richTextLength, richTextToPlain, type RichTextAreaProps, type RichTextProps } from './components/RichTextArea';
 export { DomainField, domainUrl, type DomainFieldProps, type DomainType } from './components/DomainField';
+export { BrandColours, pickBrandColours, extractBrandColours, contrastRatio, readableOn, type BrandColoursProps, type BrandColourSet } from './components/BrandColours';
 export { SegmentedControl, type SegmentedControlProps, type SegmentedOption } from './components/Segmented';
 
 // App layout and data

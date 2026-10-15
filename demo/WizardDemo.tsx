@@ -6,8 +6,8 @@ import {
   type PreviewDevice, type WizardMutators, type WizardSiteDate,
 } from '../src/wizard';
 import {
-  AnimatedList, Button, DomainField, ExpandableRow, Icon, RichText, RichTextArea, SortableList, StatusPill, TextField, UploadTile,
-  domainUrl, richTextLength, richTextToPlain, type DomainType,
+  AnimatedList, BrandColours, Button, DomainField, ExpandableRow, Icon, RichText, RichTextArea, SortableList, StatusPill, TextField, UploadTile,
+  domainUrl, richTextLength, richTextToPlain, type BrandColourSet, type DomainType,
 } from '../src';
 import { DatePicker } from '../src/inputs';
 
@@ -22,6 +22,8 @@ type Brief = {
   name?: string; sub_domain?: string; sub_domain_type: DomainType; heading?: string; subheading?: string; cause?: string; logo?: string; sharing_image?: string; support_email?: string;
   slides: Slide[]; sales_open?: string; sales_close?: string; draw_at?: string; draw_location?: string; early_draws: Early[];
   ticket_pack_groups: Licence[]; prizes: Prize[]; client: { name: string; province: string };
+  /** The site's colours, picked from the logo (the app's leading_color is the primary). */
+  colours: BrandColourSet;
 };
 
 const tile = (label: string, a: string, b: string) => `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="650" height="500"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="650" height="500" fill="url(#g)"/><text x="40" y="440" font-family="Arial" font-weight="700" font-size="44" fill="#fff">${label}</text></svg>`)}`;
@@ -53,12 +55,15 @@ const START: Brief = {
   }],
   prizes: [{ id: 'z1', title: 'Lakeside home', value: '1250000', description: '<p>A four-bedroom home by the lake, <em>fully furnished</em>.</p>' }],
   client: { name: 'Sample Hospital Foundation', province: 'BC' },
+  colours: { primary: '#0c3f75', secondary: '#13324f', accent: '#126ab5' },
 };
+/** Who licenses raffles in each province (the badge names them). */
+const REGULATOR: Record<string, string> = { BC: 'IGCO', AB: 'AGLC', SK: 'SLGA', MB: 'LGCA', ON: 'AGCO' };
 
 const set = (field: string) => (args: unknown[], state: any, utils: any) => utils.changeValue(state, field, () => args[0]); // eslint-disable-line @typescript-eslint/no-explicit-any
 const MUTATORS = {
   setSlides: set('slides'), setLicences: set('ticket_pack_groups'), setPrizes: set('prizes'), setEarlyDraws: set('early_draws'),
-  setLogo: set('logo'), setSharingImage: set('sharing_image'), setSubDomainType: set('sub_domain_type'),
+  setLogo: set('logo'), setSharingImage: set('sharing_image'), setSubDomainType: set('sub_domain_type'), setColours: set('colours'),
 };
 
 // The app's rules for the web address: a Raffle Nexus name, or a whole domain.
@@ -291,12 +296,13 @@ function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice;
     <WizardPreview url={address(v) || 'your-raffle.rafflenexus.com'} device={device} onDeviceChange={onDevice}>
       <WizardSitePreview
         org={v.client.name} logo={v.logo} logoAlt={`${v.client.name} logo`} heading={v.heading} subheading={v.subheading}
-        cause={richTextLength(v.cause) ? <RichText html={v.cause} /> : undefined} colour="#0c3f75" accent="#126ab5"
+        cause={richTextLength(v.cause) ? <RichText html={v.cause} /> : undefined} colour={v.colours.primary} secondary={v.colours.secondary} accent={v.colours.accent}
         slides={v.slides.map((s) => s.src)}
         packs={(first?.ticket_packs ?? []).filter((p) => p.price).map((p) => ({ label: plural(Number(p.tickets) || 0, 'ticket'), note: p.name, price: money(p.price) }))}
         dates={dates}
         prizes={v.prizes.filter((p) => p.title).map((p) => ({ title: p.title, value: p.value ? money(p.value) : undefined }))}
         licence={numbers.length ? `${v.client.province} Gaming Event Licence #${numbers.join(', #')}` : undefined}
+        badge={numbers.length ? { regulator: REGULATOR[v.client.province] ?? v.client.province, licence: numbers.join(', #') } : undefined}
       />
     </WizardPreview>
   );
@@ -389,13 +395,15 @@ export function WizardDemo() {
                   )}
                 </Field>
               </WizardSection>
-              <WizardSection title="Branding" description="Drop a file on a tile, or choose one.">
+              <WizardSection title="Branding" description="Your logo, the image shown when the site is shared, and the site's colours.">
                 <div style={{ ...grid(200), alignItems: 'stretch' }}>
                   <UploadTile label="Logo" hint="PNG or SVG, on a clear background." src={v.logo} alt="Your logo" disabled={ro} error={v.logo ? undefined : 'Add your logo'}
                     onFile={(_f, url) => m.setLogo(url)} onRemove={() => m.setLogo(undefined)} />
                   <UploadTile label="Sharing image" hint="Shown when the site is shared, 1200 × 630." src={v.sharing_image} alt="Sharing image" disabled={ro}
                     onFile={(_f, url) => m.setSharingImage(url)} onRemove={() => m.setSharingImage(undefined)} />
                 </div>
+                <BrandColours value={v.colours} onChange={(c) => m.setColours(c)} logo={v.logo} review={ro}
+                  hint="We pick these from your logo when you add it. Select a swatch or type a hex value to change one." />
               </WizardSection>
               <WizardSection title="Support contact" description="Shown on your site so buyers can reach you.">
                 <Text name="support_email" label="Support email" type="email" inputMode="email" readOnly={ro} />

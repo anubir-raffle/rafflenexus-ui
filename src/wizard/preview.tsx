@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { SegmentedControl } from '../components/Segmented';
 import { Icon } from '../components/Icon';
+import { readableOn } from '../components/BrandColours';
+import { VerifiedBadge } from '../components/VerifiedBadge';
 import { cx } from '../utils';
 
 const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -15,7 +17,7 @@ export interface WizardPreviewProps {
   url?: ReactNode;
   /** Default "Live preview". */
   label?: ReactNode;
-  /** Default "Updates as you type". */
+  /** Default "Updates as you type. Your live site may look a little different." (it's a close guide, not an exact copy). */
   hint?: ReactNode;
   /** Controlled device; leave it out and the preview keeps its own, starting at `defaultDevice` (default desktop). */
   device?: PreviewDevice;
@@ -35,7 +37,7 @@ export interface WizardPreviewProps {
  * in a browser or phone frame, with a Desktop / Mobile switch. Return it from the Wizard's `preview`.
  */
 export function WizardPreview({
-  url, label = 'Live preview', hint = 'Updates as you type', device, defaultDevice = 'desktop', onDeviceChange, devices = true,
+  url, label = 'Live preview', hint = 'Updates as you type. Your live site may look a little different.', device, defaultDevice = 'desktop', onDeviceChange, devices = true,
   desktopWidth = 1280, mobileWidth = 390, children,
 }: WizardPreviewProps) {
   const [own, setOwn] = useState<PreviewDevice>(defaultDevice);
@@ -101,9 +103,10 @@ export interface WizardSitePreviewProps {
   subheading?: ReactNode;
   /** "Where the money goes": text, or `<RichText html={…} />`. */
   cause?: ReactNode;
-  /** The client's colours: the hero and the buttons. */
+  /** The client's colours (hex): the header and hero, buttons and links, the footer and panels. Text on each is white or dark, whichever reads. */
   colour?: string;
   accent?: string;
+  secondary?: string;
   /** The first slide: the hero's photo. */
   image?: string;
   /** Every slide; the first one shows, with a progress bar for each. */
@@ -115,6 +118,8 @@ export interface WizardSitePreviewProps {
   prizes?: WizardSitePrize[];
   /** The licence line, e.g. "BC Gaming Event Licence #000000". */
   licence?: ReactNode;
+  /** The licensed-raffle badge (VerifiedBadge) in the trust strip above the footer: regulator and licence number. */
+  badge?: { regulator: string; licence: string; rng?: boolean };
   /** Default "Order tickets". */
   cta?: ReactNode;
   /** Shown while the heading is empty. Default "Add a main heading". */
@@ -127,14 +132,15 @@ export interface WizardSitePreviewProps {
  * chosen device; nothing in it is clickable.
  */
 export function WizardSitePreview({
-  org, logo, logoAlt = '', heading, subheading, cause, colour, accent, image, slides, packs, dates, prizes, licence,
+  org, logo, logoAlt = '', heading, subheading, cause, colour, accent, secondary, image, slides, packs, dates, prizes, licence, badge,
   cta = 'Order tickets', emptyHeading = 'Add a main heading',
 }: WizardSitePreviewProps) {
   const device = usePreviewDevice();
   const photos = slides?.length ? slides : image ? [image] : [];
   const style = {
-    ...(colour ? { ['--site-colour' as string]: colour } : {}),
-    ...(accent ? { ['--site-accent' as string]: accent } : {}),
+    ...(colour ? { ['--site-colour' as string]: colour, ['--site-on-colour' as string]: readableOn(colour) } : {}),
+    ...(accent ? { ['--site-accent' as string]: accent, ['--site-on-accent' as string]: readableOn(accent) } : {}),
+    ...(secondary || colour ? { ['--site-secondary' as string]: secondary || colour, ['--site-on-secondary' as string]: readableOn((secondary || colour)!) } : {}),
   };
   const empty = heading == null || heading === '';
   return (
@@ -190,9 +196,13 @@ export function WizardSitePreview({
           <div className="rnc-wsite-cause">{cause}</div>
         </section>
       ) : null}
+      <div className="rnc-wsite-trust">
+        {badge ? <VerifiedBadge regulator={badge.regulator} licence={badge.licence} rng={badge.rng} />
+          : licence ? <span className="rnc-wsite-licensed"><Icon name="check-circle" size={18} />Licensed raffle<small>{licence}</small></span> : null}
+        <small><b>19+ to play.</b> Know your limit, play within it.</small>
+      </div>
       <div className="rnc-wsite-foot">
-        {licence ? <span className="rnc-wsite-licensed"><Icon name="check-circle" size={18} />Licensed raffle<small>{licence}</small></span> : null}
-        <small>19+ to play. Know your limit, play within it.</small>
+        {org ? <span>{org}</span> : null}
         <small>Powered by Raffle Nexus</small>
       </div>
     </div>

@@ -80,11 +80,13 @@ export interface WizardSectionProps {
 export function WizardSection({ title, tooltip, description, size = 'lg', as: Title = 'h3', className, children }: WizardSectionProps) {
   return (
     <section className={cx('rnc-wizard-section', size !== 'lg' && `is-${size}`, className)}>
-      <div className="rnc-wizard-section-head">
-        <Title className="rnc-wizard-section-title">{title}</Title>
-        {tooltip}
+      <div className="rnc-wizard-section-top">
+        <div className="rnc-wizard-section-head">
+          <Title className="rnc-wizard-section-title">{title}</Title>
+          {tooltip}
+        </div>
+        {description ? <p className="rnc-wizard-section-desc">{description}</p> : null}
       </div>
-      {description ? <p className="rnc-wizard-section-desc">{description}</p> : null}
       {children != null ? <div className="rnc-wizard-section-body">{children}</div> : null}
     </section>
   );
