@@ -1,5 +1,5 @@
 import { type FocusEventHandler, type ReactNode } from 'react';
-import { CopyButton, FieldLabel, FieldShell, useFieldA11y, useFieldId, type FieldBaseProps } from './Field';
+import { CharCount, CopyButton, FieldLabel, FieldShell, useFieldA11y, useFieldId, type FieldBaseProps } from './Field';
 import { SegmentedControl } from './Segmented';
 import { cx } from '../utils';
 
@@ -20,6 +20,10 @@ export interface DomainFieldProps extends FieldBaseProps {
   ownHint?: ReactNode;
   rnLabel?: ReactNode;
   ownLabel?: ReactNode;
+  /** The most characters allowed. Defaults: 63 for a Raffle Nexus name (the longest a web address name can be), 253 for a whole domain. */
+  maxLength?: number;
+  /** Show how many characters are left under the field. Default true. */
+  showCount?: boolean;
   disabled?: boolean;
   id?: string;
   className?: string;
@@ -47,15 +51,18 @@ function tidy(raw: string, type: DomainType, suffix: string): string {
 export function DomainField({
   label, hint, error, optional, review, type, onTypeChange, value, onChange, onBlur, suffix = '.rafflenexus.com',
   rnHint = 'Letters, numbers, hyphens and underscores.', ownHint = 'A domain you own, like lottery.example.org. We send you the steps to point it at your raffle site.',
-  rnLabel = 'Raffle Nexus address', ownLabel = 'Your own domain', disabled, id, className,
+  rnLabel = 'Raffle Nexus address', ownLabel = 'Your own domain', maxLength, showCount = true, disabled, id, className,
 }: DomainFieldProps) {
   const fid = useFieldId(id);
   const shownHint = hint ?? (type === 'rn' ? rnHint : ownHint);
-  const { hintId, errorId, aria } = useFieldA11y(fid, shownHint, error, `${fid}-full`);
+  const limit = maxLength ?? (type === 'rn' ? 63 : 253);
+  const counted = showCount && !review;
+  const { hintId, errorId, aria } = useFieldA11y(fid, shownHint, error, `${fid}-full`, counted ? `${fid}-count` : undefined);
   const locked = disabled || review;
   return (
     <FieldShell className={cx('rnc-domain', className)} error={error} hint={shownHint} hintId={hintId} errorId={errorId} review={review}
-      label={<FieldLabel htmlFor={fid} label={label} optional={optional} />}>
+      label={<FieldLabel htmlFor={fid} label={label} optional={optional} />}
+      count={counted ? <CharCount id={`${fid}-count`} length={value.length} max={limit} /> : null}>
       {!review ? (
         <SegmentedControl<DomainType> aria-label={typeof label === 'string' ? `${label}: type` : 'Address type'} value={type} disabled={locked}
           onChange={onTypeChange} options={[{ value: 'rn', label: rnLabel }, { value: 'own', label: ownLabel }]} />
@@ -65,8 +72,8 @@ export function DomainField({
         <input
           id={fid} className="rnc-input" {...aria} value={value} disabled={disabled} readOnly={review}
           inputMode="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} autoComplete="off"
-          maxLength={type === 'rn' ? 63 : 253} placeholder={type === 'rn' ? 'your-raffle' : 'lottery.example.org'}
-          onChange={(e) => onChange(tidy(e.target.value, type, suffix))} onBlur={onBlur}
+          maxLength={limit} placeholder={type === 'rn' ? 'your-raffle' : 'lottery.example.org'}
+          onChange={(e) => onChange(tidy(e.target.value, type, suffix).slice(0, limit))} onBlur={onBlur}
         />
         {type === 'rn' ? <span aria-hidden="true">{suffix}</span> : null}
         {review ? <CopyButton label={label} value={() => domainUrl(type, value, suffix)} /> : null}

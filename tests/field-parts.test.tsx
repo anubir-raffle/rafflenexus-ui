@@ -122,6 +122,8 @@ describe('DomainField and SegmentedControl', () => {
     fireEvent.change(screen.getByLabelText('Web address'), { target: { value: 'https://Sample-Hospital.rafflenexus.com/tickets' } });
     expect(screen.getByLabelText('Web address')).toHaveValue('sample-hospital');
     expect(screen.getByText('Full address: https://sample-hospital.rafflenexus.com')).toHaveClass('rnc-sr-only');
+    expect(screen.getByLabelText('Web address')).toHaveAttribute('maxlength', '63');
+    expect(screen.getByText('48 characters left')).toHaveClass('rnc-field-count');
   });
 
   it('switches to your own domain: no suffix, its own hint, www and paths dropped', async () => {
@@ -131,6 +133,8 @@ describe('DomainField and SegmentedControl', () => {
     expect(screen.getByText(/A domain you own/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Web address'), { target: { value: 'www.Lottery.Example.org/win' } });
     expect(screen.getByLabelText('Web address')).toHaveValue('lottery.example.org');
+    expect(screen.getByLabelText('Web address')).toHaveAttribute('maxlength', '253');
+    expect(screen.getByText('234 characters left')).toBeInTheDocument();
     expect(domainUrl('own', 'lottery.example.org')).toBe('https://lottery.example.org');
     expect(domainUrl('rn', 'sample')).toBe('https://sample.rafflenexus.com');
   });
