@@ -605,10 +605,10 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 /* Wizard, V2 layout (layout="v2"): the Raffle Builder of RaffleBuilderConcept. A rail with the raffle, progress and the steps (each with a
    one-line summary; the current one lifts onto a white card), and a main column with the step's title in the display face, its sections as
    white panels and a sticky footer. On narrow screens the rail stacks on top and its steps scroll sideways. */
-.rnc-wizard.is-v2 { gap: 0; border-radius: var(--radius-lg); background: var(--ground); box-shadow: var(--shadow-1); }
+.rnc-wizard.is-v2 { container: rnc-wizard / inline-size; gap: 0; border-radius: var(--radius-lg); background: var(--ground); box-shadow: var(--shadow-1); }
 .rnc-wizard.is-v2 .rnc-wizard-notice { justify-content: flex-start; padding: 10px 24px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; background: var(--lead-soft); font-size: 14px; }
-.rnc-wizard-frame { display: grid; grid-template-columns: 300px minmax(0, 1fr); min-width: 0; }
-.rnc-wizard-rail { display: flex; flex-direction: column; gap: 22px; min-width: 0; padding: 24px 20px; }
+.rnc-wizard-frame { display: grid; grid-template-columns: clamp(240px, 24%, 340px) minmax(0, 1fr); min-width: 0; }
+.rnc-wizard-rail { display: flex; flex-direction: column; gap: 22px; min-width: 0; padding: 24px clamp(14px, 1.6vw, 24px); }
 .rnc-wizard.is-v2 .rnc-wizard-head { flex-wrap: nowrap; flex-direction: row-reverse; justify-content: flex-end; align-items: center; gap: 12px; padding: 0; }
 .rnc-wizard.is-v2 .rnc-wizard-title { font: 700 16px/1.3 var(--font-sans); letter-spacing: 0; }
 .rnc-wizard.is-v2 .rnc-wizard-subtitle { margin-top: 2px; font-size: 13px; }
@@ -632,7 +632,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-wizard-steps.is-rail .is-complete .rnc-wizard-step-dot { background: var(--verified-soft); color: var(--verified); }
 .rnc-wizard-steps.is-rail [aria-current="step"] .rnc-wizard-step-dot { background: var(--action); color: var(--on-action); }
 .rnc-wizard-rail-extra { display: grid; gap: 8px; font-size: 13px; }
-.rnc-wizard-main { display: flex; flex-direction: column; min-width: 0; padding: 28px 32px 0; }
+.rnc-wizard-main { --main-pad: clamp(16px, 2.4vw, 40px); display: flex; flex-direction: column; min-width: 0; padding: 28px var(--main-pad) 0; }
 .rnc-wizard.is-v2 .rnc-wizard-blocked { margin: 0 0 20px; padding: 12px 16px; border-radius: var(--radius-md); }
 .rnc-wizard.is-v2 .rnc-wizard-body { flex: 1; padding: 0; }
 .rnc-wizard-page-title { margin: 0; font: 600 30px/1.15 var(--font-display); color: var(--ink); text-wrap: balance; }
@@ -643,9 +643,9 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-wizard.is-v2 .rnc-wizard-section-title { font-size: 17px; }
 .rnc-wizard.is-v2 .rnc-wizard-section-body { margin-top: 0; }
 .rnc-wizard.is-v2 .rnc-wizard-section-desc { margin-top: -14px; font-size: 13px; }
-.rnc-wizard.is-v2 .rnc-wizard-foot { position: sticky; bottom: 0; z-index: 2; margin: 24px -32px 0; padding: 14px 32px; border-radius: 0 0 var(--radius-lg) 0; background: var(--surface); box-shadow: 0 -1px 0 var(--line), var(--shadow-2); }
+.rnc-wizard.is-v2 .rnc-wizard-foot { position: sticky; bottom: 0; z-index: 2; margin: 24px calc(var(--main-pad) * -1) 0; padding: 14px var(--main-pad); border-radius: 0 0 var(--radius-lg) 0; background: var(--surface); box-shadow: 0 -1px 0 var(--line), var(--shadow-2); }
 .rnc-wizard.is-v2 .rnc-wizard-save .rnc-icon { width: 18px; height: 18px; color: var(--verified); }
-@media (max-width: 900px) {
+@container rnc-wizard (max-width: 860px) {
   /* The rail's parts join the page flow: raffle, progress and steps on top, then the step, then the rail's extras (QA checks) */
   .rnc-wizard-frame { display: flex; flex-direction: column; gap: 16px; padding-top: 20px; }
   .rnc-wizard-rail { display: contents; }
@@ -654,11 +654,32 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
   .rnc-wizard-steps.is-rail { overflow-x: auto; scrollbar-width: thin; }
   .rnc-wizard-steps.is-rail ol { display: flex; min-width: max-content; padding-bottom: 8px; }
   .rnc-wizard-steps.is-rail li { flex: none; width: 200px; min-width: 0; }
-  .rnc-wizard-main { order: 4; padding: 0 16px; }
+  .rnc-wizard-main { --main-pad: 16px; order: 4; padding: 0 16px; }
   .rnc-wizard.is-v2 .rnc-wizard-foot { margin: 20px -16px 0; padding: 12px 16px; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
   .rnc-wizard.is-v2 .rnc-wizard-section { padding: 18px 16px; }
   .rnc-wizard-page-title { font-size: 25px; }
 }
+/* V2 live preview (the preview slot): the step's sections on the left, the raffle site as it will look on the right, updating as people type.
+   Sticks while the sections scroll; below 1200px it moves under them. */
+.rnc-wizard-split { display: grid; grid-template-columns: minmax(0, 1fr) clamp(320px, 44%, 720px); gap: clamp(20px, 2.4vw, 36px); align-items: start; }
+.rnc-wizard-preview { position: sticky; top: 16px; display: grid; gap: 10px; min-width: 0; }
+.rnc-wizard-preview-label { display: flex; justify-content: space-between; gap: 12px; margin: 0; font: 600 13px/1.3 var(--font-sans); color: var(--ink); }
+.rnc-wizard-preview-label span { font-weight: 400; color: var(--ink-muted); }
+.rnc-wizard-browser { overflow: hidden; border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-2); }
+.rnc-wizard-browser-bar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--surface-tint); }
+.rnc-wizard-browser-bar i { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+.rnc-wizard-browser-url { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 5px 8px; border-radius: 6px; background: var(--surface); font: 12px/1.3 var(--font-mono); color: var(--ink-body); }
+.rnc-wizard-site { --site-colour: var(--stage); --site-accent: var(--action); position: relative; isolation: isolate; container-type: inline-size; padding: clamp(22px, 6cqi, 48px) clamp(20px, 6cqi, 44px) clamp(26px, 7cqi, 56px); background: var(--site-colour) center / cover no-repeat; color: #ffffff; }
+.rnc-wizard-site.has-image::before { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(15, 42, 68, .62); }
+.rnc-wizard-site small { display: block; font-size: clamp(12px, 3cqi, 16px); opacity: .9; }
+.rnc-wizard-site .rnc-wizard-site-title { margin: 8px 0; font: 700 clamp(20px, 5cqi, 34px)/1.2 var(--font-sans); color: #ffffff; overflow-wrap: anywhere; }
+.rnc-wizard-site p { margin: 0 0 14px; font-size: clamp(13px, 3.3cqi, 18px); line-height: 1.5; color: #ffffff; opacity: .92; overflow-wrap: anywhere; }
+.rnc-wizard-site-cta { display: inline-block; padding: 8px 16px; border-radius: var(--radius-pill); background: var(--site-accent); color: #ffffff; font: 700 clamp(12px, 2.6cqi, 15px)/1.2 var(--font-sans); }
+.rnc-wizard-site-body { padding: 16px clamp(20px, 6cqi, 44px) 20px; font-size: clamp(12px, 1.2vw, 15px); line-height: 1.5; color: var(--ink-body); overflow-wrap: anywhere; }
+.rnc-wizard-site-body b { display: block; margin-bottom: 4px; font-size: 13px; color: var(--ink); }
+.rnc-wizard-site-empty { color: var(--ink-muted); font-style: italic; }
+@container rnc-wizard (max-width: 1080px) { .rnc-wizard-split { grid-template-columns: minmax(0, 1fr); } .rnc-wizard-preview { position: static; max-width: 560px; } }
+
 /* V2 top bar (the toolbar slot): back, the product, a breadcrumb, then the status pill and the form's actions on the right */
 .rnc-wizard-topbar { position: relative; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; min-height: 64px; padding: 10px 24px; box-sizing: border-box; border-radius: var(--radius-lg) var(--radius-lg) 0 0; background: var(--surface); box-shadow: var(--shadow-1); }
 .rnc-wizard-topbar + .rnc-wizard-notice { border-radius: 0; }
@@ -671,7 +692,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-wizard-crumb b { font-weight: 600; color: var(--ink); }
 .rnc-wizard-grow { flex: 1; }
 .rnc-wizard-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-@media (max-width: 900px) { .rnc-wizard-topbar { padding: 10px 16px; } .rnc-wizard-crumb { flex-basis: 100%; order: 3; } }
+@container rnc-wizard (max-width: 860px) { .rnc-wizard-topbar { padding: 10px 16px; } .rnc-wizard-crumb { flex-basis: 100%; order: 3; } }
 @media (prefers-reduced-motion: reduce) { .rnc-wizard-track > span { transition: none; } }
 
 /* Alert box (npm: @rafflenexuscanada/design-system/alerts, on SweetAlert2): a modal that asks, confirms or reports one thing.
