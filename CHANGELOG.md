@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.10 (2026-10-15)
+
+- Synced with the design system. Updated: icons, component styles.
+
 ## 0.6.9 (2026-10-15)
 
 - Synced with the design system. Updated: icons, component styles.
