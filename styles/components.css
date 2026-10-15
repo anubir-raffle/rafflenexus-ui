@@ -56,8 +56,10 @@
 
 /* Stage band */
 .rnc-stage { background: var(--stage); color: var(--on-stage); }
-/* Headings get the colour directly: inheriting it loses to an app's own `h2 { color }` rule */
+/* Text gets the colour directly: inheriting it loses to an app's own `h2 { color }` or `p { color }` rule.
+   Body text uses :where so any component rule (one class or more) still sets its own colour. */
 .rnc-stage :is(h1, h2, h3, h4, h5, h6), .rnc-stage .rnc-h { color: var(--on-stage); }
+.rnc-stage :where(p, li, dt, dd, blockquote, figcaption) { color: var(--on-stage); }
 .rnc-stage .rnc-label { color: var(--stage-accent); }
 
 /* Verified badge */
