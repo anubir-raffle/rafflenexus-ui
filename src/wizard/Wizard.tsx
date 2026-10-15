@@ -1,5 +1,5 @@
 import {
-  Children, isValidElement, useCallback, useEffect, useMemo, useRef, useState, type ReactElement, type ReactNode,
+  Children, isValidElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement, type ReactNode,
 } from 'react';
 import { Form, FormSpy } from 'react-final-form';
 import arrayMutators from 'final-form-arrays';
@@ -101,17 +101,54 @@ export type WizardStepState = 'complete' | 'incomplete' | 'review' | 'locked';
 export interface WizardStep { label: string; state: WizardStepState; summary?: ReactNode }
 
 /** The step bar: one button per step, each naming its state; the current step is marked. Scrolls sideways when narrow. */
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
 export function WizardSteps({ steps, current, onSelect, label = 'Form steps', layout = 'v1' }: { steps: WizardStep[]; current: number; onSelect: (index: number) => void; label?: string; layout?: 'v1' | 'v2' }) {
   const nav = useRef<HTMLElement>(null);
+  const list = useRef<HTMLOListElement>(null);
+  const rail = layout === 'v2';
   useEffect(() => {
     const el = nav.current?.querySelector<HTMLElement>('[aria-current="step"]');
     if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }, [current]);
+
+  // V2: one white card under the current step that glides to the next one (instead of jumping)
+  const [marker, setMarker] = useState<{ style: CSSProperties; ready: boolean } | null>(null);
+  const place = useCallback(() => {
+    const ol = list.current; const el = ol?.querySelector<HTMLElement>('[aria-current="step"]');
+    if (!ol || !el) return;
+    const style: CSSProperties = { transform: `translate(${el.offsetLeft}px, ${el.offsetTop}px)`, width: el.offsetWidth, height: el.offsetHeight };
+    setMarker((m) => ({ style, ready: !!m }));
+  }, []);
+  useIsoLayoutEffect(() => { if (rail) place(); }, [rail, current, steps.length, place]);
+  useEffect(() => {
+    if (!rail || typeof ResizeObserver === 'undefined' || !list.current) return;
+    const ro = new ResizeObserver(() => place());
+    ro.observe(list.current);
+    return () => ro.disconnect();
+  }, [rail, place]);
+
+  // A step's circle pops when its state changes (it's done, or Review unlocks); not on the first render
+  const prev = useRef<WizardStepState[] | null>(null);
+  const [pops, setPops] = useState<number[]>([]);
+  const stateKey = steps.map((s) => s.state).join(',');
+  useEffect(() => {
+    const before = prev.current; const now = steps.map((s) => s.state);
+    prev.current = now;
+    if (!before) return;
+    const changed = now.map((st, i) => (before[i] !== undefined && before[i] !== st && (st === 'complete' || st === 'review') ? i : -1)).filter((i) => i > -1);
+    if (!changed.length) return;
+    setPops(changed);
+    const t = setTimeout(() => setPops([]), 450);
+    return () => clearTimeout(t);
+  }, [stateKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const words: Record<WizardStepState, string> = { complete: 'complete', incomplete: 'not complete', review: 'ready', locked: 'available once every section is complete' };
   const icons: Record<WizardStepState, 'check' | 'x' | 'eye'> = { complete: 'check', incomplete: 'x', review: 'eye', locked: 'eye' };
   return (
-    <nav className={cx('rnc-wizard-steps', layout === 'v2' && 'is-rail')} aria-label={label} ref={nav}>
-      <ol>
+    <nav className={cx('rnc-wizard-steps', rail && 'is-rail', rail && marker && 'has-marker')} aria-label={label} ref={nav}>
+      <ol ref={list}>
+        {rail && marker ? <span className={cx('rnc-wizard-rail-marker', marker.ready && 'is-ready')} style={marker.style} aria-hidden="true" /> : null}
         {steps.map((s, i) => (
           <li key={`${s.label}-${i}`}>
             <button
@@ -122,9 +159,9 @@ export function WizardSteps({ steps, current, onSelect, label = 'Form steps', la
               aria-label={`${s.label}, ${words[s.state]}`}
               onClick={() => onSelect(i)}
             >
-              <span className="rnc-wizard-step-dot" aria-hidden="true"><Icon name={icons[s.state]} size={16} /></span>
+              <span className={cx('rnc-wizard-step-dot', pops.includes(i) && 'is-pop')} aria-hidden="true"><Icon name={icons[s.state]} size={16} /></span>
               <span className="rnc-wizard-step-name">{s.label}</span>
-              {layout === 'v2' && s.summary != null && s.summary !== '' ? <span className="rnc-wizard-step-sub">{s.summary}</span> : null}
+              {rail && s.summary != null && s.summary !== '' ? <span className="rnc-wizard-step-sub">{s.summary}</span> : null}
             </button>
           </li>
         ))}
@@ -146,6 +183,7 @@ function WizardRoot<V extends Values = Values>({
   const [start] = useState(() => (initialValues ?? {}) as V);
   const [page, setPage] = useState(0);
   const [blocked, setBlocked] = useState(false);
+  const [travel, setTravel] = useState<'forward' | 'back' | null>(null);
   const body = useRef<HTMLDivElement>(null);
   const moved = useRef(false);
   const pages = Children.toArray(children).filter(isValidElement) as ReactElement<WizardPageProps<V>>[];
@@ -168,7 +206,7 @@ function WizardRoot<V extends Values = Values>({
     return (active?.props.validate?.(values) ?? {}) as any;
   }, [visibleOf, page]);
 
-  const goTo = (index: number) => { moved.current = true; setBlocked(false); setPage(index); };
+  const goTo = (index: number) => { moved.current = true; setBlocked(false); setTravel(index >= page ? 'forward' : 'back'); setPage(index); };
   useEffect(() => {
     if (!moved.current) return;
     moved.current = false;
@@ -233,6 +271,7 @@ function WizardRoot<V extends Values = Values>({
         ) : null;
         const content = (
           <div className="rnc-wizard-body" ref={body} tabIndex={-1} aria-label={steps[current]?.label}>
+            <div key={current} className={cx('rnc-wizard-enter', travel && `is-${travel} is-moved`)}>
             {v2 ? (
               <div className="rnc-wizard-page-head">
                 <h2 className="rnc-wizard-page-title">{steps[current]?.label}</h2>
@@ -244,12 +283,14 @@ function WizardRoot<V extends Values = Values>({
               const side = v2 && preview ? preview(values, { label: steps[current]?.label ?? '', index: current }) : null;
               return side != null && side !== false ? <div className="rnc-wizard-split"><div>{page}</div>{side}</div> : page;
             })()}
+            </div>
           </div>
         );
         const foot = (
           <div className="rnc-wizard-foot">
             <span className="rnc-wizard-save" role="status">
-              {isSaving ? <><span className="rnc-btn-spinner" aria-hidden="true" />Saving…</> : lastSaved ? <>{v2 ? <Icon name="check-circle" size={18} /> : null}Last saved {lastSaved}</> : null}
+              {isSaving ? <span className="rnc-wizard-save-msg" key="saving"><span className="rnc-btn-spinner" aria-hidden="true" />Saving…</span>
+                : lastSaved ? <span className="rnc-wizard-save-msg" key={`saved-${String(lastSaved)}`}>{v2 ? <Icon name="check-circle" size={18} /> : null}Last saved {lastSaved}</span> : null}
             </span>
             <div className="rnc-wizard-actions">
               {current > 0 ? <Button variant="secondary" onClick={() => goTo(current - 1)}>{backLabel}</Button> : null}
