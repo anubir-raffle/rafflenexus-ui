@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.4 (2026-10-15)
+
+- Synced with the design system. Updated: icons.
+
 ## 0.6.3 (2026-10-15)
 
 - Synced with the design system. Updated: icons.
