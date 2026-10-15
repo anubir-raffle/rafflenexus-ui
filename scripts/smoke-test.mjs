@@ -53,7 +53,7 @@ for (const [name, el, expect] of cases) {
 }
 const hex = /^#[0-9a-f]{6}$/i;
 check('tokens', ['action', 'ink', 'stage', 'ground', 'reward', 'verified', 'focus'].every((k) => hex.test(DS.tokens.color[k])) && DS.tokens.font.display.startsWith('Newsreader') && DS.tokens.font.mono.includes('DM Mono'));
-check('icon names', DS.ICON_NAMES.length >= 39 && ['ticket', 'x', 'list', 'user', 'plus', 'upload-simple', 'arrow-square-out', 'caret-left', 'caret-right'].every((n) => DS.ICON_NAMES.includes(n)));
+check('icon names', DS.ICON_NAMES.length >= 57 && ['ticket', 'x', 'list', 'user', 'plus', 'upload-simple', 'arrow-square-out', 'caret-left', 'caret-right'].every((n) => DS.ICON_NAMES.includes(n)));
 const require = createRequire(import.meta.url);
 const cjs = require('../dist/index.cjs');
 check('CommonJS build', typeof cjs.TicketButton === 'function' && typeof cjs.JackpotFigure === 'function');
@@ -106,6 +106,22 @@ const legacyTables = JSON.parse(readFileSync(join(root, 'tables/package.json'), 
 check('tables/ fallback for older tools', ['main', 'module', 'types'].every((k) => statSync(join(root, 'tables', legacyTables[k])).isFile())
   && require(join(root, 'tables', legacyTables.main)).ReactTableComponent != null
   && pkgJson.files.includes('tables') && pkgJson.typesVersions?.['*']?.tables?.[0] === './dist/tables.d.ts' && pkgJson.exports['./tables']?.require === './dist/tables.cjs');
+
+// The /wizard entry (react-final-form): renders a two-step wizard from the CommonJS build, with the header and deadline.
+const WZ = require('../dist/wizard.cjs');
+const wzHtml = render(h(WZ.Wizard, { onSubmit: () => {}, initialValues: { name: 'Sample Lottery' }, notice: () => h(WZ.WizardDeadline, { date: 'October 20, 2026' }), header: (v) => h(WZ.WizardHeader, { title: v.name, subtitle: 'Sample Foundation' }) },
+  h(WZ.Wizard.Page, { label: 'Website', validate: (v) => (v.name ? {} : { name: 'Required' }) }, h(WZ.WizardSection, { title: 'Name', description: 'The raffle name.' })),
+  h(WZ.Wizard.Page, { label: 'Dates', validate: () => ({ draw: 'Required' }) }, 'Dates'),
+  h(WZ.Wizard.Page, null, 'Review')));
+check('wizard: Wizard (CJS)', ['rnc-wizard-card', 'aria-current="step"', 'Website, complete', 'Dates, not complete', 'Review, available once every section is complete', '1 of 2 sections complete', 'Sample Lottery', 'October 20, 2026', 'rnc-wizard-section-desc', '>Next<'].every((x) => wzHtml.includes(x)));
+check('wizard: default export and parts', WZ.default === WZ.Wizard && typeof WZ.WizardSteps === 'function' && typeof WZ.Wizard.Page === 'function');
+const WZesm = await import('../dist/wizard.js');
+check('wizard: ESM build', typeof WZesm.Wizard === 'function');
+const legacyWizard = JSON.parse(readFileSync(join(root, 'wizard/package.json'), 'utf8'));
+check('wizard/ fallback for older tools', ['main', 'module', 'types'].every((k) => statSync(join(root, 'wizard', legacyWizard[k])).isFile())
+  && require(join(root, 'wizard', legacyWizard.main)).Wizard != null
+  && pkgJson.files.includes('wizard') && pkgJson.typesVersions?.['*']?.wizard?.[0] === './dist/wizard.d.ts' && pkgJson.exports['./wizard']?.require === './dist/wizard.cjs'
+  && pkgJson.peerDependenciesMeta?.['final-form-arrays']?.optional === true);
 
 // The package and its repository are public: no client names may appear in either.
 // The names live in a git-ignored local file (see client-names.mjs), so this check runs on Marketing's machine.

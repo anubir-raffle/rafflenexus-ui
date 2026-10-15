@@ -1,6 +1,6 @@
 {
   "name": "@rafflenexuscanada/design-system",
-  "version": "0.6.5",
+  "version": "0.7.0",
   "description": "Raffle Nexus Canada design system (RNC V2.1): React components, design tokens and fonts, plus MUI form inputs for react-final-form and SweetAlert2 alert dialogs.",
   "license": "SEE LICENSE IN LICENSE",
   "author": "Raffle Nexus Canada",
@@ -29,6 +29,9 @@
       ],
       "tables": [
         "./dist/tables.d.ts"
+      ],
+      "wizard": [
+        "./dist/wizard.d.ts"
       ]
     }
   },
@@ -53,6 +56,11 @@
       "import": "./dist/tables.js",
       "require": "./dist/tables.cjs"
     },
+    "./wizard": {
+      "types": "./dist/wizard.d.ts",
+      "import": "./dist/wizard.js",
+      "require": "./dist/wizard.cjs"
+    },
     "./styles.css": "./dist/styles.css",
     "./tokens.css": "./dist/tokens.css",
     "./fonts.css": "./dist/fonts.css",
@@ -64,6 +72,7 @@
     "inputs",
     "alerts",
     "tables",
+    "wizard",
     "LICENSE",
     "README.md",
     "CHANGELOG.md"
@@ -93,6 +102,7 @@
     "@mui/x-date-pickers": "^7.0.0",
     "@react-input/mask": "^2.0.4",
     "final-form": "^4.20.4 || ^5.0.0",
+    "final-form-arrays": "^3.1.0 || ^4.0.0",
     "moment": "^2.29.4",
     "react": ">=17",
     "react-dom": ">=17",
@@ -118,6 +128,9 @@
       "optional": true
     },
     "final-form": {
+      "optional": true
+    },
+    "final-form-arrays": {
       "optional": true
     },
     "moment": {
@@ -152,6 +165,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "final-form": "^5.0.1",
+    "final-form-arrays": "^4.0.1",
     "jsdom": "^30.1.2",
     "moment": "^2.31.0",
     "react": "^19.3.0",

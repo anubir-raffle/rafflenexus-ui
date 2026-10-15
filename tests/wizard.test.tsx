@@ -1,0 +1,202 @@
+// The Raffle Builder's setup form wizard (/wizard): the handoff's "done when" list and behaviour section.
+import { describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { Field } from 'react-final-form';
+import { Wizard, WizardDeadline, WizardHeader, WizardSection, type WizardProps } from '../src/wizard';
+import DefaultWizard from '../src/wizard';
+
+type Brief = { name?: string; draw_at?: string; prize?: string; logo?: string; prizes?: string[]; client: { name: string; province: string } };
+const need = (key: keyof Brief, msg: string) => (v: Brief) => (v[key] ? {} : { [key]: msg });
+
+function Text({ name, label }: { name: string; label: string }) {
+  return (
+    <Field name={name}>
+      {({ input, meta }) => (
+        <div><label htmlFor={name}>{label}</label><input id={name} {...input} />{meta.error ? <span role="note">{meta.error}</span> : null}</div>
+      )}
+    </Field>
+  );
+}
+
+function Brief(props: Partial<WizardProps<Brief>> & { province?: string; start?: Partial<Brief> }) {
+  const { province = 'BC', start, ...rest } = props;
+  return (
+    <Wizard<Brief>
+      onSubmit={vi.fn()}
+      initialValues={{ name: 'Sample Hospital Lottery', client: { name: 'Sample Foundation', province }, ...start }}
+      {...rest}
+    >
+      <Wizard.Page label="Website" validate={need('name', 'Enter the raffle name')}><Text name="name" label="Raffle name" /></Wizard.Page>
+      <Wizard.Page label="Dates" validate={need('draw_at', 'Enter the draw date')}><Text name="draw_at" label="Draw date" /></Wizard.Page>
+      <Wizard.Page label="Prizes" validate={need('prize', 'Enter a prize')}>
+        {(mutators, values, changePage) => (
+          <>
+            <Text name="prize" label="Prize" />
+            <button type="button" onClick={() => mutators.setLogo('logo.png')}>Set logo</button>
+            <button type="button" onClick={() => mutators.push('prizes', 'Car')}>Add prize</button>
+            <button type="button" onClick={() => changePage(0)}>Edit website</button>
+            <output data-testid="vals">{JSON.stringify({ logo: values.logo, prizes: values.prizes })}</output>
+          </>
+        )}
+      </Wizard.Page>
+      <Wizard.Page label="Rules of play" hide={(v) => ['BC', 'AB', 'MB'].includes(v.client.province)}><p>Rules</p></Wizard.Page>
+      <Wizard.Page label="Review" hide={() => !!rest.isQaPage}><p>Check everything, then submit.</p></Wizard.Page>
+    </Wizard>
+  );
+}
+const steps = () => within(screen.getByRole('navigation', { name: 'Form steps' })).getAllByRole('button');
+const step = (name: RegExp) => within(screen.getByRole('navigation', { name: 'Form steps' })).getByRole('button', { name });
+const mutators = { setLogo: (args: unknown[], state: any, utils: any) => utils.changeValue(state, 'logo', () => args[0]) };
+
+describe('Wizard (/wizard)', () => {
+  it('is the default export too', () => {
+    expect(DefaultWizard).toBe(Wizard);
+  });
+
+  it('builds the step bar from the visible pages and their labels; Rules of play is hidden for BC and shown for ON', () => {
+    const { unmount } = render(<Brief />);
+    expect(steps().map((b) => b.textContent)).toEqual(['Website', 'Dates', 'Prizes', 'Review']);
+    unmount();
+    render(<Brief province="ON" />);
+    expect(steps().map((b) => b.textContent)).toEqual(['Website', 'Dates', 'Prizes', 'Rules of play', 'Review']);
+  });
+
+  it('validates each step from the start and names its state; the current step is marked', () => {
+    render(<Brief />);
+    expect(step(/^Website, complete/)).toHaveAttribute('aria-current', 'step');
+    expect(step(/^Dates, not complete/)).toHaveClass('is-incomplete');
+    expect(step(/^Review, available once every section is complete/)).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByText('1 of 3 sections complete')).toBeInTheDocument();
+  });
+
+  it('shows the active step’s errors at once (validation runs on mount)', async () => {
+    render(<Brief />);
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByRole('note')).toHaveTextContent('Enter the draw date');
+  });
+
+  it('Next never blocks; Back appears after the first step; the step before Review shows Review, locked until every step is done', async () => {
+    render(<Brief />);
+    expect(screen.queryByRole('button', { name: 'Back' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(step(/^Dates/)).toHaveAttribute('aria-current', 'step');
+    expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    const review = screen.getByRole('button', { name: 'Review' });
+    expect(review).toBeDisabled();
+    await userEvent.type(screen.getByLabelText('Prize'), 'Sunshine Coast home');
+    await userEvent.click(step(/^Dates/));
+    await userEvent.type(screen.getByLabelText('Draw date'), '2027-02-01');
+    await userEvent.click(step(/^Prizes/));
+    expect(screen.getByRole('button', { name: 'Review' })).toBeEnabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Review' }));
+    expect(step(/^Review, ready/)).toHaveAttribute('aria-current', 'step');
+  });
+
+  it('selecting Review early says why and stays put; onReviewBlocked replaces the message', async () => {
+    const { unmount } = render(<Brief />);
+    await userEvent.click(step(/^Review/));
+    expect(screen.getByRole('alert')).toHaveTextContent('Complete every section before you review');
+    expect(step(/^Website/)).toHaveAttribute('aria-current', 'step');
+    unmount();
+    const blocked = vi.fn();
+    render(<Brief onReviewBlocked={blocked} />);
+    await userEvent.click(step(/^Review/));
+    expect(blocked).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('Submit on the last step calls onSubmit with the values, then resets the form', async () => {
+    const onSubmit = vi.fn();
+    render(<Brief onSubmit={onSubmit} start={{ draw_at: '2027-02-01', prize: 'Home' }} />);
+    await userEvent.click(step(/^Review/));
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ name: 'Sample Hospital Lottery', prize: 'Home' }));
+  });
+
+  it('read-only has no submit button; QA mode hides Review and shows Complete form only when the status is 2', async () => {
+    const done = { draw_at: '2027-02-01', prize: 'Home' };
+    const { unmount } = render(<Brief disabledAll start={done} />);
+    await userEvent.click(step(/^Review/));
+    expect(screen.queryByRole('button', { name: 'Submit' })).toBeNull();
+    unmount();
+    const onSubmit = vi.fn();
+    const qa = render(<Brief isQaPage briefStatus={2} onSubmit={onSubmit} start={done} />);
+    expect(steps().map((b) => b.textContent)).toEqual(['Website', 'Dates', 'Prizes']);
+    await userEvent.click(step(/^Prizes/));
+    await userEvent.click(screen.getByRole('button', { name: 'Complete form' }));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    qa.unmount();
+    render(<Brief isQaPage briefStatus={1} start={done} />);
+    await userEvent.click(step(/^Prizes/));
+    expect(screen.queryByRole('button', { name: /Complete form|Submit/ })).toBeNull();
+  });
+
+  it('autosave: onSave gets { values, active } on every change; the footer shows Saving… or Last saved', async () => {
+    const onSave = vi.fn();
+    const { rerender } = render(<Brief onSave={onSave} lastSaved="2 minutes ago" />);
+    expect(screen.getByRole('status')).toHaveTextContent('Last saved 2 minutes ago');
+    await userEvent.type(screen.getByLabelText('Raffle name'), '!');
+    expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ values: expect.objectContaining({ name: 'Sample Hospital Lottery!' }), active: 'name' }));
+    rerender(<Brief onSave={onSave} isSaving />);
+    expect(screen.getByRole('status')).toHaveTextContent('Saving…');
+  });
+
+  it('merges the app’s mutators with arrayMutators; pages get mutators, values and changePage', async () => {
+    render(<Brief mutators={mutators} />);
+    await userEvent.click(step(/^Prizes/));
+    await userEvent.click(screen.getByRole('button', { name: 'Set logo' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Add prize' }));
+    expect(screen.getByTestId('vals')).toHaveTextContent('{"logo":"logo.png","prizes":["Car"]}');
+    await userEvent.click(screen.getByRole('button', { name: 'Edit website' }));
+    expect(step(/^Website/)).toHaveAttribute('aria-current', 'step');
+  });
+
+  it('submit buttons are disabled while a SweetAlert2 dialog is open (or isSubmitBlocked says so)', async () => {
+    const swal = document.createElement('div'); swal.className = 'swal2-container'; document.body.appendChild(swal);
+    render(<Brief start={{ draw_at: '2027-02-01', prize: 'Home' }} />);
+    await userEvent.click(step(/^Review/));
+    expect(screen.getByRole('button', { name: 'Submit' })).toBeDisabled();
+    swal.remove();
+  });
+
+  it('header and notice get the values; WizardHeader shows the name, organization and logos', () => {
+    render(<Brief
+      header={(v) => <WizardHeader title={v.name} subtitle={v.client.name} logo="/client.png" logoAlt="Sample Foundation logo" />}
+      notice={() => <WizardDeadline date="October 20, 2026" />}
+    />);
+    expect(screen.getByRole('heading', { level: 2, name: 'Sample Hospital Lottery' })).toBeInTheDocument();
+    expect(screen.getByText('Sample Foundation')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Sample Foundation logo' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Raffle Nexus' })).toBeInTheDocument();
+    expect(screen.getByText('October 20, 2026')).toBeInTheDocument();
+  });
+
+  it('WizardDeadline says Past due in words; WizardSection has a title, a tooltip slot and an explainer line', () => {
+    render(<>
+      <WizardDeadline date="October 20, 2026" overdue />
+      <WizardSection title="Ticket sales" size="md" tooltip={<button type="button">About ticket sales</button>} description="*All dates are in Pacific time.">
+        <input aria-label="Sales open" />
+      </WizardSection>
+    </>);
+    expect(screen.getByText('Past due').closest('.rnc-wizard-deadline')).toHaveClass('is-overdue');
+    expect(screen.getByText(/Your raffle launch is at risk of delay/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Ticket sales' }).closest('section')).toHaveClass('rnc-wizard-section', 'is-md');
+    expect(screen.getByRole('button', { name: 'About ticket sales' })).toBeInTheDocument();
+    expect(screen.getByText('*All dates are in Pacific time.')).toHaveClass('rnc-wizard-section-desc');
+  });
+
+  it('a page marked review is the Review step even when it isn’t last', () => {
+    render(
+      <Wizard onSubmit={vi.fn()} initialValues={{}}>
+        <Wizard.Page label="One">a</Wizard.Page>
+        <Wizard.Page label="Check" review>b</Wizard.Page>
+        <Wizard.Page label="Extra">c</Wizard.Page>
+      </Wizard>,
+    );
+    expect(step(/^Check, ready/)).toHaveClass('is-review');
+    act(() => { fireEvent.click(step(/^Extra/)); });
+    expect(step(/^Extra/)).toHaveAttribute('aria-current', 'step');
+  });
+});

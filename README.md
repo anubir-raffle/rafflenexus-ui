@@ -44,7 +44,7 @@ export function Hero() {
 
 ## Components
 
-> **Looking for `TextInput`, `DatePicker`, `InputMasked`, the MUI `Switch`, `SweetAlert` or `ReactTableComponent`?** They're in separate entry points, not this one: `import { TextInput, Switch } from '@rafflenexuscanada/design-system/inputs'`, `import { SweetAlert } from '@rafflenexuscanada/design-system/alerts'` and `import { ReactTableComponent } from '@rafflenexuscanada/design-system/tables'`. See [Raffle Builder inputs](#raffle-builder-inputs-inputs), [Alert dialogs](#alert-dialogs-alerts) and [The Raffle Builder dashboard](#the-raffle-builder-dashboard-tables-buttons-avatars-sidebar). (`TextField` and `TextArea` below are the design system's simpler fields, with different props.)
+> **Looking for `TextInput`, `DatePicker`, `InputMasked`, the MUI `Switch`, `SweetAlert`, `ReactTableComponent` or the setup form `Wizard`?** They're in separate entry points, not this one: `import { TextInput, Switch } from '@rafflenexuscanada/design-system/inputs'`, `import { SweetAlert } from '@rafflenexuscanada/design-system/alerts'` `import { ReactTableComponent } from '@rafflenexuscanada/design-system/tables'` and `import { Wizard } from '@rafflenexuscanada/design-system/wizard'`. See [Raffle Builder inputs](#raffle-builder-inputs-inputs), [Alert dialogs](#alert-dialogs-alerts) and [The Raffle Builder dashboard](#the-raffle-builder-dashboard-tables-buttons-avatars-sidebar). (`TextField` and `TextArea` below are the design system's simpler fields, with different props.)
 
 | Component | What it's for | Key props |
 | --- | --- | --- |
@@ -306,6 +306,53 @@ import { StatusPill, FilterChip, FilterChipGroup, StepTimeline, StepTimelineLabe
 - **Please check:**
   - What does red mean on a step: reached after its deadline, or past its deadline and not reached? `late` assumes the first. If it's the second, we'd show the red on a step with no date ("Overdue").
   - The red dashed line between steps: is it "today"? It isn't built yet; it's easy to add once we know.
+
+## Setup form wizard (`/wizard`)
+
+`@rafflenexuscanada/design-system/wizard` is the Raffle Builder's setup form wizard on react-final-form, with the app's props and behaviour and the design system's look (the `Wizard` card). Peer dependencies, which the app already has: `react-final-form`, `final-form` and `final-form-arrays` (3 or 4).
+
+```jsx
+// BriefForm/Wizard.jsx: a thin wrapper; AppForm.jsx keeps its pages and adds a label to each
+import { Wizard as DSWizard, WizardHeader, WizardDeadline } from '@rafflenexuscanada/design-system/wizard';
+import { isSweetAlertOpen } from '@rafflenexuscanada/design-system/alerts';
+import SweetAlert from '../../../shared/SweetAlert';
+
+const set = (field) => (args, state, utils) => utils.changeValue(state, field, () => args[0]);
+const mutators = {
+  setEarlyDraws: set('early_draws'), setSubdomain: set('sub_domain'), setRulesOfPlay: set('rules_of_play'),
+  setTicketPackGroups: (args, state, utils) => {
+    if (Array.isArray(args[0]) && args[0].length === 0) {
+      Object.keys(state.fields).filter((f) => f.startsWith('ticket_pack_groups[')).forEach((f) => utils.resetFieldState(f));
+    }
+    utils.changeValue(state, 'ticket_pack_groups', () => args[0]);
+  },
+  setTicketPacks: set('ticket_packs'), setPrizes: set('prizes'), setLogo: set('logo'), setBgLogo: set('logo_bg'),
+  setSharingImage: set('sharing_image'), setSaleLocations: set('sale_locations'), setLotteryUsers: set('lottery_users'),
+  setWinnersAreAt: set('winner_at'), setSlides: set('slides'),
+};
+
+export default function Wizard(props) {
+  return (
+    <DSWizard
+      {...props}
+      mutators={mutators}
+      isSubmitBlocked={isSweetAlertOpen}
+      onReviewBlocked={() => SweetAlert.error({ title: 'Cannot Proceed', text: 'Please complete all required sections before proceeding to the Review page.' })}
+      header={(v) => <WizardHeader title={v.name} subtitle={v.client?.name} logo={v.logo?.cropped} logoAlt={`${v.client?.name} logo`} />}
+      notice={(v) => (props.briefStatus < 3 && v.expiring ? <WizardDeadline date={formatDeadline(v.expiring)} overdue={isPastDue(v.expiring)} /> : null)}
+    />
+  );
+}
+Wizard.Page = DSWizard.Page;
+```
+
+- **`Wizard` props, as today:** `onSubmit` (last visible step; the form resets afterwards), `initialValues`, `onSave({ values, active })` (every value or focus change), `lastSaved`, `isSaving`, `disabledAll` (no submit button), `isQaPage` (Review hidden; Complete form on the last step when `briefStatus` is 2), `briefStatus`, `user` (accepted, unused).
+- **New, optional:** `mutators` (merged with `arrayMutators`), `header(values)`, `notice(values)`, `backLabel`, `nextLabel`, `reviewLabel`, `submitLabel`, `completeLabel`, `onReviewBlocked` (instead of the inline message), `isSubmitBlocked` (default: a SweetAlert2 dialog is open), `stepsLabel`.
+- **`Wizard.Page`:** `validate(values)` (`{}` means complete), `hide(values)`, `children` (content, or `(mutators, values, changePage) => …`), plus `label` (the step's name) and `review` (marks the Review step; without it, the last visible step is Review unless `isQaPage`).
+- **Parts:** `WizardHeader` (`title`, `subtitle`, `logo`, the Raffle Nexus mark), `WizardDeadline` (`date`, `overdue`, `overdueMessage`), `WizardSection` (`title`, `tooltip` slot for `BriefToolTip`, `description`, `size`: `lg` = the app's h5, `md` = sub-1, `sm` = sub-2), and `WizardSteps` if you need the step bar on its own.
+- **Behaviour kept:** one form across steps; the active step's `validate` is the form's validation, so its errors show on arrival; Next never blocks; the step before Review shows Review, disabled until every visible step is valid; selecting Review early is refused with a reason; Submit and Complete form are disabled while a dialog is open; autosave through a `FormSpy`.
+- **Different from the app (on purpose, per the handoff):** everything uses the visible steps (Review is no longer validated with Rules of Play's rules when Rules of Play is hidden); step labels come from each page's `label` instead of `WIZARD_PAGES`; mutators come in as a prop; no `document.body` colour, per-second countdown, Export JSON modal or `getStatus`; buttons are the design system's (Submit shows a spinner while `onSubmit` runs). Labels are sentence case without an exclamation mark ("Submit", "Complete form"); pass `submitLabel="Submit!"` to keep the old one. Selecting a step moves keyboard focus to that step's content, and the step bar scrolls the current step into view on phones.
+- `validateOnMount` isn't a react-final-form prop (the app's was ignored); final-form validates when the form is created, so errors show at once either way.
 
 ## Tokens
 

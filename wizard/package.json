@@ -1,0 +1,9 @@
+{
+  "name": "@rafflenexuscanada/design-system/wizard",
+  "private": true,
+  "description": "Fallback for tools that ignore package.json \"exports\" (webpack 4, Create React App 4, older Jest): resolves @rafflenexuscanada/design-system/wizard.",
+  "main": "../dist/wizard.cjs",
+  "module": "../dist/wizard.js",
+  "types": "../dist/wizard.d.ts",
+  "sideEffects": false
+}

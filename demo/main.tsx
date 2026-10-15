@@ -6,6 +6,7 @@ import '../styles/components.css';
 import './demo.css';
 import { InputsDemo } from './InputsDemo';
 import { AlertsDemo } from './AlertsDemo';
+import { WizardDemo } from './WizardDemo';
 import { AvatarsDemo, ButtonsDemo, RaffleBuilderDemo } from './Handoff2Demo';
 import { SetupFormsDemo } from './Handoff3Demo';
 import {
@@ -216,6 +217,10 @@ function App() {
 
       <Section title="Raffle Builder frame: Sidebar and ReactTableComponent (@rafflenexuscanada/design-system/tables)" note="The sidebar with its collapse button, main action, what's new footer, an external link and a badge (a dot when collapsed; hover or Tab to an icon for its name). Beside it, the scroll table: react-table v6 columns, loads more at 60% scrolled, a row highlighted with getTrProps.">
         <RaffleBuilderDemo />
+      </Section>
+
+      <Section title="Setup form wizard (@rafflenexuscanada/design-system/wizard)" note="The Raffle Builder's wizard on react-final-form: the step bar (done, not done, Review locked until every step is done), sections, autosave status, Back / Next / Review / Submit. Rules of play is hidden for this BC raffle. Try QA mode and read-only.">
+        <WizardDemo />
       </Section>
 
       <Section title="StatusPill, FilterChipGroup and StepTimeline" note="All setup forms as the Raffle Builder shows it: remove a filter chip (focus moves to the next one, or back to search), status pills in five tones, and the step timeline with its names once in the header. Below: every pill tone, and a timeline on its own.">
