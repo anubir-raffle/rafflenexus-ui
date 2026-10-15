@@ -109,8 +109,10 @@ export interface WizardSitePreviewProps {
   secondary?: string;
   /** The first slide: the hero's photo. */
   image?: string;
-  /** Every slide; the first one shows, with a progress bar for each. */
+  /** Every slide; the first one shows, whole, with a progress bar for each. */
   slides?: string[];
+  /** The client's own hero background, faint behind the hero. Slides never go there (cropped to fill, their text would be cut off). */
+  background?: string;
   /** The packs in "Choose a pack". */
   packs?: WizardSitePack[];
   /** "Important dates", in order. */
@@ -132,7 +134,7 @@ export interface WizardSitePreviewProps {
  * chosen device; nothing in it is clickable.
  */
 export function WizardSitePreview({
-  org, logo, logoAlt = '', heading, subheading, cause, colour, accent, secondary, image, slides, packs, dates, prizes, licence, badge,
+  org, logo, logoAlt = '', heading, subheading, cause, colour, accent, secondary, image, slides, background, packs, dates, prizes, licence, badge,
   cta = 'Order tickets', emptyHeading = 'Add a main heading',
 }: WizardSitePreviewProps) {
   const device = usePreviewDevice();
@@ -145,7 +147,7 @@ export function WizardSitePreview({
   const empty = heading == null || heading === '';
   return (
     <div className={cx('rnc-wsite', `is-${device}`)} style={style}>
-      <div className="rnc-wsite-hero" style={photos[0] ? { ['--site-photo' as string]: `url("${photos[0]}")` } : undefined}>
+      <div className="rnc-wsite-hero" style={background ? { ['--site-photo' as string]: `url("${background}")` } : undefined}>
         <div className="rnc-wsite-head">
           <span className="rnc-wsite-brand">
             {logo ? <img src={logo} alt={logoAlt} /> : null}

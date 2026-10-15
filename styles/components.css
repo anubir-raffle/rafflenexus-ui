@@ -249,8 +249,8 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-field-error { display: flex; gap: 6px; align-items: flex-start; margin: 2px 0 0; font: 600 14px/1.4 var(--font-sans); color: var(--error); }
 .rnc-field-error::before { content: "!"; flex: none; width: 18px; height: 18px; margin-top: 1px; border-radius: 50%; background: var(--error); color: #ffffff; font: 700 12px/18px var(--font-sans); text-align: center; }
 /* Character count: how many characters are left, beside the error. Darker near the limit, red at it. */
-.rnc-field-foot { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
-.rnc-field-foot > .rnc-field-error { flex: 1; min-width: 0; }
+.rnc-field-foot { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 2px 12px; min-width: 0; }
+.rnc-field-foot > .rnc-field-error { flex: 1 1 14em; min-width: 0; }
 .rnc-field-count { flex: none; margin: 2px 0 0 auto; font: 500 13px/1.4 var(--font-sans); font-variant-numeric: tabular-nums; color: var(--ink-muted); transition: color .2s ease; }
 .rnc-field-count.is-near { color: var(--ink); font-weight: 600; }
 .rnc-field-count.is-full { color: var(--error); font-weight: 600; }
@@ -918,7 +918,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
    their new places, so people see what changed. Sortable rows have a grip to drag by and Move earlier / Move later for the keyboard;
    while dragging, the row lifts and the others make room. All of it is instant under reduced motion. */
 .rnc-alist { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; min-width: 0; }
-.rnc-alist-item { position: relative; min-width: 0; }
+.rnc-alist-item { position: relative; min-width: 0; container: rnc-row / inline-size; }
 .rnc-alist-item.is-leaving { pointer-events: none; }
 /* A list of whole sections (licences, each with its packs) spaces them like sections. */
 .rnc-alist:has(> .rnc-alist-item > .rnc-wizard-section) { gap: 40px; }
@@ -932,6 +932,13 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-sort-grip svg { width: 16px; height: 22px; }
 .rnc-sort-body { flex: 1; min-width: 0; }
 .rnc-sort-moves { display: flex; flex: none; gap: 4px; }
+/* A narrow row (a phone) keeps its handles on one line and gives what you edit a full line underneath. */
+@container rnc-row (max-width: 520px) {
+  .rnc-sort-row { flex-wrap: wrap; gap: 10px 6px; padding: 10px; }
+  .rnc-sort-row > .rnc-sort-body { order: 10; flex: 1 1 100%; }
+  .rnc-sort-row > .rnc-sort-moves { margin-left: auto; }
+  .rnc-sort-row > .rnc-sort-pos { display: none; }
+}
 .rnc-sort-pos { flex: none; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--surface-tint); font: 600 12px/1 var(--font-sans); color: var(--ink); }
 @media (prefers-reduced-motion: no-preference) {
   .rnc-alist-item.is-entering { animation: rnc-list-in .34s cubic-bezier(.2, .8, .2, 1) both; }
@@ -944,7 +951,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 @keyframes rnc-list-flash { from { box-shadow: 0 0 0 3px var(--lead-soft), var(--shadow-1); } }
 
 /* Expandable row (ExpandableRow): a ticket pack, a prize, a licence. The head says what it is; it opens smoothly to edit. */
-.rnc-xrow { min-width: 0; border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-1); }
+.rnc-xrow { min-width: 0; border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-1); container: rnc-xrow / inline-size; }
 .rnc-xrow-head { display: flex; align-items: center; gap: 8px 12px; min-width: 0; padding: 6px 8px 6px 6px; }
 .rnc-xrow-toggle { display: flex; flex: 1; align-items: center; gap: 12px; min-width: 0; min-height: 44px; padding: 6px 10px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; transition: background-color .2s ease; }
 .rnc-xrow-toggle:hover { background: var(--surface-tint); }
@@ -959,6 +966,17 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-xrow-panel > div { min-height: 0; overflow: hidden; }
 .rnc-xrow-inner { display: grid; gap: 16px; padding: 4px 16px 18px; }
 .rnc-xrow:not(.is-open) .rnc-xrow-panel > div { visibility: hidden; transition: visibility 0s .26s; }
+/* A narrow row (a phone): the title may wrap, with what it holds (the value) under it, so it's never squeezed to nothing. */
+@container rnc-xrow (max-width: 440px) {
+  .rnc-xrow-head { flex-wrap: wrap; padding: 4px 4px 4px 2px; }
+  .rnc-xrow-head > .rnc-xrow-toggle { flex: 1 1 160px; }
+  .rnc-xrow-head > .rnc-xrow-actions { margin-left: auto; }
+  .rnc-xrow-toggle { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 2px 10px; padding: 8px; }
+  .rnc-xrow-chev { margin-top: 1px; }
+  .rnc-xrow-title { white-space: normal; overflow-wrap: anywhere; }
+  .rnc-xrow-meta { grid-column: 2; margin-left: 0; padding-left: 0; white-space: normal; }
+  .rnc-xrow-inner { padding: 4px 12px 14px; }
+}
 @media (prefers-reduced-motion: reduce) { .rnc-xrow-panel, .rnc-xrow-chev { transition: none; } }
 
 /* Upload tile (UploadTile): choose or drop a file. The tile lights up while a file is dragged over it; the image fades in; Replace and Remove. */
