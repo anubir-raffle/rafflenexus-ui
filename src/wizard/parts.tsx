@@ -89,3 +89,34 @@ export function WizardSection({ title, tooltip, description, size = 'lg', as: Ti
     </section>
   );
 }
+
+export interface WizardToolbarProps {
+  /** The product's name. Default "Raffle Builder". */
+  product?: ReactNode;
+  /** The product's mark. Default: the Raffle Nexus ticket mark. Pass null to leave it out. */
+  mark?: string | null;
+  /** Where the back arrow goes: a URL, or a function (a button). */
+  back?: string | (() => void);
+  backLabel?: string;
+  /** The breadcrumb, e.g. <>Raffles / <b>Sample Lottery</b></>. */
+  crumb?: ReactNode;
+  /** On the right: the status, e.g. <StatusPill tone="review">Ready for QA</StatusPill>. */
+  status?: ReactNode;
+  /** On the right, after the status: the form's actions (Download images, Lock editing, Mark form complete). */
+  actions?: ReactNode;
+}
+
+/** The V2 top bar: back, the product, a breadcrumb, then the status and the form's actions. Pass it as the Wizard's `toolbar`. */
+export function WizardToolbar({ product = 'Raffle Builder', mark = MARK_NAVY, back, backLabel = 'Back to your raffles', crumb, status, actions }: WizardToolbarProps) {
+  const arrow = <Icon name="caret-left" size={20} />;
+  return (
+    <header className="rnc-wizard-topbar">
+      {typeof back === 'string' ? <a className="rnc-wizard-back" href={back} aria-label={backLabel}>{arrow}</a>
+        : back ? <button type="button" className="rnc-wizard-back" aria-label={backLabel} onClick={back}>{arrow}</button> : null}
+      <span className="rnc-wizard-product">{mark ? <img src={mark} alt="" /> : null}{product}</span>
+      {crumb ? <span className="rnc-wizard-crumb">{crumb}</span> : null}
+      <span className="rnc-wizard-grow" />
+      {status || actions ? <div className="rnc-wizard-tools">{status}{actions}</div> : null}
+    </header>
+  );
+}

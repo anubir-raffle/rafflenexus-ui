@@ -27,3 +27,7 @@ p { color: var(--ink-body); }
 
 /* The row the Raffle Builder highlights after a save (its own class, passed through getTrProps) */
 .rnc-rt .demo-row-saved { background: var(--reward-soft) !important; cursor: pointer; }
+
+/* A section that uses the window's full width on desktop (the wizard), centred over the 1120px column */
+.demo-full { width: calc(100vw - 48px); max-width: 1760px; justify-self: center; box-sizing: border-box; }
+@media (max-width: 600px) { .demo-full { width: auto; justify-self: stretch; } }

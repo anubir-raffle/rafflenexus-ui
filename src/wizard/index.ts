@@ -8,7 +8,7 @@ export {
   type WizardProps, type WizardPageProps, type WizardMutators, type WizardStep, type WizardStepState,
 } from './Wizard';
 export {
-  WizardHeader, WizardDeadline, WizardSection,
-  type WizardHeaderProps, type WizardDeadlineProps, type WizardSectionProps,
+  WizardHeader, WizardDeadline, WizardSection, WizardToolbar,
+  type WizardHeaderProps, type WizardDeadlineProps, type WizardSectionProps, type WizardToolbarProps,
 } from './parts';
 export { Wizard as default } from './Wizard';

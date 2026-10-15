@@ -83,6 +83,8 @@ export interface WizardProps<V extends Values = Values> {
   aside?: (values: V) => ReactNode;
   /** V2: the rail's accessible name. Default "Setup form". */
   railLabel?: string;
+  /** V2: a top bar above everything, e.g. `<WizardToolbar … />` (back, the product, a breadcrumb, the status and the form's actions). */
+  toolbar?: (values: V) => ReactNode;
   className?: string;
   children?: ReactNode;
 }
@@ -134,7 +136,7 @@ export function WizardSteps({ steps, current, onSelect, label = 'Form steps', la
 function WizardRoot<V extends Values = Values>({
   onSubmit, initialValues, onSave, lastSaved, isSaving, disabledAll, isQaPage, briefStatus, mutators, header, notice,
   backLabel = 'Back', nextLabel = 'Next', reviewLabel = 'Review', submitLabel = 'Submit', completeLabel = 'Complete form',
-  onReviewBlocked, isSubmitBlocked = swalOpen, stepsLabel = 'Form steps', layout = 'v1', aside, railLabel = 'Setup form', className, children,
+  onReviewBlocked, isSubmitBlocked = swalOpen, stepsLabel = 'Form steps', layout = 'v1', aside, railLabel = 'Setup form', toolbar, className, children,
 }: WizardProps<V>) {
   const [start] = useState(() => (initialValues ?? {}) as V);
   const [page, setPage] = useState(0);
@@ -256,6 +258,7 @@ function WizardRoot<V extends Values = Values>({
         );
         return (
           <form className={cx('rnc-wizard', v2 && 'is-v2', className)} onSubmit={(e) => e.preventDefault()} noValidate>
+            {v2 && toolbar ? toolbar(values) : null}
             {notice ? <div className="rnc-wizard-notice">{notice(values)}</div> : null}
             {v2 ? (
               <div className="rnc-wizard-frame">
