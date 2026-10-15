@@ -9,7 +9,7 @@
 - `WizardSitePreview` on a phone: the licence badge no longer stretches tall with empty space (a column flex-basis set its height), and sponsor logos sit two across (one for the top tier, three for the smallest).
 - `UploadTile`: `kind` (`image`, `video`, `file`) and `fileName`; videos and documents come back as object URLs and preview as a playing video or a document icon with the file's name.
 - `AnimatedList` / `SortableList`: moves no longer jump. Re-renders during a slide (the announcement, the form, autosave) were read as new moves, so rows snapped to the far side and slid back; the slide was also cut short by transitions ending inside the row. A Move button keeps focus on its row.
-- The demo's builder: cause photo or video, social media accounts, a prize sponsor on each prize, a Sponsors step (tiers, alt text, a presenting sponsor), and Rules of play for every province (the standard rules unless a PDF is uploaded). Raffle name drops its "5 to 80 characters" hint.
+- The demo's builder: cause photo or video, social media accounts, a prize sponsor on each prize, a Sponsors step (tiers, alt text, a presenting sponsor), and Rules of play for every province (the standard rules unless a PDF is uploaded). Raffle name drops its "5 to 80 characters" hint. "Sharing image" is now "Social share image". Every image upload suggests a size (slides 1300 × 1000, cause photo 1600 × 1200, social share image 1200 × 630, logos at least 600 px wide, sponsor logos at least 400 px wide), and the cause photo and social share image refuse ones too small to look sharp.
 
 ## 0.7.2 (2026-10-15)
 

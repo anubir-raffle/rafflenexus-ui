@@ -241,7 +241,7 @@ function Slides({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
       </WizardSection>
       {!ro ? (
         <WizardSection title="Add a slide" size="md">
-          <UploadTile label="New slide" hint="PNG or JPG, at least 650 × 500." minWidth={650} minHeight={500}
+          <UploadTile label="New slide" hint="1300 × 1000 works best. At least 650 × 500. PNG or JPG." minWidth={650} minHeight={500}
             onFile={(_f, url) => m.setSlides([...v.slides, { id: uid('s'), src: url, alt: '' }])} />
         </WizardSection>
       ) : null}
@@ -332,7 +332,7 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                       <legend className="rnc-field-label" style={{ marginBottom: 12 }}>Prize sponsor (optional)</legend>
                       <div style={grid(220)}>
                         <ItemText label="Sponsor name" value={p.sponsor.name} readOnly={ro} maxLength={LIMIT.prize} check={() => prizeSponsorError(p)} onValue={(x) => setSponsor(p, { name: x })} />
-                        <UploadTile label="Sponsor logo" hint="PNG or SVG, on a clear background." src={p.sponsor.logo} alt={`${p.sponsor.name || 'Sponsor'} logo`} disabled={ro}
+                        <UploadTile label="Sponsor logo" hint="At least 400 px wide. PNG or SVG on a clear background." src={p.sponsor.logo} alt={`${p.sponsor.name || 'Sponsor'} logo`} disabled={ro}
                           onFile={(_f, url) => setSponsor(p, { logo: url })} onRemove={() => setSponsor(p, { logo: undefined })} />
                       </div>
                       <TextArea label="About the sponsor" hint="One or two lines, shown with the prize." value={p.sponsor.description} readOnly={ro} maxLength={300}
@@ -396,7 +396,7 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
             </div>
           )}
         />
-        {!ro ? <UploadTile label="Add a sponsor logo" hint="PNG or SVG, on a clear background." onFile={(_f, url) => addSponsor(url)} /> : null}
+        {!ro ? <UploadTile label="Add a sponsor logo" hint="At least 400 px wide. PNG or SVG on a clear background." onFile={(_f, url) => addSponsor(url)} /> : null}
       </WizardSection>
       <WizardSection title="Presenting sponsor" size="md" description="Optional. One sponsor shown beside your logo at the top of every page.">
         <div style={grid(220)}>
@@ -570,15 +570,15 @@ export function WizardDemo() {
                   )}
                 </Field>
                 {/* Optional: shown beside the cause text on the site (Miguel, 2026-10-16). */}
-                <UploadTile label="Cause photo or video (optional)" hint="Shown beside the cause on your site. A photo (JPG or PNG) or a short video (MP4 or WebM, up to 50 MB)."
-                  accept="image/*,video/mp4,video/webm" maxBytes={50 * 1024 * 1024} src={v.cause_media?.src} kind={v.cause_media?.kind} alt="The cause photo" disabled={ro}
+                <UploadTile label="Cause photo or video (optional)" hint="Shown beside the cause. A photo at 1600 × 1200 (at least 800 × 600) or a short video in MP4 or WebM up to 50 MB."
+                  accept="image/*,video/mp4,video/webm" minWidth={800} minHeight={600} maxBytes={50 * 1024 * 1024} src={v.cause_media?.src} kind={v.cause_media?.kind} alt="The cause photo" disabled={ro}
                   onFile={(f, url) => m.setCauseMedia({ kind: f.type.startsWith('video/') ? 'video' : 'image', src: url, name: f.name })} onRemove={() => m.setCauseMedia(undefined)} />
               </WizardSection>
               <WizardSection title="Branding" description="Your logo, the image shown when the site is shared, and the site's colours.">
                 <div style={{ ...grid(200), alignItems: 'stretch' }}>
-                  <UploadTile label="Logo" hint="PNG or SVG, on a clear background." src={v.logo} alt="Your logo" disabled={ro} error={v.logo ? undefined : 'Add your logo'}
+                  <UploadTile label="Logo" hint="At least 600 px wide. PNG or SVG on a clear background." src={v.logo} alt="Your logo" disabled={ro} error={v.logo ? undefined : 'Add your logo'}
                     onFile={(_f, url) => m.setLogo(url)} onRemove={() => m.setLogo(undefined)} />
-                  <UploadTile label="Social share image" hint="Shown when the site is shared, 1200 × 630." src={v.sharing_image} alt="Social share image" disabled={ro}
+                  <UploadTile label="Social share image" hint="Shown when the site is shared. 1200 × 630 works best. At least 600 × 315." minWidth={600} minHeight={315} src={v.sharing_image} alt="Social share image" disabled={ro}
                     onFile={(_f, url) => m.setSharingImage(url)} onRemove={() => m.setSharingImage(undefined)} />
                 </div>
                 <BrandColours value={v.colours} onChange={(c) => m.setColours(c)} logo={v.logo} review={ro}
