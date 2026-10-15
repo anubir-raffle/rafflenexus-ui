@@ -971,6 +971,9 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-wsite-sponsors.is-lg img { max-height: 64px; max-width: 190px; }
 .rnc-wsite-sponsors.is-sm li { min-width: 110px; height: 60px; padding: 8px 14px; }
 .rnc-wsite-sponsors.is-sm img { max-height: 34px; max-width: 110px; }
+/* Thank you to our sponsors: centred, heading, tier names and logos (Miguel, 2026-10-16). */
+.rnc-wsite-thanks { text-align: center; }
+.rnc-wsite-thanks .rnc-wsite-sponsors { justify-content: center; }
 /* The organization's social accounts, in the footer. */
 .rnc-wsite-socials { display: flex; flex-wrap: wrap; gap: 6px 14px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .rnc-wsite-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 32px; margin-top: 52px; padding: 34px 56px; background: var(--site-secondary); color: var(--site-on-secondary); font-size: 14px; transition: background-color .4s ease, color .4s ease; }
@@ -1006,12 +1009,10 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 /* In the column, a flex-basis would set the badge's height (Miguel, 2026-10-16: too much space in the badge on mobile). */
 .rnc-wsite.is-mobile .rnc-wsite-trust .rnc-licence { flex: none; width: 100%; }
 /* Sponsor logos on a phone: big tier one per row, the middle tier two across, small three across. */
-.rnc-wsite.is-mobile .rnc-wsite-sponsors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.rnc-wsite.is-mobile .rnc-wsite-sponsors.is-lg { grid-template-columns: minmax(0, 1fr); }
-.rnc-wsite.is-mobile .rnc-wsite-sponsors.is-sm { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.rnc-wsite.is-mobile .rnc-wsite-sponsors li { min-width: 0; height: 64px; padding: 8px 10px; }
-.rnc-wsite.is-mobile .rnc-wsite-sponsors.is-lg li { height: 84px; }
-.rnc-wsite.is-mobile .rnc-wsite-sponsors.is-sm li { height: 52px; padding: 6px 8px; }
+.rnc-wsite.is-mobile .rnc-wsite-sponsors { gap: 10px; }
+.rnc-wsite.is-mobile .rnc-wsite-sponsors li { flex: 0 1 calc(50% - 5px); min-width: 0; height: 64px; padding: 8px 10px; box-sizing: border-box; }
+.rnc-wsite.is-mobile .rnc-wsite-sponsors.is-lg li { flex-basis: min(100%, 240px); height: 84px; }
+.rnc-wsite.is-mobile .rnc-wsite-sponsors.is-sm li { flex-basis: calc((100% - 20px) / 3); height: 52px; padding: 6px 8px; }
 .rnc-wsite.is-mobile .rnc-wsite-sponsors img { max-width: 100%; max-height: 40px; }
 .rnc-wsite.is-mobile .rnc-wsite-sponsors.is-lg img { max-height: 56px; }
 .rnc-wsite.is-mobile .rnc-wsite-sponsors.is-sm img { max-height: 30px; }

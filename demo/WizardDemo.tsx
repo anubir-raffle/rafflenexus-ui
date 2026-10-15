@@ -25,6 +25,7 @@ type Tier = { id: string; name: string };
 /** A photo or a video for the cause, shown beside the cause text on the site. */
 type CauseMedia = { kind: 'image' | 'video'; src: string; name: string };
 /** The organization's social accounts: the part after the address (the app's support_socials). */
+type Presenting = { name: string; logo?: string; label: string };
 type Socials = { facebook?: string; instagram?: string; twitter?: string; youtube?: string; linkedin?: string };
 type Early = { id: string; date: string; prize: string };
 type Brief = {
@@ -32,8 +33,10 @@ type Brief = {
   slides: Slide[]; sales_open?: string; sales_close?: string; draw_at?: string; draw_location?: string; early_draws: Early[];
   ticket_pack_groups: Licence[]; prizes: Prize[]; client: { name: string; province: string };
   cause_media?: CauseMedia; support_socials: Socials;
-  /** Sponsors, plain or in tiers, and an optional presenting sponsor (a Sponsor id) beside the raffle's logo. */
-  sponsors: Sponsor[]; sponsors_tiered: boolean; sponsor_tiers: Tier[]; presenting_sponsor: string; presenting_label: 'Presented by' | 'Sponsored by';
+  /** Sponsors, plain or in tiers. */
+  sponsors: Sponsor[]; sponsors_tiered: boolean; sponsor_tiers: Tier[];
+  /** An optional presenting sponsor beside the raffle's logo: its own logo, its name (the alt text) and the wording before it. */
+  presenting: Presenting;
   /** The organization's own rules of play (a PDF). Without it, the standard rules for the province are used. */
   rules?: { name: string; src: string };
   /** The site's colours, picked from the logo (the app's leading_color is the primary). */
@@ -87,7 +90,7 @@ const START: Brief = {
   ],
   sponsors_tiered: true,
   sponsor_tiers: [{ id: 't1', name: 'Gold sponsors' }, { id: 't2', name: 'Silver sponsors' }, { id: 't3', name: 'Bronze sponsors' }],
-  presenting_sponsor: 'sp1', presenting_label: 'Presented by',
+  presenting: { name: 'Sample Credit Union', logo: badge('SAMPLE CREDIT UNION', '#13324f'), label: 'Presented by' },
   client: { name: 'Sample Hospital Foundation', province: 'BC' },
   colours: { primary: '#0c3f75', secondary: '#13324f', accent: '#126ab5' },
 };
@@ -96,7 +99,7 @@ const set = (field: string) => (args: unknown[], state: any, utils: any) => util
 const MUTATORS = {
   setSlides: set('slides'), setLicences: set('ticket_pack_groups'), setPrizes: set('prizes'), setEarlyDraws: set('early_draws'),
   setLogo: set('logo'), setSharingImage: set('sharing_image'), setSubDomainType: set('sub_domain_type'), setColours: set('colours'),
-  setCauseMedia: set('cause_media'), setSponsors: set('sponsors'), setTiers: set('sponsor_tiers'), setTiered: set('sponsors_tiered'), setRules: set('rules'),
+  setCauseMedia: set('cause_media'), setSponsors: set('sponsors'), setTiers: set('sponsor_tiers'), setTiered: set('sponsors_tiered'), setRules: set('rules'), setPresenting: set('presenting'),
 };
 
 // The app's rules for the web address: a Raffle Nexus name, or a whole domain.
@@ -163,6 +166,8 @@ const errs = {
     ...(v.sponsors.some((x) => !x.alt.trim()) && { sponsor_alt: 'Describe every sponsor logo (alt text): usually the sponsor’s name' }),
     ...(v.sponsors_tiered && v.sponsor_tiers.some((t) => !t.name.trim()) && { tier_names: 'Name every tier' }),
     ...(v.sponsors_tiered && v.sponsors.some((x) => !v.sponsor_tiers.some((t) => t.id === x.tier)) && { tier_pick: 'Put every sponsor in a tier' }),
+    ...(v.presenting.logo && !v.presenting.name.trim() && { presenting_name: 'Name the presenting sponsor' }),
+    ...(v.presenting.logo && !v.presenting.label.trim() && { presenting_label: 'Add the presenting sponsor’s wording, like Presented by' }),
   }),
   slides: (v: Brief) => ({ ...(!v.slides.length && { slides: 'Add at least one slide' }), ...(v.slides.some((s) => !s.alt.trim()) && { slides_alt: 'Describe every slide (alt text)' }) }),
   dates: (v: Brief) => ({
@@ -361,67 +366,115 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   );
 }
 
-/** The raffle's sponsors: logos only, with alt text; in tiers or one list; one of them may be shown beside the raffle's logo. */
+/**
+ * The raffle's sponsors: logos only, with alt text; in tiers or one list; one of them may be shown beside the raffle's logo.
+ * In tiers, each tier is its own group (Miguel, 2026-10-16: "organize that more intuitively"): its name, its logos in order, and its
+ * own upload. A logo changes tier from its row. The stored list follows the tiers' order, so the site shows what the form shows.
+ */
 function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   const tiers = v.sponsor_tiers;
-  const addSponsor = (url: string) => m.setSponsors([...v.sponsors, { id: uid('sp'), logo: url, alt: '', tier: tiers[0]?.id ?? '' }]);
+  const tierName = (t: Tier, i: number) => t.name.trim() || `Tier ${i + 1}`;
+  const byTier = (list: Sponsor[], order: Tier[] = tiers) => [...order.flatMap((t) => list.filter((x) => x.tier === t.id)), ...list.filter((x) => !order.some((t) => t.id === x.tier))];
+  const add = (url: string, tier = '') => m.setSponsors(byTier([...v.sponsors, { id: uid('sp'), logo: url, alt: '', tier }]));
+  const moveTo = (x: Sponsor, tier: string) => m.setSponsors(byTier([...v.sponsors.filter((o) => o.id !== x.id), { ...x, tier }]));
+  const reorderIn = (tier: string, next: Sponsor[]) => m.setSponsors(byTier([...v.sponsors.filter((x) => x.tier !== tier), ...next]));
+  const setTiered = (on: boolean) => {
+    m.setTiered(on);
+    if (!on) return;
+    let order = tiers;
+    if (!order.length) { order = [{ id: uid('t'), name: '' }]; m.setTiers(order); }
+    m.setSponsors(byTier(v.sponsors.map((x) => (order.some((t) => t.id === x.tier) ? x : { ...x, tier: order[0].id })), order));
+  };
   const addTier = () => { const id = uid('t'); m.setTiers([...tiers, { id, name: '' }]); focusSoon(`${id}-name`); };
+  // A removed tier's logos join the tier above it (or the next one, for the first tier).
+  const removeTier = (t: Tier, i: number) => {
+    const rest = tiers.filter((x) => x.id !== t.id); const into = rest[Math.max(0, i - 1)];
+    m.setTiers(rest); m.setSponsors(byTier(v.sponsors.map((x) => (x.tier === t.id ? { ...x, tier: into.id } : x)), rest));
+  };
+
+  const logos = (list: Sponsor[], label: string, onReorder: (next: Sponsor[]) => void) => (
+    <SortableList aria-label={label} items={list} getKey={(x) => x.id} disabled={ro} itemLabel={(x, i) => x.alt || `Logo ${i + 1}`} onReorder={onReorder}
+      renderItem={(x, t) => (
+        <div className="rnc-sort-row">
+          {t.grip}
+          <img src={x.logo} alt="" style={{ width: 'clamp(72px, 12vw, 120px)', height: 48, objectFit: 'contain', borderRadius: 6, background: '#ffffff', flex: 'none' }} />
+          <div className="rnc-sort-body">
+            {t.index > -1 ? (
+              <div style={grid(200)}>
+                <TextField label={`Alt text for logo ${t.index + 1}`} value={x.alt} review={ro} maxLength={LIMIT.alt} error={x.alt ? undefined : 'Describe the logo (the sponsor’s name)'}
+                  onChange={(e) => m.setSponsors(patch(v.sponsors, x.id, { alt: e.target.value }))} />
+                {v.sponsors_tiered && tiers.length > 1 ? (
+                  <Select label="Tier" value={x.tier} disabled={ro} options={tiers.map((tt, n) => ({ value: tt.id, label: tierName(tt, n) }))} onChange={(e) => moveTo(x, e.target.value)} />
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+          {t.moves}
+          {!ro && t.index > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${x.alt || `logo ${t.index + 1}`}`} onClick={() => m.setSponsors(v.sponsors.filter((o) => o.id !== x.id))} /> : null}
+        </div>
+      )}
+    />
+  );
+  const upload = (label: string, tier?: string) => (ro ? null : <UploadTile label={label} hint="At least 400 px wide. PNG or SVG on a clear background." onFile={(_f, url) => add(url, tier)} />);
+
   return (
     <>
       <WizardSection title="Sponsor logos" description="Shown on your raffle site under “Thank you to our sponsors”. Logos only, in the order here. Give each logo alt text: usually the sponsor’s name.">
-        <Switch label="Group sponsors into tiers" checked={v.sponsors_tiered} disabled={ro} onChange={(on) => m.setTiered(on)} />
+        <Switch label="Group sponsors into tiers" checked={v.sponsors_tiered} disabled={ro} onChange={setTiered} />
         {v.sponsors_tiered ? (
-          <div style={{ display: 'grid', gap: 12 }}>
-            <p className="rnc-field-label" style={{ margin: 0 }}>Tiers, biggest first</p>
-            <AnimatedList aria-label="Sponsor tiers" items={tiers} getKey={(t) => t.id} renderItem={(t, i) => (
-              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
-                  <ItemText id={`${t.id}-name`} label={`Tier ${i + 1}`} value={t.name} readOnly={ro} maxLength={40} required="Name the tier" onValue={(x) => m.setTiers(patch(tiers, t.id, { name: x }))} />
-                </div>
-                {!ro && i > -1 && tiers.length > 1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${t.name || `tier ${i + 1}`}`} style={{ marginTop: 32 }}
-                  onClick={() => { const rest = tiers.filter((x) => x.id !== t.id); m.setTiers(rest); m.setSponsors(v.sponsors.map((sp) => (sp.tier === t.id ? { ...sp, tier: rest[0].id } : sp))); }} /> : null}
-              </div>
-            )} />
-            {!ro ? <div><Button variant="secondary" size="sm" startIcon="plus" onClick={addTier}>Add a tier</Button></div> : null}
-          </div>
-        ) : null}
-        <SortableList aria-label="Sponsors" items={v.sponsors} getKey={(x) => x.id} disabled={ro} itemLabel={(x, i) => x.alt || `Sponsor ${i + 1}`} onReorder={(next) => m.setSponsors(next)}
-          renderItem={(x, t) => (
-            <div className="rnc-sort-row">
-              {t.grip}
-              <img src={x.logo} alt="" style={{ width: 'clamp(72px, 12vw, 120px)', height: 48, objectFit: 'contain', borderRadius: 6, background: '#ffffff', flex: 'none' }} />
-              <div className="rnc-sort-body" style={{ display: 'grid', gap: 12 }}>
-                {t.index > -1 ? (
-                  <div style={grid(200)}>
-                    <TextField label={`Alt text for sponsor ${t.index + 1}`} value={x.alt} review={ro} maxLength={LIMIT.alt} error={x.alt ? undefined : 'Describe the logo (the sponsor’s name)'}
-                      onChange={(e) => m.setSponsors(patch(v.sponsors, x.id, { alt: e.target.value }))} />
-                    {v.sponsors_tiered ? (
-                      <Select label="Tier" value={x.tier} disabled={ro} options={tiers.map((tt, n) => ({ value: tt.id, label: tt.name || `Tier ${n + 1}` }))}
-                        onChange={(e) => m.setSponsors(patch(v.sponsors, x.id, { tier: e.target.value }))} />
+          <>
+            <p className="rnc-field-hint" style={{ margin: 0 }}>Biggest tier first. The site shows bigger logos for higher tiers.</p>
+            <SortableList aria-label="Sponsor tiers" items={tiers} getKey={(t) => t.id} disabled={ro} itemLabel={(t, i) => tierName(t, i)}
+              onReorder={(next) => { m.setTiers(next); m.setSponsors(byTier(v.sponsors, next)); }}
+              renderItem={(t, tt) => {
+                const list = v.sponsors.filter((x) => x.tier === t.id);
+                const name = tierName(t, Math.max(0, tt.index));
+                return (
+                  <section aria-label={name} style={{ display: 'grid', gap: 16, padding: 'clamp(12px, 2vw, 18px)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', background: 'var(--ground)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      {tt.grip}
+                      <strong style={{ flex: 1, minWidth: 0, font: '600 15px/1.3 var(--font-sans)', color: 'var(--ink)' }}>
+                        {name}<span style={{ fontWeight: 400, color: 'var(--ink-muted)' }}> · {plural(list.length, 'logo')}</span>
+                      </strong>
+                      {tt.moves}
+                      {!ro && tt.index > -1 && tiers.length > 1 ? (
+                        <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove the ${name} tier (its logos move to ${tierName(tiers[tt.index === 0 ? 1 : tt.index - 1], tt.index === 0 ? 1 : tt.index - 1)})`}
+                          onClick={() => removeTier(t, tt.index)} />
+                      ) : null}
+                    </div>
+                    {tt.index > -1 ? (
+                      <>
+                        <ItemText id={`${t.id}-name`} label="Tier name" value={t.name} readOnly={ro} maxLength={40} required="Name the tier" onValue={(x) => m.setTiers(patch(tiers, t.id, { name: x }))} />
+                        {list.length ? logos(list, `${name} logos`, (next) => reorderIn(t.id, next)) : <p className="rnc-field-hint" style={{ margin: 0 }}>No logos in this tier yet.</p>}
+                        {upload(`Add a logo to ${name}`, t.id)}
+                      </>
                     ) : null}
-                  </div>
-                ) : null}
-              </div>
-              {t.moves}
-              {!ro && t.index > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${x.alt || `sponsor ${t.index + 1}`}`} onClick={() => m.setSponsors(v.sponsors.filter((o) => o.id !== x.id))} /> : null}
-            </div>
-          )}
-        />
-        {!ro ? <UploadTile label="Add a sponsor logo" hint="At least 400 px wide. PNG or SVG on a clear background." onFile={(_f, url) => addSponsor(url)} /> : null}
+                  </section>
+                );
+              }}
+            />
+            {!ro ? <div><Button variant="secondary" size="sm" startIcon="plus" onClick={addTier}>Add a tier</Button></div> : null}
+          </>
+        ) : (
+          <>
+            {v.sponsors.length ? logos(v.sponsors, 'Sponsor logos', (next) => m.setSponsors(next)) : null}
+            {upload('Add a sponsor logo')}
+          </>
+        )}
       </WizardSection>
-      <WizardSection title="Presenting sponsor" size="md" description="Optional. One sponsor shown beside your logo at the top of every page.">
+      {/* Its own logo and wording, not one of the logos above (Miguel, 2026-10-16: "they should be able to upload a logo and change the text"). */}
+      <WizardSection title="Presenting sponsor" size="md" description="Optional. Shown beside your logo at the top of every page, after your own wording.">
         <div style={grid(220)}>
-          <Field name="presenting_sponsor">
-            {({ input }) => (
-              <Select label="Show beside your logo" disabled={ro} {...input}
-                options={[{ value: '', label: 'No presenting sponsor' }, ...v.sponsors.map((x, i) => ({ value: x.id, label: x.alt || `Sponsor ${i + 1}` }))]} />
-            )}
-          </Field>
-          {v.presenting_sponsor ? (
-            <Field name="presenting_label">
-              {({ input }) => <Select label="Wording" disabled={ro} {...input} options={[{ value: 'Presented by', label: 'Presented by' }, { value: 'Sponsored by', label: 'Sponsored by' }]} />}
-            </Field>
-          ) : null}
+          <div style={{ display: 'grid', gap: 16, alignContent: 'start', minWidth: 0 }}>
+            <TextField label="Wording" hint="Shown before the logo. For example Presented by or Brought to you by." value={v.presenting.label} review={ro} maxLength={30}
+              error={v.presenting.logo && !v.presenting.label.trim() ? 'Add the wording, like Presented by' : undefined}
+              onChange={(e) => m.setPresenting({ ...v.presenting, label: e.target.value })} />
+            <TextField label="Sponsor name" hint="Read out in place of the logo for people who can’t see it." value={v.presenting.name} review={ro} maxLength={LIMIT.alt}
+              error={v.presenting.logo && !v.presenting.name.trim() ? 'Name the presenting sponsor' : undefined}
+              onChange={(e) => m.setPresenting({ ...v.presenting, name: e.target.value })} />
+          </div>
+          <UploadTile label="Presenting sponsor logo" hint="At least 400 px wide. PNG or SVG on a clear background." src={v.presenting.logo} alt={`${v.presenting.name || 'Presenting sponsor'} logo`} disabled={ro}
+            onFile={(_f, url) => m.setPresenting({ ...v.presenting, logo: url })} onRemove={() => m.setPresenting({ ...v.presenting, logo: undefined })} />
         </div>
       </WizardSection>
     </>
@@ -467,7 +520,6 @@ function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice;
   ].filter(Boolean).sort((a, b) => moment(a!.at).valueOf() - moment(b!.at).valueOf()).map((d): WizardSiteDate => ({ when: when(d!.at), what: d!.what }));
   const numbers = v.ticket_pack_groups.map((g) => g.licence_number).filter(Boolean);
   const logo = (x: Sponsor): WizardSiteSponsor => ({ name: x.alt, logo: x.logo });
-  const presenter = v.sponsors.find((x) => x.id === v.presenting_sponsor);
   return (
     <WizardPreview url={address(v) || 'your-raffle.rafflenexus.com'} device={device} onDeviceChange={onDevice}>
       <WizardSitePreview
@@ -478,7 +530,7 @@ function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice;
         dates={dates}
         prizes={v.prizes.filter((p) => p.title).map((p) => ({ title: p.title, value: p.value ? money(p.value) : undefined, sponsor: p.sponsor.name || p.sponsor.logo ? { name: p.sponsor.name, logo: p.sponsor.logo } : undefined }))}
         causeMedia={v.cause_media ? { kind: v.cause_media.kind, src: v.cause_media.src } : undefined}
-        sponsor={presenter ? { ...logo(presenter), label: v.presenting_label } : undefined}
+        sponsor={v.presenting.logo ? { name: v.presenting.name, logo: v.presenting.logo, label: v.presenting.label.trim() || 'Presented by' } : undefined}
         sponsors={v.sponsors_tiered ? { tiers: v.sponsor_tiers.map((t) => ({ name: t.name, sponsors: v.sponsors.filter((x) => x.tier === t.id).map(logo) })) } : v.sponsors.map(logo)}
         socials={SOCIALS.filter((x) => v.support_socials[x.key]).map((x) => ({ label: x.label.split(' ')[0], href: `https://${x.host}${v.support_socials[x.key]}` }))}
         licence={numbers.length ? `${v.client.province} Gaming Event Licence #${numbers.join(', #')}` : undefined}
@@ -666,7 +718,7 @@ export function WizardDemo() {
               { label: 'Dates', step: 2, complete: !messages(errs.dates(v)).length, summary: `Sales ${when(v.sales_open) || 'not set'} to ${when(v.sales_close) || 'not set'}. Draw ${when(v.draw_at) || 'not set'}.`, issues: messages(errs.dates(v)) },
               { label: 'Licences and tickets', step: 3, complete: !messages(errs.licences(v)).length, summary: v.ticket_pack_groups.map((g) => `#${g.licence_number || '(no number)'}: ${g.ticket_packs.map((p) => `${p.name || 'New pack'} ${money(p.price)}`).join(', ') || 'no packs'}`).join('. '), issues: messages(errs.licences(v)) },
               { label: 'Prizes', step: 4, complete: !messages(errs.prizes(v)).length, summary: v.prizes.map((p) => p.title || 'New prize').join(', '), issues: messages(errs.prizes(v)) },
-              { label: 'Sponsors', step: 5, complete: !messages(errs.sponsors(v)).length, summary: v.sponsors.length ? `${plural(v.sponsors.length, 'sponsor logo')}${v.sponsors_tiered ? ', in tiers' : ''}.` : 'No sponsors.', issues: messages(errs.sponsors(v)) },
+              { label: 'Sponsors', step: 5, complete: !messages(errs.sponsors(v)).length, summary: `${v.sponsors.length ? `${plural(v.sponsors.length, 'sponsor logo')}${v.sponsors_tiered ? `, in ${plural(v.sponsor_tiers.length, 'tier')}` : ''}.` : 'No sponsor logos.'}${v.presenting.logo ? ` ${v.presenting.label.trim() || 'Presented by'} ${v.presenting.name || 'a sponsor'}.` : ''}`, issues: messages(errs.sponsors(v)) },
               { label: 'Rules of play', step: 6, complete: true, summary: v.rules ? `Your own rules (${v.rules.name}).` : `The standard rules for ${v.client.province}.`, issues: [] },
             ]} />
           )}

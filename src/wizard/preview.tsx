@@ -269,7 +269,7 @@ export function WizardSitePreview({
         </section>
       ) : null}
       {tiers.length ? (
-        <section className="rnc-wsite-section">
+        <section className="rnc-wsite-section rnc-wsite-thanks">
           <h4>Thank you to our sponsors</h4>
           {tiers.map((tier, t) => (
             <div key={t} className="rnc-wsite-tier">
