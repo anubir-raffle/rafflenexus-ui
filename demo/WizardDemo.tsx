@@ -578,7 +578,7 @@ export function WizardDemo() {
                 <div style={{ ...grid(200), alignItems: 'stretch' }}>
                   <UploadTile label="Logo" hint="PNG or SVG, on a clear background." src={v.logo} alt="Your logo" disabled={ro} error={v.logo ? undefined : 'Add your logo'}
                     onFile={(_f, url) => m.setLogo(url)} onRemove={() => m.setLogo(undefined)} />
-                  <UploadTile label="Sharing image" hint="Shown when the site is shared, 1200 × 630." src={v.sharing_image} alt="Sharing image" disabled={ro}
+                  <UploadTile label="Social share image" hint="Shown when the site is shared, 1200 × 630." src={v.sharing_image} alt="Social share image" disabled={ro}
                     onFile={(_f, url) => m.setSharingImage(url)} onRemove={() => m.setSharingImage(undefined)} />
                 </div>
                 <BrandColours value={v.colours} onChange={(c) => m.setColours(c)} logo={v.logo} review={ro}
