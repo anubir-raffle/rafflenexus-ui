@@ -15,8 +15,12 @@ type Errors = Record<string, any> | undefined | void;
 export type WizardMutators = Record<string, (...args: any[]) => any>;
 
 export interface WizardPageProps<V extends Values = Values> {
-  /** The step's name in the step bar ("Dates"). */
+  /** The step's name in the step bar ("Dates"), and its title in the V2 layout. */
   label?: string;
+  /** V2: a short line under the step's name in the rail ("1 licence, 3 packs"). */
+  summary?: (values: V) => ReactNode;
+  /** V2: the line under the step's title ("We use this to build your raffle site"). */
+  description?: ReactNode;
   /** This step's validation. `{}` (or nothing) means the step is complete. */
   validate?: (values: V) => Errors;
   /** Leaves the step out of the step bar and navigation, e.g. Rules of play for BC, AB and MB. */
@@ -73,6 +77,12 @@ export interface WizardProps<V extends Values = Values> {
   isSubmitBlocked?: () => boolean;
   /** The step bar's accessible name. Default "Form steps". */
   stepsLabel?: string;
+  /** `v1` (default): one card with a step bar, the app's current shape. `v2`: the Raffle Builder layout of RNC V2.1, with a rail. */
+  layout?: 'v1' | 'v2';
+  /** V2: under the steps in the rail, e.g. the QA checks. Moves below the step on phones. */
+  aside?: (values: V) => ReactNode;
+  /** V2: the rail's accessible name. Default "Setup form". */
+  railLabel?: string;
   className?: string;
   children?: ReactNode;
 }
@@ -81,10 +91,10 @@ const swalOpen = () => typeof document !== 'undefined' && !!document.querySelect
 const isValid = <V extends Values>(validate: ((values: V) => Errors) | undefined, values: V) => Object.keys(validate?.(values) ?? {}).length === 0;
 
 export type WizardStepState = 'complete' | 'incomplete' | 'review' | 'locked';
-export interface WizardStep { label: string; state: WizardStepState }
+export interface WizardStep { label: string; state: WizardStepState; summary?: ReactNode }
 
 /** The step bar: one button per step, each naming its state; the current step is marked. Scrolls sideways when narrow. */
-export function WizardSteps({ steps, current, onSelect, label = 'Form steps' }: { steps: WizardStep[]; current: number; onSelect: (index: number) => void; label?: string }) {
+export function WizardSteps({ steps, current, onSelect, label = 'Form steps', layout = 'v1' }: { steps: WizardStep[]; current: number; onSelect: (index: number) => void; label?: string; layout?: 'v1' | 'v2' }) {
   const nav = useRef<HTMLElement>(null);
   useEffect(() => {
     const el = nav.current?.querySelector<HTMLElement>('[aria-current="step"]');
@@ -93,7 +103,7 @@ export function WizardSteps({ steps, current, onSelect, label = 'Form steps' }: 
   const words: Record<WizardStepState, string> = { complete: 'complete', incomplete: 'not complete', review: 'ready', locked: 'available once every section is complete' };
   const icons: Record<WizardStepState, 'check' | 'x' | 'eye'> = { complete: 'check', incomplete: 'x', review: 'eye', locked: 'eye' };
   return (
-    <nav className="rnc-wizard-steps" aria-label={label} ref={nav}>
+    <nav className={cx('rnc-wizard-steps', layout === 'v2' && 'is-rail')} aria-label={label} ref={nav}>
       <ol>
         {steps.map((s, i) => (
           <li key={`${s.label}-${i}`}>
@@ -106,7 +116,8 @@ export function WizardSteps({ steps, current, onSelect, label = 'Form steps' }: 
               onClick={() => onSelect(i)}
             >
               <span className="rnc-wizard-step-dot" aria-hidden="true"><Icon name={icons[s.state]} size={16} /></span>
-              <span>{s.label}</span>
+              <span className="rnc-wizard-step-name">{s.label}</span>
+              {layout === 'v2' && s.summary != null && s.summary !== '' ? <span className="rnc-wizard-step-sub">{s.summary}</span> : null}
             </button>
           </li>
         ))}
@@ -123,7 +134,7 @@ export function WizardSteps({ steps, current, onSelect, label = 'Form steps' }: 
 function WizardRoot<V extends Values = Values>({
   onSubmit, initialValues, onSave, lastSaved, isSaving, disabledAll, isQaPage, briefStatus, mutators, header, notice,
   backLabel = 'Back', nextLabel = 'Next', reviewLabel = 'Review', submitLabel = 'Submit', completeLabel = 'Complete form',
-  onReviewBlocked, isSubmitBlocked = swalOpen, stepsLabel = 'Form steps', className, children,
+  onReviewBlocked, isSubmitBlocked = swalOpen, stepsLabel = 'Form steps', layout = 'v1', aside, railLabel = 'Setup form', className, children,
 }: WizardProps<V>) {
   const [start] = useState(() => (initialValues ?? {}) as V);
   const [page, setPage] = useState(0);
@@ -187,6 +198,7 @@ function WizardRoot<V extends Values = Values>({
         const steps: WizardStep[] = visible.map((p, i) => ({
           label: p.props.label ?? (i === reviewIndex ? reviewLabel : `Step ${i + 1}`),
           state: i === reviewIndex ? (done === sections.length ? 'review' : 'locked') : isValid(p.props.validate, values) ? 'complete' : 'incomplete',
+          summary: p.props.summary?.(values),
         }));
         const select = (i: number) => {
           if (i === reviewIndex && done < sections.length) {
@@ -199,40 +211,73 @@ function WizardRoot<V extends Values = Values>({
         const beforeReview = reviewIndex > -1 && current === reviewIndex - 1;
         const submitOff = !allValid || isSubmitBlocked();
         const active = visible[current];
-        return (
-          <form className={cx('rnc-wizard', className)} onSubmit={(e) => e.preventDefault()} noValidate>
-            {notice ? <div className="rnc-wizard-notice">{notice(values)}</div> : null}
-            <div className="rnc-wizard-card">
-              {header ? header(values) : null}
-              {sections.length ? <p className="rnc-wizard-progress">{`${done} of ${sections.length} sections complete`}</p> : null}
-              <WizardSteps steps={steps} current={current} onSelect={select} label={stepsLabel} />
-              {blocked ? (
-                <p className="rnc-wizard-blocked" role="alert">
-                  <Icon name="warning" size={20} />Complete every section before you review. The steps marked with a cross still need something.
-                </p>
+        const v2 = layout === 'v2';
+        const progress = sections.length ? (
+          <div className="rnc-wizard-progress">
+            {`${done} of ${sections.length} sections complete`}
+            {v2 ? <span className="rnc-wizard-track" aria-hidden="true"><span style={{ width: `${Math.round((done / sections.length) * 100)}%` }} /></span> : null}
+          </div>
+        ) : null;
+        const bar = <WizardSteps steps={steps} current={current} onSelect={select} label={stepsLabel} layout={layout} />;
+        const alert = blocked ? (
+          <p className="rnc-wizard-blocked" role="alert">
+            <Icon name="warning" size={20} />Complete every section before you review. The steps marked with a cross still need something.
+          </p>
+        ) : null;
+        const content = (
+          <div className="rnc-wizard-body" ref={body} tabIndex={-1} aria-label={steps[current]?.label}>
+            {v2 ? (
+              <div className="rnc-wizard-page-head">
+                <h2 className="rnc-wizard-page-title">{steps[current]?.label}</h2>
+                {active?.props.description ? <p className="rnc-wizard-page-lede">{active.props.description}</p> : null}
+              </div>
+            ) : null}
+            {active ? <WizardPage {...active.props} mutators={form.mutators as WizardMutators} values={values} changePage={goTo} /> : null}
+          </div>
+        );
+        const foot = (
+          <div className="rnc-wizard-foot">
+            <span className="rnc-wizard-save" role="status">
+              {isSaving ? <><span className="rnc-btn-spinner" aria-hidden="true" />Saving…</> : lastSaved ? <>{v2 ? <Icon name="check-circle" size={18} /> : null}Last saved {lastSaved}</> : null}
+            </span>
+            <div className="rnc-wizard-actions">
+              {current > 0 ? <Button variant="secondary" onClick={() => goTo(current - 1)}>{backLabel}</Button> : null}
+              {!isLast && !beforeReview ? (
+                <Button onClick={() => goTo(Math.min(current + 1, visible.length - 1))}>{nextLabel}</Button>
+              ) : beforeReview ? (
+                <Button startIcon="eye" disabled={submitOff} onClick={() => goTo(current + 1)}>{reviewLabel}</Button>
+              ) : isQaPage && Number(briefStatus) === 2 ? (
+                <Button startIcon="check-circle" disabled={submitOff} loading={submitting} onClick={() => submit()}>{completeLabel}</Button>
+              ) : !isQaPage && !disabledAll ? (
+                <Button disabled={submitOff} loading={submitting} onClick={() => submit()}>{submitLabel}</Button>
               ) : null}
-              <div className="rnc-wizard-body" ref={body} tabIndex={-1} aria-label={steps[current]?.label}>
-                {active ? <WizardPage {...active.props} mutators={form.mutators as WizardMutators} values={values} changePage={goTo} /> : null}
-              </div>
-              <div className="rnc-wizard-foot">
-                <span className="rnc-wizard-save" role="status">
-                  {isSaving ? <><span className="rnc-btn-spinner" aria-hidden="true" />Saving…</> : lastSaved ? <>Last saved {lastSaved}</> : null}
-                </span>
-                <div className="rnc-wizard-actions">
-                  {current > 0 ? <Button variant="secondary" onClick={() => goTo(current - 1)}>{backLabel}</Button> : null}
-                  {!isLast && !beforeReview ? (
-                    <Button onClick={() => goTo(Math.min(current + 1, visible.length - 1))}>{nextLabel}</Button>
-                  ) : beforeReview ? (
-                    <Button startIcon="eye" disabled={submitOff} onClick={() => goTo(current + 1)}>{reviewLabel}</Button>
-                  ) : isQaPage && Number(briefStatus) === 2 ? (
-                    <Button startIcon="check-circle" disabled={submitOff} loading={submitting} onClick={() => submit()}>{completeLabel}</Button>
-                  ) : !isQaPage && !disabledAll ? (
-                    <Button disabled={submitOff} loading={submitting} onClick={() => submit()}>{submitLabel}</Button>
-                  ) : null}
-                </div>
-              </div>
             </div>
-            {onSave ? <FormSpy<V> subscription={{ active: true, values: true }} onChange={(s) => onSave({ values: s.values as V, active: s.active as string | undefined })} /> : null}
+          </div>
+        );
+        return (
+          <form className={cx('rnc-wizard', v2 && 'is-v2', className)} onSubmit={(e) => e.preventDefault()} noValidate>
+            {notice ? <div className="rnc-wizard-notice">{notice(values)}</div> : null}
+            {v2 ? (
+              <div className="rnc-wizard-frame">
+                <aside className="rnc-wizard-rail" aria-label={railLabel}>
+                  {header ? header(values) : null}
+                  {progress}
+                  {bar}
+                  {aside ? <div className="rnc-wizard-rail-extra">{aside(values)}</div> : null}
+                </aside>
+                <div className="rnc-wizard-main">{alert}{content}{foot}</div>
+              </div>
+            ) : (
+              <div className="rnc-wizard-card">
+                {header ? header(values) : null}
+                {progress}
+                {bar}
+                {alert}
+                {content}
+                {foot}
+              </div>
+            )}
+            {onSave ? <FormSpy<V> subscription={{ active: true, values: true }} onChange={(st) => onSave({ values: st.values as V, active: st.active as string | undefined })} /> : null}
           </form>
         );
       }}
