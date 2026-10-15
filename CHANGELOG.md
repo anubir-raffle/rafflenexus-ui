@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.0 (2026-10-15)
+## 0.7.0 (2026-10-16)
 
 The Raffle Builder's setup form wizard, plus the 0.6.x fixes.
 
@@ -21,7 +21,7 @@ The Raffle Builder's setup form wizard, plus the 0.6.x fixes.
 - Upload tiles side by side line up (label, hint, tile and message share rows). List animations measure inside each list, so nested lists stay still. The dropdown button no longer lifts on click and its menu fades in; the `/inputs` dropdown list fades in too.
 - `final-form-arrays` (3 or 4) is an optional peer dependency, needed only for `/wizard`.
 - Icons: added `check`, `dots-six-vertical`, `trash`, `arrow-up`, `arrow-down`, `image`, `text-b`, `text-italic`, `list-numbers` and `monitor` (66).
-- Includes the design-system syncs 0.6.5 to 0.6.12 (the Wizard's styles), which weren't published on their own.
+- Includes the design-system syncs 0.6.5 to 0.6.13 (the Wizard's styles), which weren't published on their own.
 
 ## 0.6.5 (2026-10-15)
 
