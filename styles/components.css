@@ -722,7 +722,10 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-wizard-steps.can-back .rnc-wizard-steps-arrow.is-back, .rnc-wizard-steps.can-more .rnc-wizard-steps-arrow.is-more { opacity: 1; pointer-events: auto; }
 .rnc-wizard-steps-arrow:hover { background: var(--surface-tint); color: var(--action); }
 .rnc-wizard-steps ol { display: flex; gap: 4px; min-width: max-content; margin: 0; padding: 12px 20px 0; list-style: none; }
-.rnc-wizard-steps li { flex: 1 1 0; min-width: 104px; }
+.rnc-wizard-steps li { position: relative; flex: 1 1 0; min-width: 104px; }
+/* The steps read as a path: a line joins each step's circle to the next, solid once the step before it is done. */
+.rnc-wizard-steps li:not(:last-child)::before { content: ""; position: absolute; z-index: 2; top: calc(var(--dot-y, 20px) - 1px); left: calc(50% + 18px); width: calc(100% + 4px - 36px); height: 2px; border-radius: 1px; background: var(--line); pointer-events: none; transition: background-color .3s ease; }
+.rnc-wizard-steps li:not(:last-child):has(> .is-complete)::before { background: var(--action); }
 .rnc-wizard-step { position: relative; display: grid; justify-items: center; gap: 8px; width: 100%; box-sizing: border-box; padding: 6px 8px 16px; border: 0; border-radius: var(--radius-sm) var(--radius-sm) 0 0; background: none; color: var(--ink-body); font: 600 13px/1.25 var(--font-sans); text-align: center; cursor: pointer; transition: background-color .2s ease, color .2s ease; }
 .rnc-wizard-step:hover { background: var(--surface-tint); color: var(--ink); }
 .rnc-wizard-step:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
@@ -791,6 +794,8 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-wizard-steps.is-rail .rnc-wizard-step:hover { background: var(--surface); }
 .rnc-wizard-steps.is-rail .rnc-wizard-step[aria-current="step"] { background: var(--surface); box-shadow: var(--shadow-2); }
 .rnc-wizard-steps.is-rail .rnc-wizard-step-dot { grid-row: span 2; width: 30px; height: 30px; }
+.rnc-wizard-steps.is-rail li:not(:last-child)::before { top: calc(50% + 18px); left: 26px; width: 2px; height: calc(100% + 4px - 36px); }
+.rnc-wizard-steps.is-rail li:not(:last-child):has(> .is-complete)::before { background: var(--verified); }
 .rnc-wizard-steps.is-rail .rnc-wizard-step-name { color: var(--ink); }
 .rnc-wizard-steps.is-rail .is-incomplete .rnc-wizard-step-name { color: var(--error); }
 .rnc-wizard-steps.is-rail .is-locked .rnc-wizard-step-name { color: var(--ink-muted); }
@@ -822,7 +827,11 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
   .rnc-wizard-rail-extra { order: 5; margin-bottom: 20px; }
   .rnc-wizard-steps.is-rail .rnc-wizard-steps-track { overflow-x: auto; }
   .rnc-wizard-steps.is-rail ol { display: flex; min-width: max-content; padding-bottom: 8px; }
-  .rnc-wizard-steps.is-rail li { flex: none; width: clamp(168px, 44cqi, 230px); min-width: 0; }
+  .rnc-wizard-steps.is-rail li { flex: none; width: clamp(128px, 32cqi, 180px); min-width: 0; }
+  /* Sideways on phones: circle on top, name and summary under it, the line running circle to circle. */
+  .rnc-wizard-steps.is-rail .rnc-wizard-step { grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 6px; padding: 12px 8px; text-align: center; }
+  .rnc-wizard-steps.is-rail .rnc-wizard-step-dot { grid-row: auto; }
+  .rnc-wizard-steps.is-rail li:not(:last-child)::before { top: 26px; left: calc(50% + 19px); width: calc(100% + 4px - 38px); height: 2px; }
   .rnc-wizard-main { --main-pad: 16px; order: 4; padding: 0 16px; }
   .rnc-wizard.is-v2 .rnc-wizard-foot { margin: 20px -16px 0; padding: 12px 16px; border-radius: 0 0 var(--radius-lg) var(--radius-lg); }
   .rnc-wizard.is-v2 .rnc-wizard-section-top { padding: 14px 16px 12px; }
@@ -845,7 +854,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
   .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(3) { animation-delay: .1s; }
   .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(4) { animation-delay: .15s; }
   .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(n+5) { animation-delay: .2s; }
-  .rnc-wizard-enter.is-moved .rnc-wizard-browser { animation: rnc-wz-rise .4s .08s cubic-bezier(.2, .8, .2, 1) both; }
+  .rnc-wizard-split > .rnc-wizard-preview { animation: rnc-wz-rise .4s .08s cubic-bezier(.2, .8, .2, 1) both; } /* once, when it first appears; it stays put across steps */
   .rnc-wizard-step-dot.is-pop { animation: rnc-wz-pop .42s cubic-bezier(.3, 1.6, .5, 1); }
   .rnc-wizard-blocked { animation: rnc-wz-drop .24s ease-out both; }
   .rnc-wizard-save-msg { animation: rnc-wz-fade .22s ease both; }

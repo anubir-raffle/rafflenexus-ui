@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.2 (2026-10-15)
+
+- Synced with the design system. Updated: component styles.
+
 ## 0.7.1 (2026-10-16)
 
 - Tables scroll sideways on narrow screens instead of squeezing or cutting off columns: `Table` and `/tables` `ReactTableComponent` keep their columns at full width, a mouse can drag them (touch swipes), and the edge with more columns shades. The same drag is used by the wizard's step bar.
