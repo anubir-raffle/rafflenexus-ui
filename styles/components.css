@@ -659,6 +659,19 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
   .rnc-wizard.is-v2 .rnc-wizard-section { padding: 18px 16px; }
   .rnc-wizard-page-title { font-size: 25px; }
 }
+/* V2 top bar (the toolbar slot): back, the product, a breadcrumb, then the status pill and the form's actions on the right */
+.rnc-wizard-topbar { position: relative; z-index: 3; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; min-height: 64px; padding: 10px 24px; box-sizing: border-box; border-radius: var(--radius-lg) var(--radius-lg) 0 0; background: var(--surface); box-shadow: var(--shadow-1); }
+.rnc-wizard-topbar + .rnc-wizard-notice { border-radius: 0; }
+.rnc-wizard-back { display: grid; place-items: center; flex: none; width: 40px; height: 40px; padding: 0; border: 0; border-radius: var(--radius-sm); background: var(--surface-tint); color: var(--ink); cursor: pointer; text-decoration: none; transition: background-color .2s ease; }
+.rnc-wizard-back:hover { background: var(--lead-soft); }
+.rnc-wizard-back:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.rnc-wizard-product { display: inline-flex; align-items: center; gap: 8px; flex: none; font: 700 17px/1 var(--font-sans); color: var(--ink); }
+.rnc-wizard-product img { display: block; height: 26px; width: auto; }
+.rnc-wizard-crumb { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; color: var(--ink-muted); }
+.rnc-wizard-crumb b { font-weight: 600; color: var(--ink); }
+.rnc-wizard-grow { flex: 1; }
+.rnc-wizard-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+@media (max-width: 900px) { .rnc-wizard-topbar { padding: 10px 16px; } .rnc-wizard-crumb { flex-basis: 100%; order: 3; } }
 @media (prefers-reduced-motion: reduce) { .rnc-wizard-track > span { transition: none; } }
 
 /* Alert box (npm: @rafflenexuscanada/design-system/alerts, on SweetAlert2): a modal that asks, confirms or reports one thing.
