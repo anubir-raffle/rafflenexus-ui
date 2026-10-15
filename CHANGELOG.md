@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1 (2026-10-15)
+
+- Synced with the design system. Updated: component styles.
+
 ## 0.6.0 (2026-10-14)
 
 The third Raffle Builder handoff: status pills, filter chips and the step timeline.

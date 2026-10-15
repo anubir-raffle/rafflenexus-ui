@@ -56,7 +56,8 @@
 
 /* Stage band */
 .rnc-stage { background: var(--stage); color: var(--on-stage); }
-.rnc-stage .rnc-h { color: var(--on-stage); }
+/* Headings get the colour directly: inheriting it loses to an app's own `h2 { color }` rule */
+.rnc-stage :is(h1, h2, h3, h4, h5, h6), .rnc-stage .rnc-h { color: var(--on-stage); }
 .rnc-stage .rnc-label { color: var(--stage-accent); }
 
 /* Verified badge */
