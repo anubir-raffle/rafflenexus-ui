@@ -4,8 +4,10 @@
 .demo-head .rnc-lede { margin: 0; max-width: 60ch; color: var(--ink-body); }
 .demo-sec { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-1); padding: 28px; display: grid; gap: 12px; }
 .demo-sec.rnc-stage { background: var(--stage); }
-.demo-sec h2 { margin: 0; color: var(--ink); }
-.demo-sec.rnc-stage h2 { color: var(--on-stage); }
+/* Like an app's own global styles: a colour on every h2 and p. The package's .rnc-stage must still win inside the band. */
+h2 { color: var(--ink); }
+p { color: var(--ink-body); }
+.demo-sec h2 { margin: 0; }
 .demo-note { margin: 0; font-size: 15px; color: var(--ink-muted); max-width: 70ch; }
 .demo-body { display: grid; gap: 20px; }
 .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; align-items: start; }

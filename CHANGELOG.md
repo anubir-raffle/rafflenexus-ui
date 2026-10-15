@@ -6,19 +6,10 @@
 
 ## 0.6.4 (2026-10-15)
 
-- Synced with the design system. Updated: icons.
-
-## 0.6.3 (2026-10-15)
-
-- Synced with the design system. Updated: icons.
-
-## 0.6.2 (2026-10-15)
-
-- Synced with the design system. Updated: component styles.
-
-## 0.6.1 (2026-10-15)
-
-- Synced with the design system. Updated: component styles.
+- Fixed: headings and text inside a stage band (`rnc-stage`) now stay white in apps that set their own colour on `h1`–`h6` or `p` (they used to inherit the colour, which an app rule beats). Component rules inside a band still set their own colours.
+- Icons: added `magnifying-glass`, `lock-simple`, `calendar-plus`, `book-open-text`, `clipboard-text`, `monitor-play`, `heartbeat`, `paw-print`, `palette`, `car`, `airplane-tilt`, `bank`, `calculator`, `download-simple`, `share-network`, `squares-four` and `list-bullets` (56 in all), so every action has an icon that means it. The design system's Assets › Icons lists what each one is for.
+- Demo and README: the sample Raffle Builder menu uses `clipboard-text` for setup forms, `book-open-text` for rules of play and `monitor-play` for Reveal; downloads use `download-simple`.
+- Includes 0.6.1–0.6.3 (the same syncs, in steps), which weren't published on their own.
 
 ## 0.6.0 (2026-10-14)
 

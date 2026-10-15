@@ -268,7 +268,7 @@ export default function Avatar({ user, size, showName, ...rest }) {
 />
 ```
 
-- Reveal is `{ label: 'Reveal', href: 'https://…', icon: 'drone', external: true, target: '_blank' }`: a plain link, never `Link`, read as "Reveal, opens in a new tab".
+- Reveal is `{ label: 'Reveal', href: 'https://…', icon: 'monitor-play', external: true, target: '_blank' }`: a plain link, never `Link`, read as "Reveal, opens in a new tab".
 - The Topbar can still expand a collapsed sidebar (`setCollapsed(false)`); the built-in chevron does the same through `onCollapsedChange`. Hide it with `showCollapseToggle={false}`.
 - Below `mobileBreakpoint` (980px) the sidebar renders nothing until `mobileOpen`, then a drawer from the left: focus moves in and stays, Escape, the close button, a tap outside or choosing an item calls `onMobileOpenChange(false)`, and focus returns to the menu button. Collapsing doesn't apply there.
 - Collapsed: each icon shows its label in a tooltip to the right (hover or Tab; Escape hides it) and a badge becomes a dot. The native `title` tooltip is gone, so there aren't two.

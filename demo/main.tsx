@@ -134,6 +134,7 @@ function App() {
         <ButtonsDemo />
       </Section>
       <Section title="Buttons on a stage band" stage>
+        <p style={{ margin: 0 }}>This heading and this text stay white, even though the demo, like most apps, sets its own colour on every h2 and p.</p>
         <div className="rnc-row">
           <Button variant="stage">Talk to our lottery team</Button>
           <Button variant="stage-ghost">Find a raffle</Button>
@@ -200,7 +201,7 @@ function App() {
 
       <Section title="Dropdown" note="A button that opens a short menu of actions or links. Arrow keys move, Escape closes.">
         <div className="rnc-row">
-          <Dropdown label="Export report" items={[{ label: 'Download CSV', icon: 'receipt', onSelect: () => {} }, { label: 'Download PDF', icon: 'printer', onSelect: () => {} }, { label: 'Email to my team', icon: 'envelope-simple', onSelect: () => {} }, { label: 'Schedule a weekly export', icon: 'clock', disabled: true }]} />
+          <Dropdown label="Export report" items={[{ label: 'Download CSV', icon: 'download-simple', onSelect: () => {} }, { label: 'Download PDF', icon: 'download-simple', onSelect: () => {} }, { label: 'Email to my team', icon: 'envelope-simple', onSelect: () => {} }, { label: 'Schedule a weekly export', icon: 'clock', disabled: true }]} />
           <Dropdown label="Help" variant="primary" items={[{ label: 'Rules of play', href: '#' }, { label: 'Contact us', href: '#' }]} />
         </div>
       </Section>

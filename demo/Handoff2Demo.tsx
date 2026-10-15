@@ -77,10 +77,10 @@ const BUILD_COLUMNS: ReactTableColumn<Build>[] = [
 
 const ITEMS: SidebarItem[] = [
   { label: 'Live board', href: '#live', icon: 'chart-line-up', current: true, badge: 3 },
-  { label: 'All setup forms', href: '#forms', icon: 'receipt' },
+  { label: 'All setup forms', href: '#forms', icon: 'clipboard-text' },
   { label: 'Clients', href: '#clients', icon: 'buildings' },
-  { label: 'Reveal', href: 'https://example.org/reveal', icon: 'drone', external: true, target: '_blank' },
-  { label: 'Rules of play', href: '#rules', icon: 'shield-check' },
+  { label: 'Reveal', href: 'https://example.org/reveal', icon: 'monitor-play', external: true, target: '_blank' },
+  { label: 'Rules of play', href: '#rules', icon: 'book-open-text' },
   { label: 'Ticket generator', href: '#tickets', icon: 'ticket' },
   { label: 'App builds', href: '#builds', icon: 'device-mobile', description: 'Admins only' },
 ];
