@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.1 (2026-10-16)
+
+- Tables scroll sideways on narrow screens instead of squeezing or cutting off columns: `Table` and `/tables` `ReactTableComponent` keep their columns at full width, a mouse can drag them (touch swipes), and the edge with more columns shades. The same drag is used by the wizard's step bar.
+- `LicenceBadge` (main entry): the official licence mark client raffle sites show (the standard template's badge), in RNC colours: the seal, "Licensed in <province>", the licence number with the province's label, the regulator and security facts behind "Licence and security details", and "Verified by Raffle Nexus Canada". `variant="compact"` is one line for the pack chooser; `licences` lists several. `LICENCE_PROVINCES` holds each province's wording. The wizard's site preview uses it: `badge={{ province: 'BC', number: '000000' }}` (the older `{ regulator, licence }` shape still shows a VerifiedBadge).
+- `DomainField`: one hint for both choices, so it stays put when the choice changes (`rnHint` / `ownHint` if they must differ).
+- The demo's builder checks what a brief has to get right: no past dates (past days greyed out), sales close after they open, the draw after sales close, early draws while sales are open, a real support email, licence numbers as on the licence and not entered twice, prices and prize values above $0, whole ticket counts, no two packs of the same size in a licence.
+- `BrandColours`: more room. One colour per row with swatch, name and hex side by side in narrower spaces (the V2 form, phones), and roomy cards with a full-width swatch in wide ones.
+
 ## 0.7.0 (2026-10-16)
 
 The Raffle Builder's setup form wizard, plus the 0.6.x fixes.

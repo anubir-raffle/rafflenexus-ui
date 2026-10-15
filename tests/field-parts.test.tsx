@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
-  DomainField, RichText, RichTextArea, SegmentedControl, TextArea, TextField, UploadTile, domainUrl, richTextLength, richTextToPlain, sanitizeRichText,
+  DomainField, LicenceBadge, RichText, RichTextArea, SegmentedControl, Table, TextArea, TextField, UploadTile, domainUrl, richTextLength, richTextToPlain, sanitizeRichText,
   type DomainType,
 } from '../src';
 import { WizardPreview, WizardSitePreview, WizardSteps } from '../src/wizard';
@@ -130,7 +130,7 @@ describe('DomainField and SegmentedControl', () => {
     render(<Address />);
     await userEvent.click(screen.getByRole('radio', { name: 'Your own domain' }));
     expect(screen.queryByText('.rafflenexus.com')).toBeNull();
-    expect(screen.getByText(/A domain you own/)).toBeInTheDocument();
+    expect(screen.getByText(/or a domain you own/)).toBeInTheDocument(); // the same hint for both choices
     fireEvent.change(screen.getByLabelText('Web address'), { target: { value: 'www.Lottery.Example.org/win' } });
     expect(screen.getByLabelText('Web address')).toHaveValue('lottery.example.org');
     expect(screen.getByLabelText('Web address')).toHaveAttribute('maxlength', '253');
@@ -186,5 +186,32 @@ describe('WizardSteps when it scrolls sideways', () => {
     expect(arrows).toHaveLength(2);
     arrows.forEach((a) => { expect(a).toHaveAttribute('tabindex', '-1'); expect(a).toHaveAttribute('aria-hidden', 'true'); });
     await waitFor(() => expect(screen.getAllByRole('button', { name: /not complete/ })).toHaveLength(6));
+  });
+});
+
+describe('tables on narrow screens', () => {
+  it('the Table scrolls inside a frame that shades the edge with more columns', () => {
+    const { container } = render(<Table data={[{ a: 'One' }]} columns={[{ accessorKey: 'a', header: 'A' }]} caption="Sample" />);
+    const wrap = container.querySelector('.rnc-table-frame > .rnc-table-wrap');
+    expect(wrap).toBeInTheDocument();
+    expect(wrap!.querySelector('table')).toHaveClass('rnc-table');
+  });
+});
+
+describe('LicenceBadge', () => {
+  it('states the province, the licence number with its label, the regulator and who verified it', () => {
+    render(<LicenceBadge province="BC" number="000000" heading="p" />);
+    expect(screen.getByText('Licensed in British Columbia')).toHaveClass('rnc-licence-title');
+    expect(screen.getByText('BC Gaming Event Licence #000000')).toHaveClass('rnc-licence-number');
+    expect(screen.getByText('Licence and security details').tagName).toBe('SUMMARY');
+    expect(screen.getByRole('link', { name: 'Independent Gambling Control Office' })).toHaveAttribute('href', 'https://www.igcobc.ca');
+    expect(screen.getByRole('link', { name: 'Verified by Raffle Nexus Canada' })).toHaveAttribute('href', 'https://rafflenexus.com');
+  });
+
+  it('compact: one line for the pack chooser, several licences listed', () => {
+    const { container } = render(<LicenceBadge province="ON" variant="compact" licences={[{ label: 'Lottery', number: 'A1234' }, { label: '50/50', number: 'B5678' }]} />);
+    expect(container.firstChild).toHaveClass('rnc-licence', 'is-compact');
+    expect(screen.getByText('Licensed in Ontario')).toBeInTheDocument();
+    expect(screen.getByText('AGCO Lottery Licences: Lottery #A1234 · 50/50 #B5678')).toBeInTheDocument();
   });
 });

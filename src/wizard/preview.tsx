@@ -3,6 +3,7 @@ import { SegmentedControl } from '../components/Segmented';
 import { Icon } from '../components/Icon';
 import { readableOn } from '../components/BrandColours';
 import { VerifiedBadge } from '../components/VerifiedBadge';
+import { LicenceBadge, type LicenceProvince } from '../components/LicenceBadge';
 import { cx } from '../utils';
 
 const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
@@ -120,8 +121,11 @@ export interface WizardSitePreviewProps {
   prizes?: WizardSitePrize[];
   /** The licence line, e.g. "BC Gaming Event Licence #000000". */
   licence?: ReactNode;
-  /** The licensed-raffle badge (VerifiedBadge) in the trust strip above the footer: regulator and licence number. */
-  badge?: { regulator: string; licence: string; rng?: boolean };
+  /**
+   * The licence badge. With `province`, the official LicenceBadge client sites show: the full navy card above the footer and
+   * the compact line in Choose a pack (wording from the province). The older `{ regulator, licence }` shape shows a VerifiedBadge.
+   */
+  badge?: { province: LicenceProvince; number?: string; licences?: { label?: string; number: string }[] } | { regulator: string; licence: string; rng?: boolean };
   /** Default "Order tickets". */
   cta?: ReactNode;
   /** Shown while the heading is empty. Default "Add a main heading". */
@@ -177,7 +181,8 @@ export function WizardSitePreview({
           <div className="rnc-wsite-packlist">
             {packs.map((p, i) => <span key={i} className="rnc-wsite-pack"><span>{p.label}{p.note ? <small>{p.note}</small> : null}</span><b>{p.price}</b></span>)}
           </div>
-          {licence ? <small className="rnc-wsite-licence"><Icon name="check" size={14} />{licence}</small> : null}
+          {badge && 'province' in badge ? <LicenceBadge className="rnc-wsite-licence" variant="compact" province={badge.province} number={badge.number} licences={badge.licences} />
+            : licence ? <small className="rnc-wsite-licence"><Icon name="check" size={14} />{licence}</small> : null}
         </div>
       ) : null}
       {dates?.length ? (
@@ -199,7 +204,8 @@ export function WizardSitePreview({
         </section>
       ) : null}
       <div className="rnc-wsite-trust">
-        {badge ? <VerifiedBadge regulator={badge.regulator} licence={badge.licence} rng={badge.rng} />
+        {badge && 'province' in badge ? <LicenceBadge province={badge.province} number={badge.number} licences={badge.licences} heading="p" />
+          : badge ? <VerifiedBadge regulator={badge.regulator} licence={badge.licence} rng={badge.rng} />
           : licence ? <span className="rnc-wsite-licensed"><Icon name="check-circle" size={18} />Licensed raffle<small>{licence}</small></span> : null}
         <small><b>19+ to play.</b> Know your limit, play within it.</small>
       </div>

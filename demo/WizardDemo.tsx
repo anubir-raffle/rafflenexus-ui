@@ -7,7 +7,7 @@ import {
 } from '../src/wizard';
 import {
   AnimatedList, BrandColours, Button, DomainField, ExpandableRow, Icon, RichText, RichTextArea, SortableList, StatusPill, TextField, UploadTile,
-  domainUrl, richTextLength, richTextToPlain, type BrandColourSet, type DomainType,
+  domainUrl, richTextLength, richTextToPlain, type BrandColourSet, type DomainType, type LicenceProvince,
 } from '../src';
 import { DatePicker } from '../src/inputs';
 
@@ -47,8 +47,8 @@ const START: Brief = {
     { id: 's2', src: tile('Early bird: a new car', '#2b7a3d', '#174a24'), alt: 'The early bird car prize' },
     { id: 's3', src: tile('50/50 jackpot', '#8a6410', '#5a400a'), alt: '' },
   ],
-  sales_open: '2026-09-29 09:00:00', sales_close: '2026-10-17 23:59:00', draw_at: '', draw_location: 'Foundation office',
-  early_draws: [{ id: 'e1', date: '2026-10-03 12:00:00', prize: '$5,000 cash' }],
+  sales_open: '2026-11-02 09:00:00', sales_close: '2026-12-18 23:59:00', draw_at: '', draw_location: 'Foundation office',
+  early_draws: [{ id: 'e1', date: '2026-11-20 12:00:00', prize: '$5,000 cash' }],
   ticket_pack_groups: [{
     id: 'g1', licence_number: '000000',
     ticket_packs: [{ id: 'p1', name: 'Single ticket', tickets: '1', price: '25' }, { id: 'p2', name: 'Pack of 3', tickets: '3', price: '60' }],
@@ -57,8 +57,6 @@ const START: Brief = {
   client: { name: 'Sample Hospital Foundation', province: 'BC' },
   colours: { primary: '#0c3f75', secondary: '#13324f', accent: '#126ab5' },
 };
-/** Who licenses raffles in each province (the badge names them). */
-const REGULATOR: Record<string, string> = { BC: 'IGCO', AB: 'AGLC', SK: 'SLGA', MB: 'LGCA', ON: 'AGCO' };
 
 const set = (field: string) => (args: unknown[], state: any, utils: any) => utils.changeValue(state, field, () => args[0]); // eslint-disable-line @typescript-eslint/no-explicit-any
 const MUTATORS = {
@@ -75,32 +73,61 @@ const addressError = (v: Brief) => {
   if (v.sub_domain_type === 'own' && !OWN_DOMAIN.test(v.sub_domain)) return 'Enter a domain like lottery.example.org';
   return undefined;
 };
+// What a brief has to get right before it can be built. The same rules show under each field (once it's touched or left empty),
+// mark the step complete or not, and fill the QA checks and the Review step.
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const LICENCE_NO = /^[A-Za-z0-9-]{4,20}$/;
+const amount = (v: string) => Number(String(v).replace(/[^0-9.]/g, ''));
+const past = (v?: string) => !!v && moment(v).isBefore(moment(), 'minute');
+const after = (a?: string, b?: string) => !!a && !!b && !moment(a).isAfter(moment(b));
+/** One rule set per field, used by the page (its step state) and by the field itself (its message). */
+const rules = {
+  name: (v?: string) => (!v ? 'Enter the raffle name' : v.trim().length < 5 ? 'Use at least 5 characters for the raffle name' : undefined),
+  support_email: (v?: string) => (!v ? 'Enter a support email' : !EMAIL.test(v.trim()) ? 'Enter an email like name@example.org' : undefined),
+  sales_open: (v?: string) => (!v ? 'Enter when sales open' : past(v) ? 'Pick a time from now on: sales can’t open in the past' : undefined),
+  sales_close: (v?: string, b?: Brief) => (!v ? 'Enter when sales close' : past(v) ? 'Pick a time from now on' : after(v, b?.sales_open) ? 'Sales must close after they open' : undefined),
+  draw_at: (v?: string, b?: Brief) => (!v ? 'Enter the draw date' : past(v) ? 'Pick a time from now on' : after(v, b?.sales_close) ? 'The draw must come after sales close' : undefined),
+  draw_location: (v?: string) => (!v?.trim() ? 'Enter where the draw happens' : undefined),
+  licence: (v: string) => (!v ? 'Enter the licence number' : !LICENCE_NO.test(v) ? 'Use 4 to 20 letters, numbers or hyphens, as on the licence' : undefined),
+  price: (v: string) => (!v ? 'Enter the price' : !(amount(v) > 0) ? 'Enter a price above $0' : undefined),
+  tickets: (v: string) => (!v ? 'Enter how many tickets' : !/^\d+$/.test(v) || Number(v) < 1 ? 'Enter a whole number, 1 or more' : undefined),
+  value: (v: string) => (!v ? "Enter the prize's value" : !(amount(v) > 0) ? 'Enter a value above $0' : undefined),
+  earlyDate: (v: string, b: Brief) => (!v ? 'Enter the date'
+    : past(v) ? 'Pick a time from now on'
+      : (b.sales_open && !moment(v).isAfter(moment(b.sales_open))) || (b.sales_close && !moment(v).isBefore(moment(b.sales_close))) ? 'Early draws happen while sales are open' : undefined),
+};
 const errs = {
   website: (v: Brief) => ({
-    ...(!v.name ? { name: 'Enter the raffle name' } : v.name.length < 5 && { name: 'Use at least 5 characters for the raffle name' }),
+    ...(rules.name(v.name) && { name: rules.name(v.name) }),
     ...(addressError(v) && { sub_domain: addressError(v) }),
-    ...(!v.heading && { heading: 'Write a main heading' }),
+    ...(!v.heading?.trim() && { heading: 'Write a main heading' }),
     ...(!richTextLength(v.cause) ? { cause: 'Say what the raffle supports' } : richTextLength(v.cause) < 30 && { cause: 'Write at least 30 characters about the cause' }),
     ...(!v.logo && { logo: 'Add your logo' }),
+    ...(rules.support_email(v.support_email) && { support_email: rules.support_email(v.support_email) }),
   }),
-  slides: (v: Brief) => ({ ...(!v.slides.length && { slides: 'Add at least one slide' }), ...(v.slides.some((s) => !s.alt) && { slides_alt: 'Describe every slide (alt text)' }) }),
+  slides: (v: Brief) => ({ ...(!v.slides.length && { slides: 'Add at least one slide' }), ...(v.slides.some((s) => !s.alt.trim()) && { slides_alt: 'Describe every slide (alt text)' }) }),
   dates: (v: Brief) => ({
-    ...(!v.sales_close && { sales_close: 'Enter when sales close' }), ...(!v.draw_at && { draw_at: 'Enter the draw date' }),
-    ...(v.early_draws.some((d) => !d.date || !d.prize) && { early: 'Give every early draw a date and a prize' }),
+    ...(rules.sales_open(v.sales_open) && { sales_open: rules.sales_open(v.sales_open) }),
+    ...(rules.sales_close(v.sales_close, v) && { sales_close: rules.sales_close(v.sales_close, v) }),
+    ...(rules.draw_at(v.draw_at, v) && { draw_at: rules.draw_at(v.draw_at, v) }),
+    ...(rules.draw_location(v.draw_location) && { draw_location: rules.draw_location(v.draw_location) }),
+    ...(v.early_draws.some((d) => rules.earlyDate(d.date, v) || !d.prize.trim()) && { early: 'Give every early draw a prize and a time while sales are open' }),
   }),
   licences: (v: Brief) => {
     const g = v.ticket_pack_groups;
     const packs = g.flatMap((l) => l.ticket_packs);
     const repeats = g.some((l) => new Set(l.ticket_packs.map((p) => p.tickets).filter(Boolean)).size < l.ticket_packs.filter((p) => p.tickets).length);
+    const numbers = g.map((l) => l.licence_number).filter(Boolean);
     return {
       ...(!g.length && { licences: 'Add a licence' }),
-      ...(g.some((l) => !l.licence_number) && { licence_number: 'Enter every licence number' }),
+      ...(g.some((l) => rules.licence(l.licence_number)) && { licence_number: 'Enter every licence number, as on the licence' }),
+      ...(new Set(numbers).size < numbers.length && { licence_twice: 'The same licence number is entered twice' }),
       ...(g.some((l) => !l.ticket_packs.length) && { packs: 'Give every licence at least one ticket pack' }),
-      ...(packs.some((p) => !p.price || !p.tickets) && { pack_fields: 'Give every pack a price and a number of tickets' }),
+      ...(packs.some((p) => !p.name.trim() || rules.price(p.price) || rules.tickets(p.tickets)) && { pack_fields: 'Give every pack a name, a price above $0 and a whole number of tickets' }),
       ...(repeats && { repeats: 'Two packs in one licence have the same number of tickets' }),
     };
   },
-  prizes: (v: Brief) => ({ ...(!v.prizes.length && { prizes: 'Add a prize' }), ...(v.prizes.some((p) => !p.title || !p.value) && { prize_fields: 'Give every prize a title and a value' }) }),
+  prizes: (v: Brief) => ({ ...(!v.prizes.length && { prizes: 'Add a prize' }), ...(v.prizes.some((p) => !p.title.trim() || rules.value(p.value)) && { prize_fields: 'Give every prize a title and a value above $0' }) }),
 };
 const messages = (o: Record<string, string | false | undefined>) => Object.values(o).filter(Boolean) as string[];
 const grid = (min: number) => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${min}px), 1fr))`, gap: 16, alignItems: 'start' });
@@ -115,9 +142,10 @@ function Text({ name, label, hint, readOnly, id, maxLength, type, inputMode }: {
 }
 /** A field for one item in a list. It edits the item by id through a mutator (like the app's setTicketPacks), so removing or
  *  reordering rows never mixes their values up. Its error shows once someone leaves it empty. */
-function ItemText({ id, label, hint, value, onValue, readOnly, required, maxLength, inputMode }: { id?: string; label: string; hint?: string; value: string; onValue: (v: string) => void; readOnly?: boolean; required?: string; maxLength?: number; inputMode?: 'numeric' | 'decimal' | 'text' }) {
+function ItemText({ id, label, hint, value, onValue, readOnly, required, check, maxLength, inputMode }: { id?: string; label: string; hint?: string; value: string; onValue: (v: string) => void; readOnly?: boolean; required?: string; check?: (v: string) => string | undefined; maxLength?: number; inputMode?: 'numeric' | 'decimal' | 'text' }) {
   const [left, setLeft] = useState(false);
-  return <TextField id={id} label={label} hint={hint} value={value} review={readOnly} maxLength={maxLength} inputMode={inputMode} onChange={(e) => onValue(e.target.value)} onBlur={() => setLeft(true)} error={required && left && !value ? required : undefined} />;
+  const problem = check ? check(value) : required && !value.trim() ? required : undefined;
+  return <TextField id={id} label={label} hint={hint} value={value} review={readOnly} maxLength={maxLength} inputMode={inputMode} onChange={(e) => onValue(e.target.value)} onBlur={() => setLeft(true)} error={left ? problem : undefined} />;
 }
 const patch = <T extends { id: string }>(list: T[], id: string, change: Partial<T>) => list.map((x) => (x.id === id ? { ...x, ...change } : x));
 /** Focus a field once it exists (after an item is added and its row opens). */
@@ -127,7 +155,7 @@ const focusSoon = (id: string) => setTimeout(() => document.getElementById(id)?.
 function DateField({ name, label, readOnly, helperText, disableDates }: { name: string; label: string; readOnly?: boolean; helperText?: string; disableDates?: (d: Moment) => boolean }) {
   return (
     <Field name={name}>
-      {({ input, meta }) => <DatePicker input={input} meta={meta.touched ? meta : null} label={label} helperText={helperText} disabled={readOnly} disableDates={disableDates} />}
+      {({ input, meta }) => <DatePicker input={input} meta={meta.touched ? meta : null} label={label} helperText={helperText} disabled={readOnly} disablePast disableDates={disableDates} />}
     </Field>
   );
 }
@@ -183,8 +211,8 @@ function Packs({ licence, setPacks, ro }: { licence: Licence; setPacks: (packs: 
           {i > -1 ? (
             <div style={grid(170)}>
               <ItemText id={`${p.id}-name`} label="Pack name" value={p.name} readOnly={ro} maxLength={LIMIT.pack} required="Name the pack" onValue={(x) => setPacks(patch(packs, p.id, { name: x }))} />
-              <ItemText label="Tickets in the pack" value={p.tickets} readOnly={ro} inputMode="numeric" required="Enter how many tickets" onValue={(x) => setPacks(patch(packs, p.id, { tickets: x.replace(/\D/g, '') }))} />
-              <ItemText label="Price ($)" value={p.price} readOnly={ro} inputMode="decimal" required="Enter the price" onValue={(x) => setPacks(patch(packs, p.id, { price: x.replace(/[^0-9.]/g, '') }))} />
+              <ItemText label="Tickets in the pack" value={p.tickets} readOnly={ro} inputMode="numeric" check={(x) => rules.tickets(x) ?? (packs.some((o) => o.id !== p.id && o.tickets && o.tickets === x) ? 'Another pack in this licence has this many tickets' : undefined)} onValue={(x) => setPacks(patch(packs, p.id, { tickets: x.replace(/\D/g, '') }))} />
+              <ItemText label="Price ($)" value={p.price} readOnly={ro} inputMode="decimal" check={rules.price} onValue={(x) => setPacks(patch(packs, p.id, { price: x.replace(/[^0-9.]/g, '') }))} />
             </div>
           ) : null}
         </ExpandableRow>
@@ -206,7 +234,7 @@ function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
             <>
               <div style={grid(240)}>
                 <ItemText id={`${g.id}-number`} label="Licence number" hint="As it appears on your licence." value={g.licence_number} readOnly={ro} maxLength={LIMIT.licence}
-                  required="Enter the licence number" onValue={(x) => m.setLicences(patch(list, g.id, { licence_number: x }))} />
+                  check={(x) => rules.licence(x) ?? (list.some((o) => o.id !== g.id && o.licence_number === x) ? "This licence number is already entered" : undefined)} onValue={(x) => m.setLicences(patch(list, g.id, { licence_number: x }))} />
               </div>
               <Packs licence={g} ro={ro} setPacks={(packs) => m.setLicences(patch(list, g.id, { ticket_packs: packs }))} />
               {!ro && list.length > 1 ? (
@@ -239,7 +267,7 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                   <div style={{ display: 'grid', gap: 16 }}>
                     <div style={grid(220)}>
                       <ItemText id={`${p.id}-title`} label="Prize title" value={p.title} readOnly={ro} maxLength={LIMIT.prize} required="Give the prize a title" onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { title: x }))} />
-                      <ItemText label="Value ($)" value={p.value} readOnly={ro} inputMode="decimal" required="Enter the prize's value" onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { value: x.replace(/[^0-9.]/g, '') }))} />
+                      <ItemText label="Value ($)" value={p.value} readOnly={ro} inputMode="decimal" check={rules.value} onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { value: x.replace(/[^0-9.]/g, '') }))} />
                     </div>
                     <RichTextArea label="Description" hint="What winners get. Shown on the prizes page." value={p.description} review={ro} maxLength={LIMIT.prizeText} minHeight={140}
                       onChange={(html) => m.setPrizes(patch(v.prizes, p.id, { description: html }))} />
@@ -266,7 +294,8 @@ function EarlyDraws({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) 
           <div className="rnc-sort-body" style={{ ...grid(220), gap: 12 }}>
             {i > -1 ? (
               <>
-                <DatePicker label={`Early draw ${i + 1}`} disabled={ro} disableDates={outside}
+                <DatePicker label={`Early draw ${i + 1}`} disabled={ro} disablePast disableDates={outside}
+                  meta={d.date && rules.earlyDate(d.date, v) ? { error: rules.earlyDate(d.date, v), touched: true } : null}
                   input={{ name: `early-${d.id}`, value: d.date, onChange: (x: string | null) => m.setEarlyDraws(patch(v.early_draws, d.id, { date: x ?? '' })) }} />
                 <ItemText label="Prize" value={d.prize} readOnly={ro} maxLength={LIMIT.earlyPrize} required="Enter the prize" onValue={(x) => m.setEarlyDraws(patch(v.early_draws, d.id, { prize: x }))} />
               </>
@@ -302,7 +331,7 @@ function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice;
         dates={dates}
         prizes={v.prizes.filter((p) => p.title).map((p) => ({ title: p.title, value: p.value ? money(p.value) : undefined }))}
         licence={numbers.length ? `${v.client.province} Gaming Event Licence #${numbers.join(', #')}` : undefined}
-        badge={numbers.length ? { regulator: REGULATOR[v.client.province] ?? v.client.province, licence: numbers.join(', #') } : undefined}
+        badge={numbers.length ? { province: v.client.province as LicenceProvince, licences: numbers.map((n) => ({ number: n })) } : undefined}
       />
     </WizardPreview>
   );

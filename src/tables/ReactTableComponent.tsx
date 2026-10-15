@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-table';
 import { Button } from '../components/Button';
 import { cx } from '../utils';
+import { useDragScroll } from '../dragScroll';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type AnyRow = any;
@@ -213,11 +214,14 @@ function ReactTableInner<T = AnyRow>({
   };
 
   const showFilters = visible.some((c, i) => table.getColumn(ids[i])?.getCanFilter());
+  // Wider than its space (a phone): it scrolls sideways; a mouse can drag it; the edge with more columns shades.
+  const scroller = useRef<HTMLDivElement>(null);
+  const { edges, dragProps } = useDragScroll(scroller);
   const pages = Math.max(1, table.getPageCount());
 
   return (
-    <div className={cx('rnc-rt', className)} style={style}>
-      <div className="rnc-rt-scroll" role="table" aria-label={ariaLabel} aria-busy={loading || isLoadingMore ? true : undefined} tabIndex={0} onScroll={onScroll}>
+    <div className={cx('rnc-rt', edges.back && 'can-back', edges.more && 'can-more', className)} style={style}>
+      <div className="rnc-rt-scroll" ref={scroller} {...dragProps} role="table" aria-label={ariaLabel} aria-busy={loading || isLoadingMore ? true : undefined} tabIndex={0} onScroll={onScroll}>
         <div className="rnc-rt-thead" role="rowgroup">
           <div className="rnc-rt-tr" role="row">{visible.map(headerCell)}</div>
           {showFilters ? (

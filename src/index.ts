@@ -5,6 +5,7 @@
 export { Button, type ButtonProps, type ButtonVariant, type ButtonSize } from './components/Button';
 export { Icon, type IconProps } from './components/Icon';
 export { VerifiedBadge, type VerifiedBadgeProps } from './components/VerifiedBadge';
+export { LicenceBadge, LicenceSeal, LICENCE_PROVINCES, type LicenceBadgeProps, type LicenceProvince } from './components/LicenceBadge';
 export { LedgerLine, type LedgerLineProps, type LedgerItem } from './components/LedgerLine';
 export { ProofStat, type ProofStatProps } from './components/ProofStat';
 export { JackpotFigure, type JackpotFigureProps } from './components/JackpotFigure';

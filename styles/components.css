@@ -71,6 +71,45 @@
 .rnc-stage .rnc-badge { background: var(--stage-raised); border-color: var(--stage-verified); }
 .rnc-stage .rnc-badge b { color: var(--on-stage); }
 .rnc-stage .rnc-badge span { color: var(--on-stage-muted); }
+/* Licence badge: the official licence mark on client raffle sites (the template's .rs-licence-badge), always in RNC colours.
+   Full: a navy card, the seal, "Licensed in <province>", the number, details on request, "Verified by Raffle Nexus Canada".
+   Compact (.is-compact): one line with a small seal, for the pack chooser. */
+.rnc-licence { position: relative; box-sizing: border-box; display: grid; grid-template-areas: "seal body" "by by"; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: 0 16px; padding: 16px 20px; border: 1px solid var(--stage-line); border-radius: var(--radius-lg); background: radial-gradient(120% 140% at 0% 0%, var(--stage-raised) 0%, var(--stage) 55%) var(--stage); box-shadow: var(--shadow-3); color: var(--on-stage); font-family: var(--font-sans); }
+.rnc-licence-seal { grid-area: seal; width: 56px; height: 56px; overflow: visible; filter: drop-shadow(0 4px 10px rgba(0, 0, 0, .35)); }
+.rnc-licence-seal-edge { fill: var(--brand); stroke: var(--brand); stroke-width: 2; stroke-linejoin: round; }
+.rnc-licence-seal-face { fill: #137fb5; stroke: rgba(255, 255, 255, .35); stroke-width: 1.5; }
+.rnc-licence-seal-ring { fill: none; stroke: #ffffff; stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: 0 4.6; opacity: .9; }
+.rnc-licence-seal-check { fill: none; stroke: #ffffff; stroke-width: 5.5; stroke-linecap: round; stroke-linejoin: round; }
+.rnc-licence-body { grid-area: body; min-width: 0; }
+.rnc-licence .rnc-licence-title { margin: 0; color: #ffffff; font: 700 18px/1.25 var(--font-sans); }
+.rnc-licence .rnc-licence-number { margin: 4px 0 0; color: var(--stage-accent); font: 500 15px/1.4 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.rnc-licence-numbers { display: grid; gap: 2px; margin: 4px 0 0; padding: 0; list-style: none; }
+.rnc-licence-numbers .rnc-licence-number { margin: 0; font-size: 14px; }
+.rnc-licence-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 2px; color: var(--stage-accent); font: 600 14px/1.3 var(--font-sans); text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); text-underline-offset: 3px; list-style: none; cursor: pointer; transition: color .2s ease, text-decoration-color .2s ease; }
+.rnc-licence-toggle::-webkit-details-marker { display: none; }
+.rnc-licence-toggle::after { content: ""; width: 7px; height: 7px; margin-top: -3px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }
+.rnc-licence-more[open] .rnc-licence-toggle::after { margin-top: 3px; transform: rotate(-135deg); }
+.rnc-licence-toggle:hover { color: #ffffff; text-decoration-color: currentColor; }
+.rnc-licence-toggle:focus-visible, .rnc-licence a:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; border-radius: 4px; }
+.rnc-licence-detail { padding-top: 8px; }
+.rnc-licence .rnc-licence-regulator { margin: 0; color: var(--on-stage-muted); font-size: 14px; line-height: 1.45; }
+.rnc-licence-regulator a, .rnc-licence-trust a { color: #ffffff; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); transition: color .2s ease, text-decoration-color .2s ease; }
+.rnc-licence-regulator a:hover, .rnc-licence-trust a:hover { color: var(--stage-accent); text-decoration-color: currentColor; }
+.rnc-licence-trust { display: grid; gap: 8px; margin: 12px 0 0; padding: 12px 0 0; border-top: 1px solid var(--stage-line); list-style: none; font-size: 14px; line-height: 1.45; color: var(--on-stage); }
+.rnc-licence-trust li { display: flex; gap: 8px; align-items: flex-start; }
+.rnc-licence-trust .rnc-icon { flex: none; margin-top: 1px; color: var(--stage-accent); }
+.rnc-licence .rnc-licence-by { grid-area: by; display: flex; align-items: center; gap: 8px; margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--stage-line); color: var(--on-stage-muted); font: 600 13px/1.3 var(--font-sans); }
+.rnc-licence-by a { display: inline-flex; align-items: center; gap: inherit; color: inherit; text-decoration: none; }
+.rnc-licence-by img { width: auto; height: 17px; }
+.rnc-licence-by span { text-decoration: underline 1px; text-decoration-color: transparent; text-underline-offset: 3px; transition: text-decoration-color .2s ease; }
+.rnc-licence-by a:hover span { text-decoration-color: currentColor; }
+.rnc-licence.is-compact { display: inline-flex; align-items: center; gap: 10px; margin: 0; padding: 0; border: 0; background: none; box-shadow: none; color: var(--ink-body); }
+.rnc-licence.is-compact .rnc-licence-seal { width: 30px; height: 30px; filter: none; }
+.rnc-licence.is-compact .rnc-licence-seal-check { stroke-width: 6.5; }
+.rnc-licence.is-compact .rnc-licence-body { display: flex; flex-wrap: wrap; gap: 0 8px; }
+.rnc-licence.is-compact .rnc-licence-title { color: var(--ink); font: 700 13px/1.4 var(--font-sans); }
+.rnc-licence.is-compact .rnc-licence-number { margin: 0; color: var(--ink-body); font: 400 13px/1.4 var(--font-mono); }
+@media (prefers-reduced-motion: no-preference) { .rnc-licence-toggle::after { transition: transform .22s ease, margin .22s ease; } }
 .rnc-stage .rnc-badge-check { background: var(--stage); }
 
 /* Ledger line */
@@ -335,9 +374,10 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 }
 /* Site colours: three swatches picked from the logo (primary, secondary, accent), each with a picker, its hex and which text reads on it. */
 .rnc-colours-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
-.rnc-colours-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
-.rnc-colour { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 2px 12px; min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
-.rnc-colour-swatch { position: relative; grid-row: span 3; display: grid; place-items: center; width: 60px; height: 60px; border-radius: var(--radius-sm); box-shadow: inset 0 0 0 1px rgba(15, 42, 68, .14); font: 700 17px/1 var(--font-sans); cursor: pointer; transition: background-color .4s ease, box-shadow .2s ease; }
+.rnc-colours { container: rnc-colours / inline-size; }
+.rnc-colours-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.rnc-colour { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 4px; min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
+.rnc-colour-swatch { position: relative; display: grid; place-items: center; width: 100%; height: 64px; margin-bottom: 6px; border-radius: var(--radius-sm); box-shadow: inset 0 0 0 1px rgba(15, 42, 68, .14); font: 700 17px/1 var(--font-sans); cursor: pointer; transition: background-color .4s ease, box-shadow .2s ease; }
 .rnc-colour-swatch:hover { box-shadow: inset 0 0 0 1px rgba(15, 42, 68, .14), 0 0 0 3px var(--surface-tint); }
 .rnc-colour-swatch input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; opacity: 0; cursor: pointer; }
 .rnc-colour-swatch input:disabled { cursor: default; }
@@ -345,7 +385,21 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-colour-swatch span { transition: color .4s ease; }
 .rnc-colour-name { font: 600 14px/1.3 var(--font-sans); color: var(--ink); }
 .rnc-colour-role { font-size: 13px; line-height: 1.35; color: var(--ink-muted); }
-.rnc-colour-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 4px; }
+.rnc-colour-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-top: 6px; }
+/* Narrow (the V2 form beside the preview, a phone): one colour per row, swatch, name and hex side by side. */
+@container rnc-colours (max-width: 620px) {
+  .rnc-colours-list { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .rnc-colour { grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 2px 14px; padding: 10px 12px; }
+  .rnc-colour-swatch { grid-row: 1 / span 2; width: 56px; height: 56px; margin: 0; }
+  .rnc-colour-name { grid-column: 2; }
+  .rnc-colour-role { grid-column: 2; }
+  .rnc-colour-row { grid-column: 3; grid-row: 1 / span 2; flex-direction: column; align-items: flex-end; gap: 4px; margin: 0; }
+}
+@container rnc-colours (max-width: 360px) {
+  .rnc-colour { grid-template-columns: auto minmax(0, 1fr); }
+  .rnc-colour-swatch { grid-row: 1 / span 3; }
+  .rnc-colour-row { grid-column: 2; grid-row: auto; flex-direction: row; align-items: center; margin-top: 4px; }
+}
 .rnc-colour-hex { box-sizing: border-box; width: 7.5em; min-height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font: 500 14px/1 var(--font-mono); text-transform: uppercase; transition: border-color .2s ease; }
 .rnc-colour-hex:hover { border-color: var(--ink-muted); }
 .rnc-colour-hex:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; border-color: var(--focus); }
@@ -502,7 +556,15 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-table-toolbar { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
 .rnc-table-search { flex: 0 1 320px; }
 .rnc-table-count { font-size: 14px; color: var(--ink-muted); }
-.rnc-table-wrap { overflow-x: auto; border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-1); }
+.rnc-table-wrap { overflow-x: auto; overscroll-behavior-x: contain; border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-1); scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+/* Wider than its space (a phone): tables scroll sideways (swipe, or drag with a mouse) and the edge with more columns shades. */
+.rnc-table-frame, .rnc-rt { position: relative; }
+.rnc-table-frame { min-width: 0; }
+.rnc-table-frame::before, .rnc-table-frame::after, .rnc-rt::before, .rnc-rt::after { content: ""; position: absolute; top: 0; bottom: 0; z-index: 3; width: 24px; pointer-events: none; opacity: 0; transition: opacity .2s ease; }
+.rnc-table-frame::before, .rnc-rt::before { left: 0; border-radius: var(--radius-md) 0 0 var(--radius-md); background: linear-gradient(to right, rgba(15, 42, 68, .14), transparent); }
+.rnc-table-frame::after, .rnc-rt::after { right: 0; border-radius: 0 var(--radius-md) var(--radius-md) 0; background: linear-gradient(to left, rgba(15, 42, 68, .14), transparent); }
+.rnc-table-frame.can-back::before, .rnc-table-frame.can-more::after, .rnc-rt.can-back::before, .rnc-rt.can-more::after { opacity: 1; }
+.rnc-table-wrap.is-dragging, .rnc-rt-scroll.is-dragging { cursor: grabbing; user-select: none; }
 .rnc-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .rnc-table caption { caption-side: top; padding: 0 0 10px; text-align: left; font: 600 16px/1.3 var(--font-sans); color: var(--ink); }
 .rnc-table thead th { padding: 10px 16px; background: var(--lead-soft); color: var(--action); font: 600 13px/1.3 var(--font-sans); text-align: left; white-space: nowrap; vertical-align: bottom; }
@@ -532,11 +594,12 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
    the rows scroll and load more near the end. Flex rows like react-table v6, so the Raffle Builder's column widths carry over. */
 .rnc-rt { box-sizing: border-box; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; border-radius: var(--radius-md); background: var(--surface); box-shadow: var(--shadow-1); font: 400 14px/1.4 var(--font-sans); color: var(--ink); }
 .rnc-rt.h-100 { height: 100%; }
-.rnc-rt-scroll { position: relative; flex: 1 1 auto; min-height: 0; contain: inline-size; overflow-x: hidden; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
-.rnc-rt-scroll::-webkit-scrollbar { width: 8px; }
+.rnc-rt-scroll { position: relative; flex: 1 1 auto; min-height: 0; contain: inline-size; overflow-x: auto; overflow-y: auto; overscroll-behavior-x: contain; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.rnc-rt-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
 .rnc-rt-scroll::-webkit-scrollbar-thumb { border-radius: 4px; background: var(--line); }
 .rnc-rt-thead { position: sticky; top: 0; z-index: 2; background: var(--lead-soft); }
-.rnc-rt-tr { display: flex; min-width: 0; }
+.rnc-rt-thead, .rnc-rt-tbody { width: max-content; min-width: 100%; }
+.rnc-rt-tr { display: flex; width: max-content; min-width: 100%; }
 .rnc-rt-th, .rnc-rt-td { box-sizing: border-box; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .rnc-rt-th { display: flex; align-items: flex-end; padding: 10px 16px; color: var(--action); font: 600 13px/1.3 var(--font-sans); }
 .rnc-rt-th .rnc-table-sort { max-width: 100%; }
@@ -872,6 +935,8 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 /* The licensed-raffle badge and the responsible-play line, on light ground above the footer (as on the raffle site). */
 .rnc-wsite-trust { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 28px; margin-top: 52px; padding: 28px 56px; border-top: 1px solid #dde5ee; background: #ffffff; font-size: 14px; color: #3a4957; }
 .rnc-wsite-trust .rnc-badge { box-shadow: none; }
+.rnc-wsite-trust .rnc-licence { flex: 0 1 460px; }
+.rnc-wsite-packs .rnc-licence.is-compact { grid-column: 1 / -1; }
 .rnc-wsite-trust > small { max-width: 52ch; }
 .rnc-wsite-trust > small b { color: #1d2b38; }
 .rnc-wsite-trust + .rnc-wsite-foot { margin-top: 0; }

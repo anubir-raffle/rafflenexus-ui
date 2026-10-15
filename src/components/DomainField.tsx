@@ -15,7 +15,7 @@ export interface DomainFieldProps extends FieldBaseProps {
   onBlur?: FocusEventHandler<HTMLInputElement>;
   /** Default ".rafflenexus.com". */
   suffix?: string;
-  /** Hints for each choice. Defaults say what's allowed. */
+  /** Hints for each choice, if they must differ. Off by default: one hint (`hint`, or the default) stays put when the choice changes. */
   rnHint?: ReactNode;
   ownHint?: ReactNode;
   rnLabel?: ReactNode;
@@ -28,6 +28,8 @@ export interface DomainFieldProps extends FieldBaseProps {
   id?: string;
   className?: string;
 }
+
+const DEFAULT_HINT = 'Use letters, numbers, hyphens and underscores, or a domain you own, like lottery.example.org. For your own domain, we send you the steps to point it at your raffle site.';
 
 /** The full address a DomainField's value points to, e.g. "https://samplehospital.rafflenexus.com". */
 export function domainUrl(type: DomainType, value: string, suffix = '.rafflenexus.com'): string {
@@ -50,11 +52,11 @@ function tidy(raw: string, type: DomainType, suffix: string): string {
  */
 export function DomainField({
   label, hint, error, optional, review, type, onTypeChange, value, onChange, onBlur, suffix = '.rafflenexus.com',
-  rnHint = 'Letters, numbers, hyphens and underscores.', ownHint = 'A domain you own, like lottery.example.org. We send you the steps to point it at your raffle site.',
+  rnHint, ownHint,
   rnLabel = 'Raffle Nexus address', ownLabel = 'Your own domain', maxLength, showCount = true, disabled, id, className,
 }: DomainFieldProps) {
   const fid = useFieldId(id);
-  const shownHint = hint ?? (type === 'rn' ? rnHint : ownHint);
+  const shownHint = hint ?? (type === 'rn' ? rnHint : ownHint) ?? DEFAULT_HINT;
   const limit = maxLength ?? (type === 'rn' ? 63 : 253);
   const counted = showCount && !review;
   const { hintId, errorId, aria } = useFieldA11y(fid, shownHint, error, `${fid}-full`, counted ? `${fid}-count` : undefined);

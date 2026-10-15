@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-table';
 import { useFieldId } from './Field';
 import { cx } from '../utils';
+import { useDragScroll } from '../dragScroll';
 
 /**
  * Column options the Table reads from `meta` (TanStack's free-form column field):
@@ -113,6 +114,9 @@ export function Table<TData>({
   const selectedCount = Object.keys(rowSelection).filter((k) => rowSelection[k]).length;
   const rows = table.getRowModel().rows;
   const colCount = table.getVisibleLeafColumns().length;
+  // Wider than its space (a phone): it scrolls sideways; a mouse can drag it; the edge with more columns shades.
+  const scroller = useRef<HTMLDivElement>(null);
+  const { edges, dragProps } = useDragScroll(scroller);
 
   return (
     <div className={cx('rnc-table-block', className)}>
@@ -130,7 +134,8 @@ export function Table<TData>({
           </span>
         </div>
       ) : null}
-      <div className="rnc-table-wrap">
+      <div className={cx('rnc-table-frame', edges.back && 'can-back', edges.more && 'can-more')}>
+      <div className="rnc-table-wrap" ref={scroller} {...dragProps}>
         <table className="rnc-table">
           <caption className={showCaption ? undefined : 'rnc-sr-only'}>{caption}</caption>
           <thead>
@@ -170,6 +175,7 @@ export function Table<TData>({
             )}
           </tbody>
         </table>
+      </div>
       </div>
       {pageSize && table.getPageCount() > 1 ? (
         <nav className="rnc-table-pager" aria-label={`${caption}, pages`}>
