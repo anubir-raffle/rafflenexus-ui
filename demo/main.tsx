@@ -219,7 +219,7 @@ function App() {
         <RaffleBuilderDemo />
       </Section>
 
-      <Section full id="wizard" title="Setup form wizard (@rafflenexuscanada/design-system/wizard)" note="The Raffle Builder's wizard on react-final-form: the step bar (done, not done, Review locked until every step is done), sections, autosave status, Back / Next / Review / Submit. Rules of play is hidden for this BC raffle. Try QA mode and read-only.">
+      <Section full id="wizard" title="Setup form wizard (@rafflenexuscanada/design-system/wizard)" note="The Raffle Builder's wizard on react-final-form: the step bar (done, not done, Review locked until every step is done), sections, autosave status, Back / Next / Review / Submit. On Website, hide the live preview to give the form the full width. Try QA mode and read-only.">
         <WizardDemo />
       </Section>
 

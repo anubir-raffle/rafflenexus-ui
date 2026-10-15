@@ -1,5 +1,5 @@
 import {
-  Children, isValidElement, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement, type ReactNode,
+  Children, isValidElement, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type ReactElement, type ReactNode,
 } from 'react';
 import { Form, FormSpy } from 'react-final-form';
 import arrayMutators from 'final-form-arrays';
@@ -74,6 +74,8 @@ export interface WizardProps<V extends Values = Values> {
   completeLabel?: string;
   /** Called instead of the inline message when someone selects Review before every step is complete (e.g. your SweetAlert). */
   onReviewBlocked?: () => void;
+  /** Testing only: Review opens before every step is complete, so you can check it. Submit stays disabled until every step is. */
+  reviewUnlocked?: boolean;
   /** Submit-type buttons are disabled while this is true. Default: while a SweetAlert2 dialog is open. */
   isSubmitBlocked?: () => boolean;
   /** The step bar's accessible name. Default "Form steps". */
@@ -91,6 +93,19 @@ export interface WizardProps<V extends Values = Values> {
    * Return null for steps without one (usually every step but Website). Below a certain width it moves under the sections.
    */
   preview?: (values: V, step: { label: string; index: number }) => ReactNode;
+  /**
+   * V2: a Hide preview / Show preview button beside the step's title, so people can give the form the full width. On by default
+   * when there's a preview. Hidden, the preview stays mounted (it keeps its desktop or mobile choice).
+   */
+  previewToggle?: boolean;
+  /** V2: start with the preview hidden (uncontrolled). */
+  defaultPreviewHidden?: boolean;
+  /** V2: the preview's hidden state, controlled. Pair it with `onPreviewHiddenChange`, e.g. to remember it per person. */
+  previewHidden?: boolean;
+  onPreviewHiddenChange?: (hidden: boolean) => void;
+  /** V2: the toggle's words. Defaults "Hide preview" and "Show preview". */
+  hidePreviewLabel?: string;
+  showPreviewLabel?: string;
   className?: string;
   children?: ReactNode;
 }
@@ -213,8 +228,19 @@ export function WizardSteps({ steps, current, onSelect, label = 'Form steps', la
 function WizardRoot<V extends Values = Values>({
   onSubmit, initialValues, onSave, lastSaved, isSaving, disabledAll, isQaPage, briefStatus, mutators, header, notice,
   backLabel = 'Back', nextLabel = 'Next', reviewLabel = 'Review', submitLabel = 'Submit', completeLabel = 'Complete form',
-  onReviewBlocked, isSubmitBlocked = swalOpen, stepsLabel = 'Form steps', layout = 'v1', aside, railLabel = 'Setup form', toolbar, preview, className, children,
+  onReviewBlocked, reviewUnlocked = false, isSubmitBlocked = swalOpen, stepsLabel = 'Form steps', layout = 'v1', aside, railLabel = 'Setup form', toolbar, preview, className, children,
+  previewToggle = true, defaultPreviewHidden = false, previewHidden, onPreviewHiddenChange, hidePreviewLabel = 'Hide preview', showPreviewLabel = 'Show preview',
 }: WizardProps<V>) {
+  const [ownHidden, setOwnHidden] = useState(defaultPreviewHidden);
+  const hidden = previewToggle && (previewHidden ?? ownHidden);
+  const [revealed, setRevealed] = useState(false);
+  const sideId = useId();
+  const togglePreview = () => {
+    const next = !hidden;
+    if (previewHidden === undefined) setOwnHidden(next);
+    setRevealed(!next);
+    onPreviewHiddenChange?.(next);
+  };
   const [start] = useState(() => (initialValues ?? {}) as V);
   const [page, setPage] = useState(0);
   const [blocked, setBlocked] = useState(false);
@@ -277,11 +303,11 @@ function WizardRoot<V extends Values = Values>({
         const allValid = visible.every((p) => isValid(p.props.validate, values));
         const steps: WizardStep[] = visible.map((p, i) => ({
           label: p.props.label ?? (i === reviewIndex ? reviewLabel : `Step ${i + 1}`),
-          state: i === reviewIndex ? (done === sections.length ? 'review' : 'locked') : isValid(p.props.validate, values) ? 'complete' : 'incomplete',
+          state: i === reviewIndex ? (done === sections.length || reviewUnlocked ? 'review' : 'locked') : isValid(p.props.validate, values) ? 'complete' : 'incomplete',
           summary: p.props.summary?.(values),
         }));
         const select = (i: number) => {
-          if (i === reviewIndex && done < sections.length) {
+          if (i === reviewIndex && done < sections.length && !reviewUnlocked) {
             if (onReviewBlocked) onReviewBlocked(); else setBlocked(true);
             return;
           }
@@ -306,19 +332,38 @@ function WizardRoot<V extends Values = Values>({
         ) : null;
         const content = (
           <div className="rnc-wizard-body" ref={body} tabIndex={-1} aria-label={steps[current]?.label}>
-            <div key={current} className={cx('rnc-wizard-enter', travel && `is-${travel} is-moved`)}>
-            {v2 ? (
-              <div className="rnc-wizard-page-head">
-                <h2 className="rnc-wizard-page-title">{steps[current]?.label}</h2>
-                {active?.props.description ? <p className="rnc-wizard-page-lede">{active.props.description}</p> : null}
-              </div>
-            ) : null}
             {(() => {
+              // Only the step's title and form animate when the step changes (keyed by step, so they remount and play
+              // in). The live preview sits outside that, so it stays mounted and still while people move between
+              // steps (Miguel, 2026-10-16: "don't animate live preview section").
+              const enter = cx('rnc-wizard-enter', travel && `is-${travel} is-moved`);
+              const head = v2 ? (
+                <div className="rnc-wizard-page-head">
+                  <h2 className="rnc-wizard-page-title">{steps[current]?.label}</h2>
+                  {active?.props.description ? <p className="rnc-wizard-page-lede">{active.props.description}</p> : null}
+                </div>
+              ) : null;
               const page = active ? <WizardPage {...active.props} mutators={form.mutators as WizardMutators} values={values} changePage={goTo} /> : null;
               const side = v2 && preview ? preview(values, { label: steps[current]?.label ?? '', index: current }) : null;
-              return side != null && side !== false ? <div className="rnc-wizard-split"><div>{page}</div>{side}</div> : page;
+              if (side == null || side === false) return <div key={current} className={enter}>{head}{page}</div>;
+              // The toggle sits outside the animated head, so it stays put between steps. Hidden, the form takes the full
+              // width (Miguel, 2026-10-16: "allow user to hide live preview to expand content").
+              const toggle = previewToggle ? (
+                <Button className="rnc-wizard-preview-toggle" variant="ghost" size="sm" startIcon={hidden ? 'eye' : 'eye-slash'}
+                  aria-expanded={!hidden} aria-controls={sideId} onClick={togglePreview}>
+                  {hidden ? showPreviewLabel : hidePreviewLabel}
+                </Button>
+              ) : null;
+              return (
+                <>
+                  <div className="rnc-wizard-page-bar"><div key={`head-${current}`} className={enter}>{head}</div>{toggle}</div>
+                  <div className={cx('rnc-wizard-split', hidden && 'is-solo')}>
+                    <div key={current} className={enter}>{page}</div>
+                    <div id={sideId} className={cx('rnc-wizard-side', revealed && 'is-revealed')} hidden={hidden}>{side}</div>
+                  </div>
+                </>
+              );
             })()}
-            </div>
           </div>
         );
         const foot = (
@@ -332,7 +377,7 @@ function WizardRoot<V extends Values = Values>({
               {!isLast && !beforeReview ? (
                 <Button onClick={() => goTo(Math.min(current + 1, visible.length - 1))}>{nextLabel}</Button>
               ) : beforeReview ? (
-                <Button startIcon="eye" disabled={submitOff} onClick={() => goTo(current + 1)}>{reviewLabel}</Button>
+                <Button startIcon="eye" disabled={submitOff && !reviewUnlocked} onClick={() => goTo(current + 1)}>{reviewLabel}</Button>
               ) : isQaPage && Number(briefStatus) === 2 ? (
                 <Button startIcon="check-circle" disabled={submitOff} loading={submitting} onClick={() => submit()}>{completeLabel}</Button>
               ) : !isQaPage && !disabledAll ? (

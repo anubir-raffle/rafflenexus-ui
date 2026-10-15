@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.3 (2026-10-16)
+
+- Wizard V2: **Hide preview / Show preview** beside the step's title gives the form the full width; the preview stays mounted (it keeps Desktop or Mobile) and stays hidden across steps. Props `previewToggle`, `defaultPreviewHidden`, `previewHidden` / `onPreviewHiddenChange`, `hidePreviewLabel`, `showPreviewLabel`.
+- Wizard V2: the live preview no longer animates when the step changes; only the step's title and form do.
+- Wizard: `reviewUnlocked`, for testing: Review opens before every step is complete; Submit stays disabled until it is. The demo has "Open Review early (testing)".
+- `WizardSitePreview`: `causeMedia` (a photo or video beside Where the money goes), `sponsor` (presenting sponsor beside the logo), `sponsors` (logos only, in tiers or one list), prize `sponsor` ("Sponsored by"), `socials` in the footer. Types `WizardCauseMedia`, `WizardSiteSponsor`, `WizardSiteSocial`.
+- `WizardSitePreview` on a phone: the licence badge no longer stretches tall with empty space (a column flex-basis set its height), and sponsor logos sit two across (one for the top tier, three for the smallest).
+- `UploadTile`: `kind` (`image`, `video`, `file`) and `fileName`; videos and documents come back as object URLs and preview as a playing video or a document icon with the file's name.
+- `AnimatedList` / `SortableList`: moves no longer jump. Re-renders during a slide (the announcement, the form, autosave) were read as new moves, so rows snapped to the far side and slid back; the slide was also cut short by transitions ending inside the row. A Move button keeps focus on its row.
+- The demo's builder: cause photo or video, social media accounts, a prize sponsor on each prize, a Sponsors step (tiers, alt text, a presenting sponsor), and Rules of play for every province (the standard rules unless a PDF is uploaded). Raffle name drops its "5 to 80 characters" hint.
+
 ## 0.7.2 (2026-10-15)
 
 - Synced with the design system. Updated: component styles.

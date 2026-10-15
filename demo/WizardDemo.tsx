@@ -3,10 +3,10 @@ import { Field } from 'react-final-form';
 import moment, { type Moment } from 'moment';
 import {
   Wizard, WizardDeadline, WizardHeader, WizardPreview, WizardReview, WizardSection, WizardSitePreview, WizardToolbar,
-  type PreviewDevice, type WizardMutators, type WizardSiteDate,
+  type PreviewDevice, type WizardMutators, type WizardSiteDate, type WizardSiteSponsor,
 } from '../src/wizard';
 import {
-  AnimatedList, BrandColours, Button, DomainField, ExpandableRow, Icon, RichText, RichTextArea, SortableList, StatusPill, TextField, UploadTile,
+  AnimatedList, BrandColours, Button, DomainField, ExpandableRow, Icon, RichText, RichTextArea, Select, SortableList, StatusPill, Switch, TextArea, TextField, UploadTile,
   domainUrl, richTextLength, richTextToPlain, type BrandColourSet, type DomainType, type LicenceProvince,
 } from '../src';
 import { DatePicker } from '../src/inputs';
@@ -16,17 +16,33 @@ type Slide = { id: string; src: string; alt: string };
 type Pack = { id: string; name: string; tickets: string; price: string };
 /** A licence and the ticket packs it covers (the app's ticket_pack_groups). */
 type Licence = { id: string; licence_number: string; ticket_packs: Pack[] };
-type Prize = { id: string; title: string; value: string; description: string };
+/** A prize's sponsor (optional): a logo, a name and a line about them. */
+type PrizeSponsor = { name: string; logo?: string; description: string };
+type Prize = { id: string; title: string; value: string; description: string; sponsor: PrizeSponsor };
+/** A raffle sponsor: a logo only on the site (Miguel, 2026-10-16), with alt text for people who can't see it. `tier` is a Tier id. */
+type Sponsor = { id: string; logo: string; alt: string; tier: string };
+type Tier = { id: string; name: string };
+/** A photo or a video for the cause, shown beside the cause text on the site. */
+type CauseMedia = { kind: 'image' | 'video'; src: string; name: string };
+/** The organization's social accounts: the part after the address (the app's support_socials). */
+type Socials = { facebook?: string; instagram?: string; twitter?: string; youtube?: string; linkedin?: string };
 type Early = { id: string; date: string; prize: string };
 type Brief = {
   name?: string; sub_domain?: string; sub_domain_type: DomainType; heading?: string; subheading?: string; cause?: string; logo?: string; sharing_image?: string; support_email?: string;
   slides: Slide[]; sales_open?: string; sales_close?: string; draw_at?: string; draw_location?: string; early_draws: Early[];
   ticket_pack_groups: Licence[]; prizes: Prize[]; client: { name: string; province: string };
+  cause_media?: CauseMedia; support_socials: Socials;
+  /** Sponsors, plain or in tiers, and an optional presenting sponsor (a Sponsor id) beside the raffle's logo. */
+  sponsors: Sponsor[]; sponsors_tiered: boolean; sponsor_tiers: Tier[]; presenting_sponsor: string; presenting_label: 'Presented by' | 'Sponsored by';
+  /** The organization's own rules of play (a PDF). Without it, the standard rules for the province are used. */
+  rules?: { name: string; src: string };
   /** The site's colours, picked from the logo (the app's leading_color is the primary). */
   colours: BrandColourSet;
 };
 
 const tile = (label: string, a: string, b: string) => `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="650" height="500"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs><rect width="650" height="500" fill="url(#g)"/><text x="40" y="440" font-family="Arial" font-weight="700" font-size="44" fill="#fff">${label}</text></svg>`)}`;
+/** A made-up sponsor logo: the name set in a box. */
+const badge = (name: string, colour: string) => `data:image/svg+xml;utf8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="320" height="120"><rect x="4" y="4" width="312" height="112" rx="14" fill="none" stroke="${colour}" stroke-width="6"/><text x="160" y="70" text-anchor="middle" font-family="Arial" font-weight="700" font-size="26" fill="${colour}">${name}</text></svg>`)}`;
 let seq = 100;
 const uid = (p: string) => `${p}-${++seq}`;
 const money = (v: string) => { const n = Number(String(v).replace(/[^0-9.]/g, '')); return n ? `$${n.toLocaleString('en-CA')}` : '$0'; };
@@ -53,7 +69,17 @@ const START: Brief = {
     id: 'g1', licence_number: '000000',
     ticket_packs: [{ id: 'p1', name: 'Single ticket', tickets: '1', price: '25' }, { id: 'p2', name: 'Pack of 3', tickets: '3', price: '60' }],
   }],
-  prizes: [{ id: 'z1', title: 'Lakeside home', value: '1250000', description: '<p>A four-bedroom home by the lake, <em>fully furnished</em>.</p>' }],
+  prizes: [{ id: 'z1', title: 'Lakeside home', value: '1250000', description: '<p>A four-bedroom home by the lake, <em>fully furnished</em>.</p>',
+    sponsor: { name: 'Sample Builders', logo: badge('SAMPLE BUILDERS', '#3b4656'), description: 'Built and furnished by Sample Builders.' } }],
+  support_socials: { facebook: 'samplehospital', instagram: 'samplehospital' },
+  sponsors: [
+    { id: 'sp1', logo: badge('SAMPLE CREDIT UNION', '#13324f'), alt: 'Sample Credit Union', tier: 't1' },
+    { id: 'sp2', logo: badge('SAMPLE MOTORS', '#7e0c20'), alt: 'Sample Motors', tier: 't2' },
+    { id: 'sp3', logo: badge('SAMPLE GROCERS', '#2b7a3d'), alt: 'Sample Grocers', tier: 't2' },
+  ],
+  sponsors_tiered: false,
+  sponsor_tiers: [{ id: 't1', name: 'Gold sponsors' }, { id: 't2', name: 'Silver sponsors' }, { id: 't3', name: 'Bronze sponsors' }],
+  presenting_sponsor: 'sp1', presenting_label: 'Presented by',
   client: { name: 'Sample Hospital Foundation', province: 'BC' },
   colours: { primary: '#0c3f75', secondary: '#13324f', accent: '#126ab5' },
 };
@@ -62,6 +88,7 @@ const set = (field: string) => (args: unknown[], state: any, utils: any) => util
 const MUTATORS = {
   setSlides: set('slides'), setLicences: set('ticket_pack_groups'), setPrizes: set('prizes'), setEarlyDraws: set('early_draws'),
   setLogo: set('logo'), setSharingImage: set('sharing_image'), setSubDomainType: set('sub_domain_type'), setColours: set('colours'),
+  setCauseMedia: set('cause_media'), setSponsors: set('sponsors'), setTiers: set('sponsor_tiers'), setTiered: set('sponsors_tiered'), setRules: set('rules'),
 };
 
 // The app's rules for the web address: a Raffle Nexus name, or a whole domain.
@@ -96,6 +123,24 @@ const rules = {
     : past(v) ? 'Pick a time from now on'
       : (b.sales_open && !moment(v).isAfter(moment(b.sales_open))) || (b.sales_close && !moment(v).isBefore(moment(b.sales_close))) ? 'Early draws happen while sales are open' : undefined),
 };
+// The social networks the app stores (support_socials), with the address each handle goes after.
+const SOCIALS: { key: keyof Socials; label: string; host: string; also?: string }[] = [
+  { key: 'facebook', label: 'Facebook page', host: 'facebook.com/' },
+  { key: 'instagram', label: 'Instagram', host: 'instagram.com/' },
+  { key: 'twitter', label: 'X (Twitter)', host: 'x.com/', also: 'twitter.com/' },
+  { key: 'youtube', label: 'YouTube channel', host: 'youtube.com/' },
+  { key: 'linkedin', label: 'LinkedIn company page', host: 'linkedin.com/' },
+];
+// The app allows no special characters here; a handle is letters, numbers and . _ - / @ (YouTube's "@name", LinkedIn's "company/name").
+const HANDLE = /^[A-Za-z0-9._\-/@]+$/;
+/** People paste whole addresses: keep only the part after the network's address. */
+const toHandle = (raw: string, s: (typeof SOCIALS)[number]) => {
+  let x = raw.trim().replace(/^https?:\/\//i, '').replace(/^www\./i, '');
+  for (const host of [s.host, s.also].filter(Boolean) as string[]) if (x.toLowerCase().startsWith(host)) x = x.slice(host.length);
+  return x.replace(/\/+$/, '');
+};
+const socialError = (v?: string) => (v && !HANDLE.test(v) ? 'Use just the account name, like the part after the address' : undefined);
+const prizeSponsorError = (p: Prize) => ((p.sponsor.logo || p.sponsor.description.trim()) && !p.sponsor.name.trim() ? 'Name the prize sponsor' : undefined);
 const errs = {
   website: (v: Brief) => ({
     ...(rules.name(v.name) && { name: rules.name(v.name) }),
@@ -104,6 +149,12 @@ const errs = {
     ...(!richTextLength(v.cause) ? { cause: 'Say what the raffle supports' } : richTextLength(v.cause) < 30 && { cause: 'Write at least 30 characters about the cause' }),
     ...(!v.logo && { logo: 'Add your logo' }),
     ...(rules.support_email(v.support_email) && { support_email: rules.support_email(v.support_email) }),
+    ...(SOCIALS.some((x) => socialError(v.support_socials[x.key])) && { socials: 'Fix the social account names' }),
+  }),
+  sponsors: (v: Brief) => ({
+    ...(v.sponsors.some((x) => !x.alt.trim()) && { sponsor_alt: 'Describe every sponsor logo (alt text): usually the sponsor’s name' }),
+    ...(v.sponsors_tiered && v.sponsor_tiers.some((t) => !t.name.trim()) && { tier_names: 'Name every tier' }),
+    ...(v.sponsors_tiered && v.sponsors.some((x) => !v.sponsor_tiers.some((t) => t.id === x.tier)) && { tier_pick: 'Put every sponsor in a tier' }),
   }),
   slides: (v: Brief) => ({ ...(!v.slides.length && { slides: 'Add at least one slide' }), ...(v.slides.some((s) => !s.alt.trim()) && { slides_alt: 'Describe every slide (alt text)' }) }),
   dates: (v: Brief) => ({
@@ -127,7 +178,11 @@ const errs = {
       ...(repeats && { repeats: 'Two packs in one licence have the same number of tickets' }),
     };
   },
-  prizes: (v: Brief) => ({ ...(!v.prizes.length && { prizes: 'Add a prize' }), ...(v.prizes.some((p) => !p.title.trim() || rules.value(p.value)) && { prize_fields: 'Give every prize a title and a value above $0' }) }),
+  prizes: (v: Brief) => ({
+    ...(!v.prizes.length && { prizes: 'Add a prize' }),
+    ...(v.prizes.some((p) => !p.title.trim() || rules.value(p.value)) && { prize_fields: 'Give every prize a title and a value above $0' }),
+    ...(v.prizes.some(prizeSponsorError) && { prize_sponsor: 'Name every prize sponsor you added' }),
+  }),
 };
 const messages = (o: Record<string, string | false | undefined>) => Object.values(o).filter(Boolean) as string[];
 const grid = (min: number) => ({ display: 'grid', gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${min}px), 1fr))`, gap: 16, alignItems: 'start' });
@@ -251,7 +306,8 @@ function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
 
 function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   const [open, setOpen] = useState<string | null>(null);
-  const add = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, title: '', value: '', description: '' }]); setOpen(id); focusSoon(`${id}-title`); };
+  const add = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, title: '', value: '', description: '', sponsor: { name: '', description: '' } }]); setOpen(id); focusSoon(`${id}-title`); };
+  const setSponsor = (p: Prize, change: Partial<PrizeSponsor>) => m.setPrizes(patch(v.prizes, p.id, { sponsor: { ...p.sponsor, ...change } }));
   return (
     <WizardSection title="Prizes for the main draw" description="Drag to set the order they're drawn in. Open a prize to edit it.">
       <SortableList aria-label="Prizes" items={v.prizes} getKey={(p) => p.id} disabled={ro} itemLabel={(p, i) => p.title || `Prize ${i + 1}`} onReorder={(next) => m.setPrizes(next)}
@@ -271,6 +327,17 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                     </div>
                     <RichTextArea label="Description" hint="What winners get. Shown on the prizes page." value={p.description} review={ro} maxLength={LIMIT.prizeText} minHeight={140}
                       onChange={(html) => m.setPrizes(patch(v.prizes, p.id, { description: html }))} />
+                    {/* Optional: the prize's own sponsor, shown as "Sponsored by" on the prize (Miguel, 2026-10-16). */}
+                    <fieldset style={{ display: 'grid', gap: 16, margin: 0, padding: 0, border: 0 }}>
+                      <legend className="rnc-field-label" style={{ marginBottom: 12 }}>Prize sponsor (optional)</legend>
+                      <div style={grid(220)}>
+                        <ItemText label="Sponsor name" value={p.sponsor.name} readOnly={ro} maxLength={LIMIT.prize} check={() => prizeSponsorError(p)} onValue={(x) => setSponsor(p, { name: x })} />
+                        <UploadTile label="Sponsor logo" hint="PNG or SVG, on a clear background." src={p.sponsor.logo} alt={`${p.sponsor.name || 'Sponsor'} logo`} disabled={ro}
+                          onFile={(_f, url) => setSponsor(p, { logo: url })} onRemove={() => setSponsor(p, { logo: undefined })} />
+                      </div>
+                      <TextArea label="About the sponsor" hint="One or two lines, shown with the prize." value={p.sponsor.description} readOnly={ro} maxLength={300}
+                        onChange={(e) => setSponsor(p, { description: e.target.value })} />
+                    </fieldset>
                   </div>
                 ) : null}
               </ExpandableRow>
@@ -280,6 +347,73 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
       />
       {!ro ? <div><Button variant="secondary" startIcon="plus" onClick={add}>Add a prize to this draw</Button></div> : null}
     </WizardSection>
+  );
+}
+
+/** The raffle's sponsors: logos only, with alt text; in tiers or one list; one of them may be shown beside the raffle's logo. */
+function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
+  const tiers = v.sponsor_tiers;
+  const addSponsor = (url: string) => m.setSponsors([...v.sponsors, { id: uid('sp'), logo: url, alt: '', tier: tiers[0]?.id ?? '' }]);
+  const addTier = () => { const id = uid('t'); m.setTiers([...tiers, { id, name: '' }]); focusSoon(`${id}-name`); };
+  return (
+    <>
+      <WizardSection title="Sponsor logos" description="Shown on your raffle site under “Thank you to our sponsors”. Logos only, in the order here. Give each logo alt text: usually the sponsor’s name.">
+        <Switch label="Group sponsors into tiers" checked={v.sponsors_tiered} disabled={ro} onChange={(on) => m.setTiered(on)} />
+        {v.sponsors_tiered ? (
+          <div style={{ display: 'grid', gap: 12 }}>
+            <p className="rnc-field-label" style={{ margin: 0 }}>Tiers, biggest first</p>
+            <AnimatedList aria-label="Sponsor tiers" items={tiers} getKey={(t) => t.id} renderItem={(t, i) => (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <ItemText id={`${t.id}-name`} label={`Tier ${i + 1}`} value={t.name} readOnly={ro} maxLength={40} required="Name the tier" onValue={(x) => m.setTiers(patch(tiers, t.id, { name: x }))} />
+                </div>
+                {!ro && i > -1 && tiers.length > 1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${t.name || `tier ${i + 1}`}`} style={{ marginTop: 32 }}
+                  onClick={() => { const rest = tiers.filter((x) => x.id !== t.id); m.setTiers(rest); m.setSponsors(v.sponsors.map((sp) => (sp.tier === t.id ? { ...sp, tier: rest[0].id } : sp))); }} /> : null}
+              </div>
+            )} />
+            {!ro ? <div><Button variant="secondary" size="sm" startIcon="plus" onClick={addTier}>Add a tier</Button></div> : null}
+          </div>
+        ) : null}
+        <SortableList aria-label="Sponsors" items={v.sponsors} getKey={(x) => x.id} disabled={ro} itemLabel={(x, i) => x.alt || `Sponsor ${i + 1}`} onReorder={(next) => m.setSponsors(next)}
+          renderItem={(x, t) => (
+            <div className="rnc-sort-row">
+              {t.grip}
+              <img src={x.logo} alt="" style={{ width: 'clamp(72px, 12vw, 120px)', height: 48, objectFit: 'contain', borderRadius: 6, background: '#ffffff', flex: 'none' }} />
+              <div className="rnc-sort-body" style={{ display: 'grid', gap: 12 }}>
+                {t.index > -1 ? (
+                  <div style={grid(200)}>
+                    <TextField label={`Alt text for sponsor ${t.index + 1}`} value={x.alt} review={ro} maxLength={LIMIT.alt} error={x.alt ? undefined : 'Describe the logo (the sponsor’s name)'}
+                      onChange={(e) => m.setSponsors(patch(v.sponsors, x.id, { alt: e.target.value }))} />
+                    {v.sponsors_tiered ? (
+                      <Select label="Tier" value={x.tier} disabled={ro} options={tiers.map((tt, n) => ({ value: tt.id, label: tt.name || `Tier ${n + 1}` }))}
+                        onChange={(e) => m.setSponsors(patch(v.sponsors, x.id, { tier: e.target.value }))} />
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+              {t.moves}
+              {!ro && t.index > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${x.alt || `sponsor ${t.index + 1}`}`} onClick={() => m.setSponsors(v.sponsors.filter((o) => o.id !== x.id))} /> : null}
+            </div>
+          )}
+        />
+        {!ro ? <UploadTile label="Add a sponsor logo" hint="PNG or SVG, on a clear background." onFile={(_f, url) => addSponsor(url)} /> : null}
+      </WizardSection>
+      <WizardSection title="Presenting sponsor" size="md" description="Optional. One sponsor shown beside your logo at the top of every page.">
+        <div style={grid(220)}>
+          <Field name="presenting_sponsor">
+            {({ input }) => (
+              <Select label="Show beside your logo" disabled={ro} {...input}
+                options={[{ value: '', label: 'No presenting sponsor' }, ...v.sponsors.map((x, i) => ({ value: x.id, label: x.alt || `Sponsor ${i + 1}` }))]} />
+            )}
+          </Field>
+          {v.presenting_sponsor ? (
+            <Field name="presenting_label">
+              {({ input }) => <Select label="Wording" disabled={ro} {...input} options={[{ value: 'Presented by', label: 'Presented by' }, { value: 'Sponsored by', label: 'Sponsored by' }]} />}
+            </Field>
+          ) : null}
+        </div>
+      </WizardSection>
+    </>
   );
 }
 
@@ -321,6 +455,8 @@ function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice;
     v.draw_at ? { at: v.draw_at, what: `Main draw${v.draw_location ? `, ${v.draw_location}` : ''}` } : null,
   ].filter(Boolean).sort((a, b) => moment(a!.at).valueOf() - moment(b!.at).valueOf()).map((d): WizardSiteDate => ({ when: when(d!.at), what: d!.what }));
   const numbers = v.ticket_pack_groups.map((g) => g.licence_number).filter(Boolean);
+  const logo = (x: Sponsor): WizardSiteSponsor => ({ name: x.alt, logo: x.logo });
+  const presenter = v.sponsors.find((x) => x.id === v.presenting_sponsor);
   return (
     <WizardPreview url={address(v) || 'your-raffle.rafflenexus.com'} device={device} onDeviceChange={onDevice}>
       <WizardSitePreview
@@ -329,7 +465,11 @@ function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice;
         slides={v.slides.map((s) => s.src)}
         packs={(first?.ticket_packs ?? []).filter((p) => p.price).map((p) => ({ label: plural(Number(p.tickets) || 0, 'ticket'), note: p.name, price: money(p.price) }))}
         dates={dates}
-        prizes={v.prizes.filter((p) => p.title).map((p) => ({ title: p.title, value: p.value ? money(p.value) : undefined }))}
+        prizes={v.prizes.filter((p) => p.title).map((p) => ({ title: p.title, value: p.value ? money(p.value) : undefined, sponsor: p.sponsor.name || p.sponsor.logo ? { name: p.sponsor.name, logo: p.sponsor.logo } : undefined }))}
+        causeMedia={v.cause_media ? { kind: v.cause_media.kind, src: v.cause_media.src } : undefined}
+        sponsor={presenter ? { ...logo(presenter), label: v.presenting_label } : undefined}
+        sponsors={v.sponsors_tiered ? { tiers: v.sponsor_tiers.map((t) => ({ name: t.name, sponsors: v.sponsors.filter((x) => x.tier === t.id).map(logo) })) } : v.sponsors.map(logo)}
+        socials={SOCIALS.filter((x) => v.support_socials[x.key]).map((x) => ({ label: x.label.split(' ')[0], href: `https://${x.host}${v.support_socials[x.key]}` }))}
         licence={numbers.length ? `${v.client.province} Gaming Event Licence #${numbers.join(', #')}` : undefined}
         badge={numbers.length ? { province: v.client.province as LicenceProvince, licences: numbers.map((n) => ({ number: n })) } : undefined}
       />
@@ -340,6 +480,8 @@ function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice;
 /** The Raffle Builder's setup form with every step built out: uploads, a sortable slideshow, licences with their ticket packs, prizes to add, open and remove, and a review. */
 export function WizardDemo() {
   const [mode, setMode] = useState<'normal' | 'qa' | 'readonly'>('normal');
+  // Testing only: open Review and submit before every step is complete (Miguel, 2026-10-16).
+  const [earlyReview, setEarlyReview] = useState(false);
   const [layout, setLayout] = useState<'v1' | 'v2'>('v2');
   // Phones start on the phone preview
   const [device, setDevice] = useState<PreviewDevice>(() => (typeof window !== 'undefined' && window.innerWidth < 720 ? 'mobile' : 'desktop'));
@@ -354,6 +496,7 @@ export function WizardDemo() {
     ['Sales close and the draw date set', !messages(errs.dates(v)).length],
     ['Every licence has a number and priced packs', !messages(errs.licences(v)).length],
     ['Every prize has a title and a value', !messages(errs.prizes(v)).length],
+    ['Every sponsor logo has alt text', !messages(errs.sponsors(v)).length],
   ] as const;
   return (
     <div style={{ display: 'grid', gap: 16 }}>
@@ -367,6 +510,8 @@ export function WizardDemo() {
             {m === 'normal' ? 'Normal' : m === 'qa' ? 'QA mode (status 2)' : 'Read-only'}
           </button>
         ))}
+        <span style={{ width: 12 }} />
+        <button type="button" className="rnc-btn rnc-btn-secondary rnc-btn-sm" aria-pressed={earlyReview} onClick={() => setEarlyReview((x) => !x)}>Open Review early (testing)</button>
         <span className="rnc-field-hint">{submitted}</span>
       </div>
       <Wizard<Brief>
@@ -380,6 +525,7 @@ export function WizardDemo() {
         lastSaved="just now"
         disabledAll={ro}
         isQaPage={mode === 'qa'}
+        reviewUnlocked={earlyReview}
         briefStatus={mode === 'qa' ? 2 : 1}
         toolbar={(v) => (
           <WizardToolbar back="#" crumb={<>Raffles / <b>{v.name}</b></>}
@@ -423,6 +569,10 @@ export function WizardDemo() {
                       error={meta.error && (meta.touched || !richTextLength(input.value)) ? meta.error : undefined} />
                   )}
                 </Field>
+                {/* Optional: shown beside the cause text on the site (Miguel, 2026-10-16). */}
+                <UploadTile label="Cause photo or video (optional)" hint="Shown beside the cause on your site. A photo (JPG or PNG) or a short video (MP4 or WebM, up to 50 MB)."
+                  accept="image/*,video/mp4,video/webm" maxBytes={50 * 1024 * 1024} src={v.cause_media?.src} kind={v.cause_media?.kind} alt="The cause photo" disabled={ro}
+                  onFile={(f, url) => m.setCauseMedia({ kind: f.type.startsWith('video/') ? 'video' : 'image', src: url, name: f.name })} onRemove={() => m.setCauseMedia(undefined)} />
               </WizardSection>
               <WizardSection title="Branding" description="Your logo, the image shown when the site is shared, and the site's colours.">
                 <div style={{ ...grid(200), alignItems: 'stretch' }}>
@@ -436,6 +586,16 @@ export function WizardDemo() {
               </WizardSection>
               <WizardSection title="Support contact" description="Shown on your site so buyers can reach you.">
                 <Text name="support_email" label="Support email" type="email" inputMode="email" readOnly={ro} />
+              </WizardSection>
+              <WizardSection title="Social media (optional)" description="Linked in your site's footer. Enter the account name, or paste the whole address.">
+                <div style={grid(220)}>
+                  {SOCIALS.map((x) => (
+                    <Field key={x.key} name={`support_socials.${x.key}`} parse={(raw: string) => toHandle(raw ?? '', x)} validate={socialError}>
+                      {({ input, meta }) => <TextField label={x.label} hint={`${x.host}your-account`} review={ro} maxLength={100} {...input} value={input.value ?? ''}
+                        error={meta.error && meta.touched ? meta.error : undefined} />}
+                    </Field>
+                  ))}
+                </div>
               </WizardSection>
             </>
           )}
@@ -469,8 +629,22 @@ export function WizardDemo() {
         <Wizard.Page label="Prizes" summary={(v) => plural(v.prizes.length, 'prize')} description="Every prize, with a value and a description." validate={errs.prizes}>
           {(m, v) => <Prizes v={v} m={m} ro={ro} />}
         </Wizard.Page>
-        <Wizard.Page label="Rules of play" hide={(v) => ['BC', 'AB', 'MB'].includes(v.client.province)}>
-          <p>Ontario raffles upload their rules here.</p>
+        <Wizard.Page label="Sponsors" summary={(v) => (v.sponsors.length ? `${plural(v.sponsors.length, 'sponsor')}${v.sponsors_tiered ? ` in ${plural(v.sponsor_tiers.length, 'tier')}` : ''}` : 'None')} description="The businesses supporting your raffle, shown as logos on your site." validate={errs.sponsors}>
+          {(m, v) => <Sponsors v={v} m={m} ro={ro} />}
+        </Wizard.Page>
+        {/* Every province: the standard rules are used unless the organization uploads its own (Miguel, 2026-10-16). */}
+        <Wizard.Page label="Rules of play" summary={(v) => (v.rules ? 'Your own rules' : 'Standard rules')} description="The rules your raffle runs by, linked from every page of your site.">
+          {(m, v) => (
+            <WizardSection title="Rules of play" description={`We use our standard rules of play for ${v.client.province} raffles unless you upload your own.`}>
+              <p style={{ margin: 0, display: 'flex', gap: 8, alignItems: 'center', color: 'var(--ink-body)' }}>
+                <Icon name="check-circle" size={18} style={{ color: 'var(--verified)' }} />
+                {v.rules ? `Using your own rules: ${v.rules.name}` : `Using the standard rules of play for ${v.client.province}.`}
+              </p>
+              <UploadTile label="Your own rules (optional)" hint="A PDF, up to 10 MB. Remove it to go back to the standard rules." accept="application/pdf" maxBytes={10 * 1024 * 1024}
+                kind="file" src={v.rules?.src} fileName={v.rules?.name} disabled={ro}
+                onFile={(f, url) => m.setRules({ name: f.name, src: url })} onRemove={() => m.setRules(undefined)} />
+            </WizardSection>
+          )}
         </Wizard.Page>
         <Wizard.Page<Brief> label="Review and submit" summary={() => 'Check and submit'} description="Check each section. Edit anything from its step, then submit." hide={() => mode === 'qa'}>
           {(_m, v, changePage) => (
@@ -480,6 +654,8 @@ export function WizardDemo() {
               { label: 'Dates', step: 2, complete: !messages(errs.dates(v)).length, summary: `Sales ${when(v.sales_open) || 'not set'} to ${when(v.sales_close) || 'not set'}. Draw ${when(v.draw_at) || 'not set'}.`, issues: messages(errs.dates(v)) },
               { label: 'Licences and tickets', step: 3, complete: !messages(errs.licences(v)).length, summary: v.ticket_pack_groups.map((g) => `#${g.licence_number || '(no number)'}: ${g.ticket_packs.map((p) => `${p.name || 'New pack'} ${money(p.price)}`).join(', ') || 'no packs'}`).join('. '), issues: messages(errs.licences(v)) },
               { label: 'Prizes', step: 4, complete: !messages(errs.prizes(v)).length, summary: v.prizes.map((p) => p.title || 'New prize').join(', '), issues: messages(errs.prizes(v)) },
+              { label: 'Sponsors', step: 5, complete: !messages(errs.sponsors(v)).length, summary: v.sponsors.length ? `${plural(v.sponsors.length, 'sponsor logo')}${v.sponsors_tiered ? ', in tiers' : ''}.` : 'No sponsors.', issues: messages(errs.sponsors(v)) },
+              { label: 'Rules of play', step: 6, complete: true, summary: v.rules ? `Your own rules (${v.rules.name}).` : `The standard rules for ${v.client.province}.`, issues: [] },
             ]} />
           )}
         </Wizard.Page>

@@ -7,12 +7,22 @@ export interface UploadTileProps {
   label: ReactNode;
   /** Under the label, e.g. "PNG or JPG, at least 650 × 500". */
   hint?: ReactNode;
-  /** The current image, if there is one. */
+  /** The current file (a URL), if there is one. */
   src?: string;
+  /**
+   * What `src` is. Default: "video" for a video data URL, otherwise "image". Pass it for object or hosted URLs.
+   * "file" (a PDF or other document) shows a document icon and `fileName` instead of a picture.
+   */
+  kind?: 'image' | 'video' | 'file';
+  /** The file's name, shown for a "file". */
+  fileName?: ReactNode;
   alt?: string;
-  /** Default "image/*". */
+  /** Default "image/*". Add video types (e.g. "image/*,video/mp4,video/webm") to take videos too. */
   accept?: string;
-  /** Called with the chosen or dropped file and a data URL for previewing it. */
+  /**
+   * Called with the chosen or dropped file and a URL for previewing it: a data URL for an image, an object URL
+   * (URL.createObjectURL) for anything else (videos, PDFs), which can be too large to read into memory as text.
+   */
   onFile: (file: File, dataUrl: string) => void;
   onRemove?: () => void;
   /** Smallest size accepted, in pixels; smaller images are refused with a message. */
@@ -35,9 +45,9 @@ const sizeOf = (url: string) => new Promise<{ w: number; h: number }>((resolve) 
   const img = new Image(); img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight }); img.onerror = () => resolve({ w: 0, h: 0 }); img.src = url;
 });
 
-/** Choose or drop a file. The tile lights up while a file is dragged over it, checks the size, and shows the image with Replace and Remove. */
+/** Choose or drop a file. The tile lights up while a file is dragged over it, checks the size, and shows the image (or plays back the video) with Replace and Remove. */
 export function UploadTile({
-  label, hint, src, alt = '', accept = 'image/*', onFile, onRemove, minWidth, minHeight, maxBytes, error, disabled,
+  label, hint, src, kind, fileName, alt = '', accept = 'image/*', onFile, onRemove, minWidth, minHeight, maxBytes, error, disabled,
   chooseLabel = 'Choose a file', replaceLabel = 'Replace', removeLabel = 'Remove',
 }: UploadTileProps) {
   const id = useId();
@@ -49,6 +59,7 @@ export function UploadTile({
     if (!file || disabled) return;
     setProblem(null);
     if (maxBytes && file.size > maxBytes) { setProblem(`That file is ${Math.round(file.size / 1024 / 1024)} MB. Use one under ${Math.round(maxBytes / 1024 / 1024)} MB.`); return; }
+    if (!file.type.startsWith('image/')) { onFile(file, URL.createObjectURL(file)); return; }
     const url = await readAsDataUrl(file);
     if ((minWidth || minHeight) && file.type.startsWith('image/')) {
       const { w, h } = await sizeOf(url);
@@ -71,7 +82,12 @@ export function UploadTile({
         onDragLeave={() => setOver(false)}
         onDrop={drop}
       >
-        {src ? <img src={src} alt={alt} key={src} /> : <><Icon name="image" size={28} /><span>Drop a file here, or</span></>}
+        {src ? (() => {
+          const shownKind = kind ?? (src.startsWith('data:video') ? 'video' : 'image');
+          if (shownKind === 'video') return <video src={src} key={src} muted playsInline controls preload="metadata" aria-label={alt || 'Uploaded video'} />;
+          if (shownKind === 'file') return <span className="rnc-upload-file" key={src}><Icon name="clipboard-text" size={28} /><span>{fileName ?? 'File added'}</span></span>;
+          return <img src={src} alt={alt} key={src} />;
+        })() : <><Icon name={/image|video/.test(accept) ? 'image' : 'clipboard-text'} size={28} /><span>Drop a file here, or</span></>}
         <span className="rnc-upload-actions">
           <Button variant="secondary" size="sm" disabled={disabled} aria-describedby={`${id}-l`} onClick={() => input.current?.click()}>{src ? replaceLabel : chooseLabel}</Button>
           {src && onRemove ? <Button variant="danger-ghost" size="sm" startIcon="trash" disabled={disabled} aria-describedby={`${id}-l`} onClick={onRemove}>{removeLabel}</Button> : null}

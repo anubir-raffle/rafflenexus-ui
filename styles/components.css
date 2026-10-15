@@ -854,7 +854,6 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
   .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(3) { animation-delay: .1s; }
   .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(4) { animation-delay: .15s; }
   .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(n+5) { animation-delay: .2s; }
-  .rnc-wizard-split > .rnc-wizard-preview { animation: rnc-wz-rise .4s .08s cubic-bezier(.2, .8, .2, 1) both; } /* once, when it first appears; it stays put across steps */
   .rnc-wizard-step-dot.is-pop { animation: rnc-wz-pop .42s cubic-bezier(.3, 1.6, .5, 1); }
   .rnc-wizard-blocked { animation: rnc-wz-drop .24s ease-out both; }
   .rnc-wizard-save-msg { animation: rnc-wz-fade .22s ease both; }
@@ -872,6 +871,14 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
    Sticks while the sections scroll; below 1200px it moves under them. */
 .rnc-wizard-split { display: grid; grid-template-columns: minmax(0, 1fr) clamp(320px, 44%, 720px); gap: clamp(20px, 2.4vw, 36px); align-items: start; }
 .rnc-wizard-preview { position: sticky; top: 16px; display: grid; gap: 10px; min-width: 0; }
+.rnc-wizard-page-bar { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px 20px; margin-bottom: 24px; }
+.rnc-wizard-page-bar > :first-child { flex: 1 1 auto; min-width: 0; }
+.rnc-wizard-page-bar .rnc-wizard-page-head { margin-bottom: 0; }
+.rnc-wizard-preview-toggle { flex: none; margin-top: 4px; }
+.rnc-wizard-side { display: contents; }
+.rnc-wizard-side[hidden] { display: none; }
+.rnc-wizard-split.is-solo { grid-template-columns: minmax(0, 1fr); }
+@media (prefers-reduced-motion: no-preference) { .rnc-wizard-side.is-revealed > * { animation: rnc-wz-fade .25s ease both; } }
 .rnc-wizard-preview-label { display: flex; justify-content: space-between; gap: 12px; margin: 0; font: 600 13px/1.3 var(--font-sans); color: var(--ink); }
 .rnc-wizard-preview-label span { font-weight: 400; color: var(--ink-muted); }
 .rnc-wizard-preview-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; }
@@ -936,9 +943,36 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-wsite-dates li::before { content: ""; position: absolute; top: -34px; left: 0; box-sizing: border-box; width: 17px; height: 17px; border: 3px solid var(--site-accent); border-radius: 50%; background: #ffffff; }
 .rnc-wsite-dates b { font-size: 16px; color: #1d2b38; }
 .rnc-wsite-prizes { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
-.rnc-wsite-prizes li { display: flex; justify-content: space-between; gap: 12px; padding: 18px 20px; border-radius: 12px; background: #ffffff; font-weight: 600; }
+.rnc-wsite-prizes li { display: grid; gap: 10px; padding: 18px 20px; border-radius: 12px; background: #ffffff; font-weight: 600; }
+.rnc-wsite-prize-main { display: flex; justify-content: space-between; gap: 12px; }
+/* A prize's sponsor: "Sponsored by" and its logo (or name), under the prize. */
+.rnc-wsite-prize-sponsor { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding-top: 10px; border-top: 1px solid #e3e9ef; font-weight: 500; font-size: 13px; color: #5a6875; }
+.rnc-wsite-prize-sponsor img { height: 22px; width: auto; max-width: 90px; object-fit: contain; }
 .rnc-wsite-prizes b { font: 600 17px/1.3 var(--font-mono); white-space: nowrap; }
 .rnc-wsite-cause { max-width: 68ch; font-size: 17px; line-height: 1.6; color: #33414e; overflow-wrap: anywhere; }
+/* Where the money goes, with a photo or video: the text on the left, the media on the right; stacked on the phone preview. */
+.rnc-wsite-causeg { display: grid; gap: 20px; }
+.rnc-wsite-causeg.has-media { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: start; }
+.rnc-wsite.is-mobile .rnc-wsite-causeg.has-media { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.rnc-wsite-cause-media { margin: 0; overflow: hidden; aspect-ratio: 4 / 3; border-radius: 14px; background: #dfe7ef; box-shadow: 0 10px 28px rgba(15, 42, 68, .14); }
+.rnc-wsite-cause-media img, .rnc-wsite-cause-media video { display: block; width: 100%; height: 100%; object-fit: cover; }
+/* The presenting sponsor, beside the client's logo on the header plate. */
+.rnc-wsite-presenter { display: inline-flex; align-items: center; gap: 8px; margin-left: 4px; padding-left: 12px; border-left: 1px solid rgba(29, 43, 56, .18); font-size: 12px; font-weight: 500; color: #5a6875; }
+.rnc-wsite-presenter img { height: 26px; width: auto; max-width: 110px; object-fit: contain; }
+.rnc-wsite-presenter b { font-size: 13px; color: #1d2b38; }
+/* "Thank you to our sponsors": a row of logos on white tiles (logos only). */
+.rnc-wsite-sponsors { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin: 0; padding: 0; list-style: none; }
+.rnc-wsite-sponsors li { display: grid; place-items: center; min-width: 140px; height: 76px; padding: 12px 18px; border-radius: 12px; background: #ffffff; box-shadow: 0 1px 3px rgba(15, 42, 68, .08); }
+.rnc-wsite-sponsors img { max-height: 48px; max-width: 150px; width: auto; object-fit: contain; }
+/* Tiers: a row per tier under its name, the first tier largest. */
+.rnc-wsite-tier + .rnc-wsite-tier { margin-top: 22px; }
+.rnc-wsite-tier h5 { margin: 0 0 10px; font: 600 15px/1.3 var(--font-sans); color: #1d2b38; }
+.rnc-wsite-sponsors.is-lg li { min-width: 190px; height: 100px; }
+.rnc-wsite-sponsors.is-lg img { max-height: 64px; max-width: 190px; }
+.rnc-wsite-sponsors.is-sm li { min-width: 110px; height: 60px; padding: 8px 14px; }
+.rnc-wsite-sponsors.is-sm img { max-height: 34px; max-width: 110px; }
+/* The organization's social accounts, in the footer. */
+.rnc-wsite-socials { display: flex; flex-wrap: wrap; gap: 6px 14px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .rnc-wsite-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 32px; margin-top: 52px; padding: 34px 56px; background: var(--site-secondary); color: var(--site-on-secondary); font-size: 14px; transition: background-color .4s ease, color .4s ease; }
 .rnc-wsite-section.is-tint + .rnc-wsite-trust { margin-top: 0; }
 /* The licensed-raffle badge and the responsible-play line, on light ground above the footer (as on the raffle site). */
@@ -969,6 +1003,18 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-wsite.is-mobile .rnc-wsite-dates li::before { top: 3px; left: -34px; }
 .rnc-wsite.is-mobile .rnc-wsite-prizes { grid-template-columns: minmax(0, 1fr); }
 .rnc-wsite.is-mobile .rnc-wsite-trust { flex-direction: column; align-items: flex-start; margin-top: 38px; padding: 24px 20px; }
+/* In the column, a flex-basis would set the badge's height (Miguel, 2026-10-16: too much space in the badge on mobile). */
+.rnc-wsite.is-mobile .rnc-wsite-trust .rnc-licence { flex: none; width: 100%; }
+/* Sponsor logos on a phone: big tier one per row, the middle tier two across, small three across. */
+.rnc-wsite.is-mobile .rnc-wsite-sponsors { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.rnc-wsite.is-mobile .rnc-wsite-sponsors.is-lg { grid-template-columns: minmax(0, 1fr); }
+.rnc-wsite.is-mobile .rnc-wsite-sponsors.is-sm { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rnc-wsite.is-mobile .rnc-wsite-sponsors li { min-width: 0; height: 64px; padding: 8px 10px; }
+.rnc-wsite.is-mobile .rnc-wsite-sponsors.is-lg li { height: 84px; }
+.rnc-wsite.is-mobile .rnc-wsite-sponsors.is-sm li { height: 52px; padding: 6px 8px; }
+.rnc-wsite.is-mobile .rnc-wsite-sponsors img { max-width: 100%; max-height: 40px; }
+.rnc-wsite.is-mobile .rnc-wsite-sponsors.is-lg img { max-height: 56px; }
+.rnc-wsite.is-mobile .rnc-wsite-sponsors.is-sm img { max-height: 30px; }
 .rnc-wsite.is-mobile .rnc-wsite-foot { flex-direction: column; align-items: flex-start; margin-top: 38px; padding: 28px 20px; }
 .rnc-wsite.is-mobile .rnc-wsite-foot > small:last-child { margin-left: 0; }
 @container rnc-wizard (max-width: 1080px) { .rnc-wizard-split { grid-template-columns: minmax(0, 1fr); } .rnc-wizard-preview { position: static; max-width: 560px; } }
@@ -1059,6 +1105,10 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-upload-zone.is-over { border-color: var(--action); background: var(--lead-soft); }
 .rnc-upload-zone.has-file { border-style: solid; border-color: var(--line); background: var(--surface); }
 .rnc-upload-zone img { display: block; max-width: 100%; max-height: 120px; object-fit: contain; }
+.rnc-upload-zone video { display: block; max-width: 100%; max-height: 140px; border-radius: 6px; background: #000000; }
+/* A document (a PDF): its icon and file name instead of a picture. */
+.rnc-upload-file { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.rnc-upload-file .rnc-icon { flex: none; color: var(--action); }
 .rnc-upload-zone .rnc-icon { width: 28px; height: 28px; color: var(--action); }
 .rnc-upload-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .rnc-upload-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }

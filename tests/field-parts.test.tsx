@@ -158,6 +158,28 @@ describe('UploadTile rows', () => {
   });
 });
 
+describe('WizardSitePreview sponsors, socials and cause media', () => {
+  it('shows a presenting sponsor, prize sponsors, sponsor logos (in tiers or not), socials and the cause photo or video', () => {
+    const logo = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>';
+    const { container, rerender } = render(
+      <WizardSitePreview org="Sample Foundation" heading="Win" cause="Hospital care" causeMedia={{ kind: 'image', src: logo, alt: 'The ward' }}
+        sponsor={{ name: 'Sample Credit Union', logo, label: 'Presented by' }}
+        prizes={[{ title: 'Home', value: '$1,000,000', sponsor: { name: 'Sample Builders', logo } }]}
+        sponsors={{ tiers: [{ name: 'Gold', sponsors: [{ name: 'A', logo }] }, { name: 'Silver', sponsors: [{ name: 'B', logo }, { name: 'C', logo }] }, { name: 'Bronze', sponsors: [] }] }}
+        socials={[{ label: 'Facebook', href: 'https://facebook.com/sample' }]} />,
+    );
+    expect(container.querySelector('.rnc-wsite-presenter')).toHaveTextContent('Presented by');
+    expect(container.querySelector('.rnc-wsite-prize-sponsor')).toHaveTextContent('Sample Builders');
+    expect(container.querySelector('.rnc-wsite-causeg')).toHaveClass('has-media');
+    expect(container.querySelectorAll('.rnc-wsite-tier')).toHaveLength(2);
+    expect(container.querySelector('.rnc-wsite-sponsors')).toHaveClass('is-lg');
+    expect(container.querySelector('.rnc-wsite-socials')).toHaveTextContent('Facebook');
+    rerender(<WizardSitePreview heading="Win" cause="Care" causeMedia={{ kind: 'video', src: 'blob:v' }} sponsors={[{ name: 'A', logo }]} />);
+    expect(container.querySelector('.rnc-wsite-cause-media video')).toBeInTheDocument();
+    expect(container.querySelectorAll('.rnc-wsite-tier')).toHaveLength(1);
+  });
+});
+
 describe('WizardPreview devices', () => {
   it('lays the site out for desktop, then for a phone, and the site follows', async () => {
     const { container } = render(

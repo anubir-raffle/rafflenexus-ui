@@ -247,6 +247,52 @@ describe('Wizard layout v2 (the Raffle Builder of RNC V2.1)', () => {
     expect(container.querySelector('.rnc-wizard-split')).toBeNull();
   });
 
+  it('Hide preview gives the form the full width; the preview stays mounted (keeps its device) and stays hidden between steps', async () => {
+    const onHidden = vi.fn();
+    const { container } = render(<V2 onPreviewHiddenChange={onHidden} preview={() => <WizardPreview url="sample.rafflenexus.com"><WizardSitePreview heading="Win" /></WizardPreview>} />);
+    await userEvent.click(screen.getByRole('radio', { name: 'Mobile' }));
+    const hide = screen.getByRole('button', { name: 'Hide preview' });
+    expect(hide).toHaveAttribute('aria-expanded', 'true');
+    const side = document.getElementById(hide.getAttribute('aria-controls')!)!;
+    expect(side).toContainElement(container.querySelector('.rnc-wizard-preview') as HTMLElement);
+    await userEvent.click(hide);
+    expect(onHidden).toHaveBeenLastCalledWith(true);
+    expect(side).not.toBeVisible();
+    expect(container.querySelector('.rnc-wizard-split')).toHaveClass('is-solo');
+    await userEvent.click(step(/^Dates/));
+    const show = screen.getByRole('button', { name: 'Show preview' });
+    expect(show).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(show);
+    expect(onHidden).toHaveBeenLastCalledWith(false);
+    expect(container.querySelector('.rnc-wizard-preview')).toHaveClass('is-mobile');
+    expect(container.querySelector('.rnc-wizard-split')).not.toHaveClass('is-solo');
+  });
+
+  it('defaultPreviewHidden starts hidden; previewToggle={false} has no button', () => {
+    const preview = () => <WizardPreview url="x"><WizardSitePreview heading="Win" /></WizardPreview>;
+    const { unmount } = render(<V2 defaultPreviewHidden preview={preview} />);
+    expect(screen.getByRole('button', { name: 'Show preview' })).toBeInTheDocument();
+    unmount();
+    render(<V2 previewToggle={false} preview={preview} />);
+    expect(screen.queryByRole('button', { name: /preview$/ })).toBeNull();
+  });
+
+  it('the preview does not remount when the step changes (only the step animates)', async () => {
+    const { container } = render(<V2 preview={() => <WizardPreview url="x"><WizardSitePreview heading="Win" /></WizardPreview>} />);
+    const before = container.querySelector('.rnc-wizard-preview');
+    await userEvent.click(step(/^Dates/));
+    expect(container.querySelector('.rnc-wizard-preview')).toBe(before);
+    expect(before!.closest('.rnc-wizard-enter')).toBeNull();
+  });
+
+  it('reviewUnlocked (testing) opens Review before every step is complete; Submit stays disabled', async () => {
+    render(<V2 reviewUnlocked />);
+    await userEvent.click(step(/^Review and submit/));
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('heading', { level: 2, name: 'Review and submit' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Submit' })).toBeDisabled();
+  });
+
   it('the toolbar sits on top: back, the product, the breadcrumb, then status and actions', () => {
     const back = vi.fn();
     render(<V2 toolbar={(v) => <WizardToolbar back={back} crumb={<>Raffles / <b>{v.name}</b></>} status={<span>Ready for QA</span>} actions={<button type="button">Lock editing</button>} />} />);

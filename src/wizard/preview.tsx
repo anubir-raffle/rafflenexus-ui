@@ -92,7 +92,21 @@ export function WizardPreview({
 
 export interface WizardSitePack { label: ReactNode; price: ReactNode; note?: ReactNode }
 export interface WizardSiteDate { when: ReactNode; what: ReactNode }
-export interface WizardSitePrize { title: ReactNode; value?: ReactNode }
+/** A sponsor: a name, and a logo (an image URL) when there is one. */
+export interface WizardSiteSponsor { name: ReactNode; logo?: string }
+/** A prize. `sponsor` shows "Sponsored by" with the sponsor's logo (or name) on the prize. */
+export interface WizardSitePrize { title: ReactNode; value?: ReactNode; sponsor?: WizardSiteSponsor }
+/** One social account, linked in the footer: the network's name and the full address. */
+export interface WizardSiteSocial { label: ReactNode; href: string }
+
+/** A photo or a video for the cause section of the site preview. */
+export interface WizardCauseMedia {
+  kind: 'image' | 'video';
+  /** A URL: a data URL or object URL from an upload, or a hosted file. */
+  src: string;
+  /** Alt text for a photo, or the video's accessible name. */
+  alt?: string;
+}
 
 export interface WizardSitePreviewProps {
   /** The organization: beside the logo, and small above the heading. */
@@ -104,6 +118,11 @@ export interface WizardSitePreviewProps {
   subheading?: ReactNode;
   /** "Where the money goes": text, or `<RichText html={…} />`. */
   cause?: ReactNode;
+  /**
+   * A photo or video for the cause, shown in a column beside the cause text (on the phone preview, under it).
+   * Videos show with controls, muted, and don't play on their own.
+   */
+  causeMedia?: WizardCauseMedia;
   /** The client's colours (hex): the header and hero, buttons and links, the footer and panels. Text on each is white or dark, whichever reads. */
   colour?: string;
   accent?: string;
@@ -126,6 +145,18 @@ export interface WizardSitePreviewProps {
    * the compact line in Choose a pack (wording from the province). The older `{ regulator, licence }` shape shows a VerifiedBadge.
    */
   badge?: { province: LicenceProvince; number?: string; licences?: { label?: string; number: string }[] } | { regulator: string; licence: string; rng?: boolean };
+  /**
+   * The presenting sponsor, beside the client's logo in the header: "Presented by" (or `label`) and the sponsor's logo or name.
+   */
+  sponsor?: WizardSiteSponsor & { label?: ReactNode };
+  /**
+   * The raffle's sponsors, under "Thank you to our sponsors", as logos only (Miguel, 2026-10-16): one row, or `{ tiers }` for a
+   * row per tier with the tier's name ("Gold sponsors"), the first tier largest (the template's sponsors shape).
+   * Sponsors without a logo are left out.
+   */
+  sponsors?: WizardSiteSponsor[] | { tiers: { name: ReactNode; sponsors: WizardSiteSponsor[] }[] };
+  /** The organization's social accounts, linked in the footer. */
+  socials?: WizardSiteSocial[];
   /** Default "Order tickets". */
   cta?: ReactNode;
   /** Shown while the heading is empty. Default "Add a main heading". */
@@ -138,7 +169,8 @@ export interface WizardSitePreviewProps {
  * chosen device; nothing in it is clickable.
  */
 export function WizardSitePreview({
-  org, logo, logoAlt = '', heading, subheading, cause, colour, accent, secondary, image, slides, background, packs, dates, prizes, licence, badge,
+  org, logo, logoAlt = '', heading, subheading, cause, causeMedia, colour, accent, secondary, image, slides, background, packs, dates, prizes, licence, badge,
+  sponsor, sponsors, socials,
   cta = 'Order tickets', emptyHeading = 'Add a main heading',
 }: WizardSitePreviewProps) {
   const device = usePreviewDevice();
@@ -149,6 +181,11 @@ export function WizardSitePreview({
     ...(secondary || colour ? { ['--site-secondary' as string]: secondary || colour, ['--site-on-secondary' as string]: readableOn((secondary || colour)!) } : {}),
   };
   const empty = heading == null || heading === '';
+  // Sponsors as rows: one unnamed row for a plain list, or one per tier (empty tiers left out).
+  const logos = (list: WizardSiteSponsor[]) => list.filter((s) => s.logo);
+  const tiers = !sponsors ? [] : Array.isArray(sponsors)
+    ? (logos(sponsors).length ? [{ name: undefined as ReactNode, sponsors: logos(sponsors) }] : [])
+    : sponsors.tiers.map((t) => ({ ...t, sponsors: logos(t.sponsors) })).filter((t) => t.sponsors.length);
   return (
     <div className={cx('rnc-wsite', `is-${device}`)} style={style}>
       <div className="rnc-wsite-hero" style={background ? { ['--site-photo' as string]: `url("${background}")` } : undefined}>
@@ -156,6 +193,12 @@ export function WizardSitePreview({
           <span className="rnc-wsite-brand">
             {logo ? <img src={logo} alt={logoAlt} /> : null}
             {org && (!logo || device === 'desktop') ? <span>{org}</span> : null}
+            {sponsor ? (
+              <span className="rnc-wsite-presenter">
+                <small>{sponsor.label ?? 'Presented by'}</small>
+                {sponsor.logo ? <img src={sponsor.logo} alt="" /> : <b>{sponsor.name}</b>}
+              </span>
+            ) : null}
           </span>
           {device === 'desktop' ? <span className="rnc-wsite-nav"><span>Prizes</span><span>Rules of play</span><span>Winners</span><span>Manage order</span></span> : null}
           <span className="rnc-wsite-btn is-light">{cta}</span>
@@ -194,13 +237,49 @@ export function WizardSitePreview({
       {prizes?.length ? (
         <section className="rnc-wsite-section">
           <h4>Prizes</h4>
-          <ul className="rnc-wsite-prizes">{prizes.map((p, i) => <li key={i}><span>{p.title}</span>{p.value ? <b>{p.value}</b> : null}</li>)}</ul>
+          <ul className="rnc-wsite-prizes">
+            {prizes.map((p, i) => (
+              <li key={i}>
+                <span className="rnc-wsite-prize-main"><span>{p.title}</span>{p.value ? <b>{p.value}</b> : null}</span>
+                {p.sponsor ? (
+                  <span className="rnc-wsite-prize-sponsor">
+                    <small>Sponsored by</small>
+                    {p.sponsor.logo ? <img src={p.sponsor.logo} alt="" /> : null}
+                    <span>{p.sponsor.name}</span>
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
         </section>
       ) : null}
-      {cause ? (
+      {cause || causeMedia ? (
         <section className="rnc-wsite-section is-tint">
           <h4>Where the money goes</h4>
-          <div className="rnc-wsite-cause">{cause}</div>
+          <div className={cx('rnc-wsite-causeg', causeMedia && 'has-media')}>
+            {cause ? <div className="rnc-wsite-cause">{cause}</div> : null}
+            {causeMedia ? (
+              <figure className="rnc-wsite-cause-media">
+                {causeMedia.kind === 'video'
+                  ? <video src={causeMedia.src} controls muted playsInline preload="metadata" aria-label={causeMedia.alt || 'Video about the cause'} />
+                  : <img src={causeMedia.src} alt={causeMedia.alt ?? ''} />}
+              </figure>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+      {tiers.length ? (
+        <section className="rnc-wsite-section">
+          <h4>Thank you to our sponsors</h4>
+          {tiers.map((tier, t) => (
+            <div key={t} className="rnc-wsite-tier">
+              {tier.name ? <h5>{tier.name}</h5> : null}
+              {/* Sizes by order, as on the site: the first tier large, the second medium, the rest small (one plain row: medium). */}
+              <ul className={cx('rnc-wsite-sponsors', `is-${tier.name == null ? 'md' : (['lg', 'md'][t] ?? 'sm')}`)}>
+                {tier.sponsors.map((s, i) => <li key={i}><img src={s.logo} alt="" /></li>)}
+              </ul>
+            </div>
+          ))}
         </section>
       ) : null}
       <div className="rnc-wsite-trust">
@@ -211,6 +290,7 @@ export function WizardSitePreview({
       </div>
       <div className="rnc-wsite-foot">
         {org ? <span>{org}</span> : null}
+        {socials?.length ? <span className="rnc-wsite-socials">{socials.map((s, i) => <span key={i}>{s.label}</span>)}</span> : null}
         <small>Powered by Raffle Nexus</small>
       </div>
     </div>

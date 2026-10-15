@@ -125,7 +125,7 @@ export function WizardToolbar({ product = 'Raffle Builder', mark = MARK_NAVY, ba
 
 export {
   WizardPreview, WizardSitePreview, usePreviewDevice,
-  type WizardPreviewProps, type WizardSitePreviewProps, type PreviewDevice, type WizardSitePack, type WizardSiteDate, type WizardSitePrize,
+  type WizardPreviewProps, type WizardSitePreviewProps, type PreviewDevice, type WizardSitePack, type WizardSiteDate, type WizardSitePrize, type WizardCauseMedia, type WizardSiteSponsor, type WizardSiteSocial,
 } from './preview';
 
 export interface WizardReviewSection {

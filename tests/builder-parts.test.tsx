@@ -83,6 +83,16 @@ describe('SortableList', () => {
   });
 });
 
+describe('SortableList move buttons', () => {
+  it('keep focus on the row that moved, on the other button once the pressed one is disabled', async () => {
+    function H() { const [items, setItems] = useState(rows); return <SortableList items={items} getKey={(r) => r.id} onReorder={setItems} itemLabel={(r) => r.name} renderItem={(r, t) => <div>{r.name}{t.moves}</div>} />; }
+    render(<H />);
+    await userEvent.click(screen.getByRole('button', { name: 'Move Bravo later' }));
+    expect(screen.getByRole('button', { name: 'Move Bravo later' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Move Bravo earlier' })).toHaveFocus();
+  });
+});
+
 describe('ExpandableRow', () => {
   it('opens and closes, telling screen readers its state; controlled or not', async () => {
     const onOpenChange = vi.fn();
@@ -118,6 +128,20 @@ describe('UploadTile', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
     expect(onRemove).toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Replace' })).toBeInTheDocument();
+  });
+
+  it('videos and documents: an object URL instead of a data URL; a video plays in the tile, a document shows its name', async () => {
+    const onFile = vi.fn();
+    const url = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:sample');
+    const { container, rerender } = render(<UploadTile label="Rules" accept="application/pdf" kind="file" onFile={onFile} />);
+    const pdf = new File(['%PDF'], 'rules.pdf', { type: 'application/pdf' });
+    await userEvent.upload(container.querySelector('input[type=file]') as HTMLInputElement, pdf);
+    await waitFor(() => expect(onFile).toHaveBeenCalledWith(pdf, 'blob:sample'));
+    rerender(<UploadTile label="Rules" kind="file" src="blob:sample" fileName="rules.pdf" onFile={onFile} onRemove={() => {}} />);
+    expect(container.querySelector('.rnc-upload-file')).toHaveTextContent('rules.pdf');
+    rerender(<UploadTile label="Cause" kind="video" src="blob:video" alt="The cause video" onFile={onFile} />);
+    expect(container.querySelector('video')).toHaveAttribute('aria-label', 'The cause video');
+    url.mockRestore();
   });
 
   it('refuses a file that is too large, in words', async () => {

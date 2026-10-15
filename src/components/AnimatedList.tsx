@@ -13,9 +13,18 @@ type Key = string | number;
 /** Where an item sits inside its list. Relative to the list, so the whole list moving (an outer list animating, the page
  *  scrolling, a field above growing) isn't mistaken for the item moving. */
 type Spot = { left: number; top: number };
+/** How far an item's own transform has it shifted right now (mid-slide), read from its computed matrix. */
+const shift = (el: HTMLElement) => {
+  const t = getComputedStyle(el).transform;
+  const n = t && t !== 'none' ? t.slice(t.indexOf('(') + 1, -1).split(',').map(Number) : [];
+  if (n.length === 16) return { x: n[12] || 0, y: n[13] || 0 };
+  if (n.length === 6) return { x: n[4] || 0, y: n[5] || 0 };
+  return { x: 0, y: 0 };
+};
+/** The item's place in the layout, leaving out any slide under way, so a re-render mid-slide doesn't read the slide as a move. */
 const spot = (el: HTMLElement): Spot => {
-  const r = el.getBoundingClientRect(); const base = el.parentElement?.getBoundingClientRect();
-  return { left: r.left - (base?.left ?? 0), top: r.top - (base?.top ?? 0) };
+  const r = el.getBoundingClientRect(); const base = el.parentElement?.getBoundingClientRect(); const s = shift(el);
+  return { left: r.left - s.x - (base?.left ?? 0), top: r.top - s.y - (base?.top ?? 0) };
 };
 interface Entry<T> { key: Key; item: T; leaving?: boolean; at?: number }
 
@@ -50,7 +59,9 @@ function useListMotion<T>(items: T[], getKey: (item: T, index: number) => Key) {
     if (gone.length) setTimeout(() => setLeaving((l) => l.filter((x) => !gone.some((g) => g.key === x.key))), LEAVE_MS);
   }, [keyString]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // FLIP: after every change, slide moved items from their old place
+  // FLIP: after every change, slide moved items from their old place. Positions are layout positions (no transform), so the
+  // re-renders a move sets off (the announcement, the form, autosave) leave a slide under way alone; an item that moves again
+  // mid-slide starts from where it is on screen, not from a jump.
   useIsoLayoutEffect(() => {
     const old = override.current ?? rects.current;
     override.current = null;
@@ -62,12 +73,18 @@ function useListMotion<T>(items: T[], getKey: (item: T, index: number) => Key) {
         if (!o || !el || el.classList.contains('is-dragging')) return;
         const dx = o.left - r.left, dy = o.top - r.top;
         if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+        const now = shift(el);
         el.style.transition = 'none';
-        el.style.transform = `translate(${dx}px, ${dy}px)`;
+        el.style.transform = `translate(${dx + now.x}px, ${dy + now.y}px)`;
         void el.offsetHeight;
         el.style.transition = SETTLE;
         el.style.transform = '';
-        const clear = () => { el.style.transition = ''; el.removeEventListener('transitionend', clear); };
+        // Only this item's own slide ending: transitionend bubbles up from the fields and buttons inside it too, and
+        // clearing the transition early would cut the slide short.
+        const clear = (e: TransitionEvent) => {
+          if (e.target !== el || e.propertyName !== 'transform') return;
+          el.style.transition = ''; el.removeEventListener('transitionend', clear);
+        };
         el.addEventListener('transitionend', clear);
       });
     }
@@ -169,6 +186,17 @@ export function SortableList<T>({ items, getKey, onReorder, renderItem, itemLabe
   const drag = useRef<{ key: Key; from: number; to: number; startY: number; mids: number[]; step: number; pointer: number; h: Handlers } | null>(null);
   const api = useRef<{ onMove: (e: PointerEvent) => void; onUp: (e: PointerEvent) => void; onKey: (e: KeyboardEvent) => void } | null>(null);
   const keys = items.map(getKey);
+  // After a Move button moves its row, keep focus on that row's moves (the other button when this one is now disabled)
+  const refocus = useRef<{ key: Key; later: boolean } | null>(null);
+  useIsoLayoutEffect(() => {
+    const r = refocus.current; refocus.current = null;
+    const buttons = r ? nodes.current.get(r.key)?.querySelectorAll<HTMLButtonElement>('.rnc-sort-moves button') : undefined;
+    if (!r || !buttons || buttons.length < 2) return;
+    const want = buttons[r.later ? 1 : 0]; const other = buttons[r.later ? 0 : 1];
+    const target = want.disabled ? other : want;
+    if (document.activeElement !== target) target.focus({ preventScroll: true });
+  });
+  const press = (key: Key, from: number, later: boolean) => { refocus.current = { key, later }; move(from, from + (later ? 1 : -1)); };
 
   // Named by where it was ("Slide 3 moved to position 1 of 3"), so the announcement says which one moved
   const announce = (from: number, to: number, list: T[]) => setSaid(`${itemLabel(list[to], from)} moved to position ${to + 1} of ${list.length}.`);
@@ -242,8 +270,8 @@ export function SortableList<T>({ items, getKey, onReorder, renderItem, itemLabe
             grip: disabled ? null : <button className="rnc-sort-grip" {...handle}>{GRIP}</button>,
             moves: disabled ? null : (
               <span className="rnc-sort-moves">
-                <Button variant="ghost" size="sm" iconOnly startIcon="arrow-up" aria-label={`Move ${name} earlier`} disabled={index === 0} onClick={() => move(index, index - 1)} />
-                <Button variant="ghost" size="sm" iconOnly startIcon="arrow-down" aria-label={`Move ${name} later`} disabled={index === items.length - 1} onClick={() => move(index, index + 1)} />
+                <Button variant="ghost" size="sm" iconOnly startIcon="arrow-up" aria-label={`Move ${name} earlier`} disabled={index === 0} onClick={() => press(e.key, index, false)} />
+                <Button variant="ghost" size="sm" iconOnly startIcon="arrow-down" aria-label={`Move ${name} later`} disabled={index === items.length - 1} onClick={() => press(e.key, index, true)} />
               </span>
             ),
           };
