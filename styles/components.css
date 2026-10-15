@@ -244,6 +244,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-select-wrap { position: relative; display: block; }
 .rnc-select { appearance: none; -webkit-appearance: none; padding-right: 44px; cursor: pointer; }
 .rnc-select-wrap::after { content: ""; position: absolute; right: 16px; top: 50%; width: 8px; height: 8px; margin-top: -6px; border-right: 2px solid var(--ink-body); border-bottom: 2px solid var(--ink-body); transform: rotate(45deg); pointer-events: none; }
+/* Invalid: a 2px red border on the field's own box (the message under it says what to fix); never a second outline inside it. */
 .rnc-field.is-invalid .rnc-input, .rnc-field.is-invalid .rnc-select, .rnc-field.is-invalid .rnc-textarea { border: 2px solid var(--error); }
 .rnc-field-error { display: flex; gap: 6px; align-items: flex-start; margin: 2px 0 0; font: 600 14px/1.4 var(--font-sans); color: var(--error); }
 .rnc-field-error::before { content: "!"; flex: none; width: 18px; height: 18px; margin-top: 1px; border-radius: 50%; background: var(--error); color: #ffffff; font: 700 12px/18px var(--font-sans); text-align: center; }
@@ -307,6 +308,12 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-mui-field.is-review .MuiInputAdornment-root { visibility: hidden; }
 .rnc-mui-field.is-review .MuiInputBase-input { padding-right: 44px; }
 .rnc-field.is-invalid .rnc-affix { border: 2px solid var(--error); }
+.rnc-field.is-invalid .rnc-affix .rnc-input { border: 0; }
+/* An invalid field being typed in shows one outline, the focus ring (3px of focus colour, like any focused field), not the red
+   border and the ring side by side; the red comes back when you leave it, and the message under it stays throughout. */
+.rnc-field.is-invalid .rnc-input:focus-visible, .rnc-field.is-invalid .rnc-select:focus-visible, .rnc-field.is-invalid .rnc-textarea:focus-visible,
+.rnc-field.is-invalid .rnc-affix:focus-within, .rnc-field.is-invalid .rnc-rte:focus-within, .rnc-colour-hex[aria-invalid="true"]:focus-visible { border-color: var(--focus); outline-width: 1px; }
+.rnc-field.is-invalid .rnc-affix .rnc-input:focus-visible { outline: none; }
 /* Segmented choice: two or three options side by side, one chosen (radio buttons underneath). */
 .rnc-segmented { box-sizing: border-box; display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 4px; max-width: 100%; margin: 0; padding: 4px; border: 0; border-radius: var(--radius-md); background: var(--surface-tint); }
 .rnc-segmented-option { position: relative; display: flex; align-items: center; justify-content: center; min-height: 40px; padding: 0 16px; border-radius: var(--radius-sm); font: 600 14px/1.2 var(--font-sans); color: var(--ink-body); text-align: center; cursor: pointer; transition: background-color .2s ease, color .2s ease, box-shadow .2s ease; }
