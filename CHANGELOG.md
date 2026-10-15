@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.7.1 (2026-10-15)
+
+- Synced with the design system. Updated: component styles.
+
 ## 0.7.0 (2026-10-16)
 
 The Raffle Builder's setup form wizard, plus the 0.6.x fixes.
