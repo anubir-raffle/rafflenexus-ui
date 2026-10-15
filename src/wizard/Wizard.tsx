@@ -85,6 +85,11 @@ export interface WizardProps<V extends Values = Values> {
   railLabel?: string;
   /** V2: a top bar above everything, e.g. `<WizardToolbar … />` (back, the product, a breadcrumb, the status and the form's actions). */
   toolbar?: (values: V) => ReactNode;
+  /**
+   * V2: a live preview beside the step's sections, e.g. `<WizardPreview url={…}><WizardSitePreview … /></WizardPreview>`.
+   * Return null for steps without one (usually every step but Website). Below a certain width it moves under the sections.
+   */
+  preview?: (values: V, step: { label: string; index: number }) => ReactNode;
   className?: string;
   children?: ReactNode;
 }
@@ -136,7 +141,7 @@ export function WizardSteps({ steps, current, onSelect, label = 'Form steps', la
 function WizardRoot<V extends Values = Values>({
   onSubmit, initialValues, onSave, lastSaved, isSaving, disabledAll, isQaPage, briefStatus, mutators, header, notice,
   backLabel = 'Back', nextLabel = 'Next', reviewLabel = 'Review', submitLabel = 'Submit', completeLabel = 'Complete form',
-  onReviewBlocked, isSubmitBlocked = swalOpen, stepsLabel = 'Form steps', layout = 'v1', aside, railLabel = 'Setup form', toolbar, className, children,
+  onReviewBlocked, isSubmitBlocked = swalOpen, stepsLabel = 'Form steps', layout = 'v1', aside, railLabel = 'Setup form', toolbar, preview, className, children,
 }: WizardProps<V>) {
   const [start] = useState(() => (initialValues ?? {}) as V);
   const [page, setPage] = useState(0);
@@ -234,7 +239,11 @@ function WizardRoot<V extends Values = Values>({
                 {active?.props.description ? <p className="rnc-wizard-page-lede">{active.props.description}</p> : null}
               </div>
             ) : null}
-            {active ? <WizardPage {...active.props} mutators={form.mutators as WizardMutators} values={values} changePage={goTo} /> : null}
+            {(() => {
+              const page = active ? <WizardPage {...active.props} mutators={form.mutators as WizardMutators} values={values} changePage={goTo} /> : null;
+              const side = v2 && preview ? preview(values, { label: steps[current]?.label ?? '', index: current }) : null;
+              return side != null && side !== false ? <div className="rnc-wizard-split"><div>{page}</div>{side}</div> : page;
+            })()}
           </div>
         );
         const foot = (

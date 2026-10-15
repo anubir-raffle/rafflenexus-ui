@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Field } from 'react-final-form';
-import { Wizard, WizardDeadline, WizardHeader, WizardSection, type WizardProps } from '../src/wizard';
+import { Wizard, WizardDeadline, WizardHeader, WizardPreview, WizardSection, WizardSitePreview, WizardToolbar, type WizardProps } from '../src/wizard';
 import DefaultWizard from '../src/wizard';
 
 type Brief = { name?: string; draw_at?: string; prize?: string; logo?: string; prizes?: string[]; client: { name: string; province: string } };
@@ -85,7 +85,7 @@ describe('Wizard (/wizard)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
     const review = screen.getByRole('button', { name: 'Review' });
     expect(review).toBeDisabled();
-    await userEvent.type(screen.getByLabelText('Prize'), 'Sunshine Coast home');
+    await userEvent.type(screen.getByLabelText('Prize'), 'Lakeside home');
     await userEvent.click(step(/^Dates/));
     await userEvent.type(screen.getByLabelText('Draw date'), '2027-02-01');
     await userEvent.click(step(/^Prizes/));
@@ -198,5 +198,72 @@ describe('Wizard (/wizard)', () => {
     expect(step(/^Check, ready/)).toHaveClass('is-review');
     act(() => { fireEvent.click(step(/^Extra/)); });
     expect(step(/^Extra/)).toHaveAttribute('aria-current', 'step');
+  });
+});
+
+describe('Wizard layout v2 (the Raffle Builder of RNC V2.1)', () => {
+  function V2(extra: Partial<WizardProps<Brief>>) {
+    return (
+      <Wizard<Brief>
+        layout="v2" onSubmit={vi.fn()}
+        initialValues={{ name: 'Sample Lottery', client: { name: 'Sample Foundation', province: 'BC' } }}
+        header={(v) => <WizardHeader title={v.name} subtitle={v.client.name} />}
+        {...extra}
+      >
+        <Wizard.Page label="Website" summary={(v) => `${v.name}`} description="We use this to build your raffle site." validate={need('name', 'Enter the raffle name')}><Text name="name" label="Raffle name" /></Wizard.Page>
+        <Wizard.Page label="Dates" summary={() => 'Draw date missing'} validate={need('draw_at', 'Enter the draw date')}><Text name="draw_at" label="Draw date" /></Wizard.Page>
+        <Wizard.Page label="Review and submit"><p>Check</p></Wizard.Page>
+      </Wizard>
+    );
+  }
+
+  it('puts the raffle, progress and steps (with summaries) in a rail, and titles the step with its intro line', () => {
+    const { container } = render(<V2 aside={() => <p>QA checks</p>} />);
+    const rail = screen.getByRole('complementary', { name: 'Setup form' });
+    expect(within(rail).getByText('Sample Lottery', { selector: '.rnc-wizard-title' })).toBeInTheDocument();
+    expect(within(rail).getByText('1 of 2 sections complete')).toBeInTheDocument();
+    expect(container.querySelector('.rnc-wizard-track > span')).toHaveStyle({ width: '50%' });
+    expect(within(rail).getByRole('navigation', { name: 'Form steps' })).toHaveClass('is-rail');
+    expect(within(rail).getByText('Draw date missing')).toHaveClass('rnc-wizard-step-sub');
+    expect(within(rail).getByText('QA checks')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Website' })).toHaveClass('rnc-wizard-page-title');
+    expect(screen.getByText('We use this to build your raffle site.')).toHaveClass('rnc-wizard-page-lede');
+    expect(container.querySelector('form')).toHaveClass('rnc-wizard', 'is-v2');
+  });
+
+  it('the live preview shows only where the app returns one, and follows the values as people type', async () => {
+    const { container } = render(<V2 preview={(v, step) => (step.label === 'Website' ? (
+      <WizardPreview url="sample.rafflenexus.com"><WizardSitePreview org={v.client.name} heading={v.name} cause="Hospital care" colour="#126ab5" /></WizardPreview>
+    ) : null)} />);
+    expect(screen.getByText('Live preview')).toBeInTheDocument();
+    expect(screen.getByText('sample.rafflenexus.com')).toHaveClass('rnc-wizard-browser-url');
+    expect(container.querySelector('.rnc-wizard-site')).toHaveStyle('--site-colour: #126ab5');
+    await userEvent.type(screen.getByLabelText('Raffle name'), ' 2026');
+    expect(container.querySelector('.rnc-wizard-site-title')).toHaveTextContent('Sample Lottery 2026');
+    await userEvent.clear(screen.getByLabelText('Raffle name'));
+    expect(container.querySelector('.rnc-wizard-site-title')).toHaveTextContent('Add a main heading');
+    await userEvent.click(step(/^Dates/));
+    expect(screen.queryByText('Live preview')).toBeNull();
+    expect(container.querySelector('.rnc-wizard-split')).toBeNull();
+  });
+
+  it('the toolbar sits on top: back, the product, the breadcrumb, then status and actions', () => {
+    const back = vi.fn();
+    render(<V2 toolbar={(v) => <WizardToolbar back={back} crumb={<>Raffles / <b>{v.name}</b></>} status={<span>Ready for QA</span>} actions={<button type="button">Lock editing</button>} />} />);
+    const bar = screen.getByRole('banner');
+    expect(within(bar).getByText('Raffle Builder')).toBeInTheDocument();
+    fireEvent.click(within(bar).getByRole('button', { name: 'Back to your raffles' }));
+    expect(back).toHaveBeenCalled();
+    expect(within(bar).getByText('Ready for QA')).toBeInTheDocument();
+    expect(within(bar).getByRole('button', { name: 'Lock editing' })).toBeInTheDocument();
+  });
+
+  it('keeps every V1 behaviour: Review locked with a reason, Next never blocks', async () => {
+    render(<V2 />);
+    await userEvent.click(step(/^Review/));
+    expect(screen.getByRole('alert')).toHaveTextContent('Complete every section before you review');
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(step(/^Dates/)).toHaveAttribute('aria-current', 'step');
+    expect(screen.getByRole('heading', { level: 2, name: 'Dates' })).toBeInTheDocument();
   });
 });

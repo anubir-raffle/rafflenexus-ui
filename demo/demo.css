@@ -29,5 +29,5 @@ p { color: var(--ink-body); }
 .rnc-rt .demo-row-saved { background: var(--reward-soft) !important; cursor: pointer; }
 
 /* A section that uses the window's full width on desktop (the wizard), centred over the 1120px column */
-.demo-full { width: calc(100vw - 48px); max-width: 1760px; justify-self: center; box-sizing: border-box; }
-@media (max-width: 600px) { .demo-full { width: auto; justify-self: stretch; } }
+.demo-full { box-sizing: border-box; justify-self: start; width: min(calc(100vw - 64px), 1760px); margin-left: calc(50% - min(50vw - 32px, 880px)); }
+@media (max-width: 1200px) { .demo-full { width: auto; margin-left: 0; justify-self: stretch; } }

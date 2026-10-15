@@ -105,9 +105,9 @@ function FormDemo() {
 }
 
 // Every name and figure here is a sample. Real client names need each client's permission.
-function Section({ title, note, children, stage, full }: { title: string; note?: ReactNode; children: ReactNode; stage?: boolean; full?: boolean }) {
+function Section({ title, note, children, stage, full, id }: { title: string; note?: ReactNode; children: ReactNode; stage?: boolean; full?: boolean; id?: string }) {
   return (
-    <section className={(stage ? 'demo-sec rnc-stage' : 'demo-sec') + (full ? ' demo-full' : '')}>
+    <section id={id} className={(stage ? 'demo-sec rnc-stage' : 'demo-sec') + (full ? ' demo-full' : '')}>
       <h2 className="rnc-h3">{title}</h2>
       {note ? <p className="demo-note">{note}</p> : null}
       <div className="demo-body">{children}</div>
@@ -219,7 +219,7 @@ function App() {
         <RaffleBuilderDemo />
       </Section>
 
-      <Section full title="Setup form wizard (@rafflenexuscanada/design-system/wizard)" note="The Raffle Builder's wizard on react-final-form: the step bar (done, not done, Review locked until every step is done), sections, autosave status, Back / Next / Review / Submit. Rules of play is hidden for this BC raffle. Try QA mode and read-only.">
+      <Section full id="wizard" title="Setup form wizard (@rafflenexuscanada/design-system/wizard)" note="The Raffle Builder's wizard on react-final-form: the step bar (done, not done, Review locked until every step is done), sections, autosave status, Back / Next / Review / Submit. Rules of play is hidden for this BC raffle. Try QA mode and read-only.">
         <WizardDemo />
       </Section>
 

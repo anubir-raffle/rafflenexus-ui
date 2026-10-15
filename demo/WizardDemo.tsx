@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react';
 import { Field } from 'react-final-form';
-import { Wizard, WizardDeadline, WizardHeader, WizardSection, WizardToolbar } from '../src/wizard';
+import { Wizard, WizardDeadline, WizardHeader, WizardPreview, WizardSection, WizardSitePreview, WizardToolbar } from '../src/wizard';
 import { Button, Icon, StatusPill, TextField } from '../src';
 
-type Brief = { name?: string; sub_domain?: string; sales_open?: string; sales_close?: string; draw_at?: string; prize?: string; client: { name: string; province: string } };
+type Brief = { name?: string; sub_domain?: string; heading?: string; subheading?: string; cause?: string; sales_open?: string; sales_close?: string; draw_at?: string; prize?: string; client: { name: string; province: string } };
 const need = (pairs: [keyof Brief, string][]) => (v: Brief) => Object.fromEntries(pairs.filter(([k]) => !v[k]).map(([k, m]) => [k, m]));
 
 function Text({ name, label, hint, readOnly }: { name: string; label: string; hint?: string; readOnly?: boolean }) {
@@ -43,6 +43,11 @@ export function WizardDemo() {
       <Wizard<Brief>
         key={mode + layout}
         layout={layout}
+        preview={(v, step) => (step.label === 'Website' ? (
+          <WizardPreview url={`${v.sub_domain || 'your-raffle'}.rafflenexus.com`}>
+            <WizardSitePreview org={v.client.name} heading={v.heading} subheading={v.subheading} cause={v.cause} colour="#126ab5" accent="#0c3f75" />
+          </WizardPreview>
+        ) : null)}
         toolbar={(v) => (
           <WizardToolbar
             back="#" crumb={<>Raffles / <b>{v.name}</b></>}
@@ -60,7 +65,7 @@ export function WizardDemo() {
             ))}
           </>
         )}
-        initialValues={{ name: 'Sample Hospital Lottery', sub_domain: 'samplehospital', sales_open: 'September 29, 2026', client: { name: 'Sample Hospital Foundation', province: 'BC' } }}
+        initialValues={{ name: 'Sample Hospital Lottery', sub_domain: 'samplehospital', heading: 'Win a lakeside home and support hospital care', subheading: 'Every ticket helps buy equipment for Sample Hospital.', cause: 'Your ticket funds new equipment for the emergency department at Sample Hospital.', sales_open: 'September 29, 2026', client: { name: 'Sample Hospital Foundation', province: 'BC' } }}
         onSubmit={(v) => setSubmitted(`onSubmit called for ${v.name}`)}
         onSave={save}
         isSaving={saving}
@@ -75,6 +80,11 @@ export function WizardDemo() {
           <WizardSection title="Name and address" description="We use this to build the raffle site.">
             <Text name="name" label="Raffle name" readOnly={ro} />
             <Text name="sub_domain" label="Web address" hint="Letters, numbers and hyphens." readOnly={ro} />
+          </WizardSection>
+          <WizardSection title="Headline and story" description="The top of your raffle site.">
+            <Text name="heading" label="Main heading" readOnly={ro} />
+            <Text name="subheading" label="Subheading" readOnly={ro} />
+            <Text name="cause" label="The cause" readOnly={ro} />
           </WizardSection>
         </Wizard.Page>
         <Wizard.Page label="Dates" summary={(v) => (v.sales_close && v.draw_at ? `Closes ${v.sales_close}` : 'Dates missing')} description="When ticket sales open and close, and when the draws happen." validate={need([['sales_close', 'Enter when sales close'], ['draw_at', 'Enter the draw date']])}>

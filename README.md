@@ -346,6 +346,36 @@ export default function Wizard(props) {
 Wizard.Page = DSWizard.Page;
 ```
 
+### V2: the Raffle Builder layout
+
+`layout="v2"` gives the Raffle Builder of RNC V2.1 (the design system's `Wizard` card, V2): a top bar, a rail with the raffle, "4 of 5 sections complete" with a bar, the steps with one-line summaries and room for QA checks, then the step's title and intro, each section on a white panel, a live site preview beside the Website step, and a sticky footer. It's fluid: the columns are proportional and it responds to its own width (container queries), so it fits beside the app's sidebar; below about 860px the rail's steps scroll sideways above the step.
+
+```jsx
+<Wizard
+  {...props}
+  layout="v2"
+  toolbar={(v) => (
+    <WizardToolbar back="/dashboard/briefs" crumb={<>Raffles / <b>{v.name}</b></>}
+      status={<StatusPill tone="review">Ready for QA</StatusPill>}
+      actions={<><Button variant="secondary" size="sm">Download images</Button><Button variant="secondary" size="sm">Lock editing</Button></>} />
+  )}
+  header={(v) => <WizardHeader title={v.name} subtitle={v.client?.name} logo={v.logo?.cropped} />}
+  aside={(v) => <QaChecks values={v} />}
+  preview={(v, step) => step.label === 'Website' ? (
+    <WizardPreview url={`${v.sub_domain}.rafflenexus.com`}>
+      <WizardSitePreview org={v.client?.name} heading={v.heading} subheading={v.subheading} cause={v.cause} colour={v.colour} image={v.slides?.[0]?.src} />
+    </WizardPreview>
+  ) : null}
+>
+  <Wizard.Page label="Website" summary={(v) => `${v.sub_domain}.rafflenexus.com`} description="We use this to build your raffle site and help it show up in search." validate={validation.branding}>…</Wizard.Page>
+  …
+</Wizard>
+```
+
+- **V2 props:** `layout` (`v1` default, `v2`), `toolbar(values)`, `aside(values)` (under the steps; moves below the step on phones), `preview(values, { label, index })` (return null for steps without one), `railLabel`. Pages add `summary(values)` and `description`.
+- **V2 parts:** `WizardToolbar` (`back` URL or function, `product`, `mark`, `crumb`, `status`, `actions`), `WizardPreview` (`url`, `label`, `hint`, children), `WizardSitePreview` (`org`, `heading`, `subheading`, `cause`, `colour`, `accent`, `image`, `cta`; text scales with the preview's width).
+- Same behaviour and props as V1 otherwise; switching is one prop.
+
 - **`Wizard` props, as today:** `onSubmit` (last visible step; the form resets afterwards), `initialValues`, `onSave({ values, active })` (every value or focus change), `lastSaved`, `isSaving`, `disabledAll` (no submit button), `isQaPage` (Review hidden; Complete form on the last step when `briefStatus` is 2), `briefStatus`, `user` (accepted, unused).
 - **New, optional:** `mutators` (merged with `arrayMutators`), `header(values)`, `notice(values)`, `backLabel`, `nextLabel`, `reviewLabel`, `submitLabel`, `completeLabel`, `onReviewBlocked` (instead of the inline message), `isSubmitBlocked` (default: a SweetAlert2 dialog is open), `stepsLabel`.
 - **`Wizard.Page`:** `validate(values)` (`{}` means complete), `hide(values)`, `children` (content, or `(mutators, values, changePage) => …`), plus `label` (the step's name) and `review` (marks the Review step; without it, the last visible step is Review unless `isQaPage`).

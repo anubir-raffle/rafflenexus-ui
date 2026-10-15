@@ -120,3 +120,66 @@ export function WizardToolbar({ product = 'Raffle Builder', mark = MARK_NAVY, ba
     </header>
   );
 }
+
+export interface WizardPreviewProps {
+  /** The address shown in the browser bar, e.g. "samplehospital.rafflenexus.com". */
+  url?: ReactNode;
+  /** Default "Live preview". */
+  label?: ReactNode;
+  /** Default "Updates as you type". */
+  hint?: ReactNode;
+  /** What the site looks like: `<WizardSitePreview … />`, or your own markup or an iframe. */
+  children?: ReactNode;
+}
+
+/** The V2 live preview: a label, then a browser frame with the site's address and the site as it will look. Return it from the Wizard's `preview`. */
+export function WizardPreview({ url, label = 'Live preview', hint = 'Updates as you type', children }: WizardPreviewProps) {
+  return (
+    <div className="rnc-wizard-preview">
+      <p className="rnc-wizard-preview-label">{label}{hint ? <span>{hint}</span> : null}</p>
+      <div className="rnc-wizard-browser">
+        <div className="rnc-wizard-browser-bar" aria-hidden="true"><i /><i /><i />{url ? <span className="rnc-wizard-browser-url">{url}</span> : null}</div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export interface WizardSitePreviewProps {
+  /** The organization, small, above the heading. */
+  org?: ReactNode;
+  heading?: ReactNode;
+  subheading?: ReactNode;
+  /** "The cause" text under the hero. */
+  cause?: ReactNode;
+  /** The client's colours: the hero and the button. */
+  colour?: string;
+  accent?: string;
+  /** A hero photo, darkened so the text stays readable. */
+  image?: string;
+  /** Default "Order tickets". */
+  cta?: ReactNode;
+  /** Shown while the heading is empty. Default "Add a main heading". */
+  emptyHeading?: ReactNode;
+}
+
+/** A small raffle site for the live preview: the organization, heading, subheading and button on the client's colour, then the cause. Text sizes follow the preview's width. */
+export function WizardSitePreview({ org, heading, subheading, cause, colour, accent, image, cta = 'Order tickets', emptyHeading = 'Add a main heading' }: WizardSitePreviewProps) {
+  const style = {
+    ...(colour ? { ['--site-colour' as string]: colour } : {}),
+    ...(accent ? { ['--site-accent' as string]: accent } : {}),
+    ...(image ? { backgroundImage: `url("${image}")` } : {}),
+  };
+  const empty = heading == null || heading === '';
+  return (
+    <>
+      <div className={cx('rnc-wizard-site', image && 'has-image')} style={style}>
+        {org ? <small>{org}</small> : null}
+        <p className={cx('rnc-wizard-site-title', empty && 'rnc-wizard-site-empty')}>{empty ? emptyHeading : heading}</p>
+        {subheading ? <p>{subheading}</p> : null}
+        <span className="rnc-wizard-site-cta">{cta}</span>
+      </div>
+      {cause ? <div className="rnc-wizard-site-body"><b>The cause</b>{cause}</div> : null}
+    </>
+  );
+}
