@@ -7,7 +7,7 @@ The Raffle Builder's setup form wizard, plus the 0.6.x fixes.
 - New entry point `@rafflenexuscanada/design-system/wizard`: `Wizard` and `Wizard.Page` on react-final-form with the app's props and behaviour (per-step validation, step bar with complete / not complete / Review, Review locked until every step is valid, Next that never blocks, autosave through `onSave`, QA mode with Complete form, read-only with no submit), and new optional `label`, `review`, `mutators`, `header`, `notice`, label overrides, `onReviewBlocked` and `isSubmitBlocked`. Parts: `WizardHeader`, `WizardDeadline`, `WizardSection`, `WizardSteps`. Older tools find it too (a `wizard/` folder and `typesVersions`). The design system's `Wizard` card.
 - `final-form-arrays` (3 or 4) is an optional peer dependency, needed only for `/wizard`.
 - Icon: added `check` (57).
-- Includes the design-system syncs 0.6.5 and 0.6.6 (the Wizard's styles), which weren't published on their own.
+- Includes the design-system syncs 0.6.5 to 0.6.7 (the Wizard's styles), which weren't published on their own.
 
 ## 0.6.5 (2026-10-15)
 
