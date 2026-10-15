@@ -267,3 +267,14 @@ describe('Wizard layout v2 (the Raffle Builder of RNC V2.1)', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Dates' })).toBeInTheDocument();
   });
 });
+
+describe('Wizard keeps what people typed', () => {
+  it('a value survives leaving its step and coming back (react-final-form 7 would reset it to the initial value)', async () => {
+    render(<Brief start={{ draw_at: '' }} />);
+    await userEvent.click(step(/^Dates/));
+    await userEvent.type(screen.getByLabelText('Draw date'), '2027-02-01');
+    await userEvent.click(step(/^Website/));
+    await userEvent.click(step(/^Dates/));
+    expect(screen.getByLabelText('Draw date')).toHaveValue('2027-02-01');
+  });
+});

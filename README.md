@@ -384,6 +384,24 @@ Wizard.Page = DSWizard.Page;
 - **Different from the app (on purpose, per the handoff):** everything uses the visible steps (Review is no longer validated with Rules of Play's rules when Rules of Play is hidden); step labels come from each page's `label` instead of `WIZARD_PAGES`; mutators come in as a prop; no `document.body` colour, per-second countdown, Export JSON modal or `getStatus`; buttons are the design system's (Submit shows a spinner while `onSubmit` runs). Labels are sentence case without an exclamation mark ("Submit", "Complete form"); pass `submitLabel="Submit!"` to keep the old one. Selecting a step moves keyboard focus to that step's content, and the step bar scrolls the current step into view on phones.
 - `validateOnMount` isn't a react-final-form prop (the app's was ignored); final-form validates when the form is created, so errors show at once either way.
 
+### Builder parts (main entry) and motion
+
+The steps of a builder are made of a few repeating patterns. These live in the main entry, so any app can use them:
+
+| Component | What it's for | Key props |
+| --- | --- | --- |
+| `AnimatedList` | A list whose items are added and removed: an added item grows in with a brief highlight, a removed one fades and folds away in place, and the others slide to their new spots. | `items`, `getKey` (a stable id, not the index), `renderItem(item, index)` (index is -1 while an item is leaving), `as`, `aria-label` |
+| `SortableList` | Reorder by dragging a grip (the row lifts, the others make room, it settles where it's dropped) or with Move earlier / Move later. Each move is announced; Escape cancels a drag. | `items`, `getKey`, `onReorder(items)`, `renderItem(item, { grip, moves, index, total, handle, moveEarlier, moveLater, isDragging })`, `itemLabel`, `disabled` |
+| `ExpandableRow` | A row that opens smoothly to edit what it holds (a ticket pack, a prize). | `title`, `meta`, `open` / `defaultOpen`, `onOpenChange`, `actions`, children |
+| `UploadTile` | Choose or drop a file; lights up while a file is dragged over; checks size and dimensions in words; Replace and Remove. | `label`, `hint`, `src`, `alt`, `onFile(file, dataUrl)`, `onRemove`, `minWidth`, `minHeight`, `maxBytes`, `error`, `accept` |
+| `WizardReview` (`/wizard`) | The Review step: a card per section with what it says, what's missing and an Edit link to its step. | `sections: { label, step, complete, summary, issues }[]`, `onEdit` (pass the page's `changePage`) |
+
+**Motion that explains what happened.** Changing steps slides the content in from the side you moved towards and its sections follow one after another; in V2 the rail's white card glides to the current step; a step's circle pops when it becomes complete or Review unlocks; the save status fades between Saving… and Last saved. Lists animate adding, removing and reordering as above, and a new pack or prize opens with its first field focused. Everything is instant under reduced motion.
+
+**Lists in react-final-form: edit items by id, not by index.** A `<Field name="ticket_packs[0].name">` keeps its field state when rows are removed or reordered, so values can land on the wrong row. Keep each item's fields controlled and write the whole array through a mutator, as the app's `setTicketPacks` / `setPrizes` / `setSlides` do: `onChange={(e) => mutators.setTicketPacks(packs.map((p) => p.id === id ? { ...p, price: e.target.value } : p))}`. The demo's `ItemText` shows the pattern.
+
+**react-final-form 7.** Its fields reset to their initial value when they mount again, which would lose what people typed once they leave a step. The Wizard keeps every field it has seen registered until it unmounts, so values survive step changes on 6 and 7 alike.
+
 ## Tokens
 
 All colours, spacing, radii, shadows and font stacks are CSS custom properties on `:root`:

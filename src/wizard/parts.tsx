@@ -183,3 +183,35 @@ export function WizardSitePreview({ org, heading, subheading, cause, colour, acc
     </>
   );
 }
+
+export interface WizardReviewSection {
+  label: ReactNode;
+  /** The step to go back to (its index among the visible steps; pass it to `changePage`). */
+  step: number;
+  complete: boolean;
+  /** What the section says, in a line or two. */
+  summary?: ReactNode;
+  /** What's still missing, in words. */
+  issues?: ReactNode[];
+}
+
+/** The Review step: one card per section with what it says and what's missing, and an Edit link back to its step. */
+export function WizardReview({ sections, onEdit, editLabel = 'Edit' }: { sections: WizardReviewSection[]; onEdit: (step: number) => void; editLabel?: string }) {
+  return (
+    <div className="rnc-review">
+      {sections.map((s, i) => (
+        <section key={i} className={cx('rnc-review-card', !s.complete && 'is-incomplete')}>
+          <div className="rnc-review-head">
+            <h3 className="rnc-review-title">
+              <span className="rnc-review-dot" aria-hidden="true"><Icon name={s.complete ? 'check' : 'x'} size={14} /></span>
+              {s.label}<span className="rnc-sr-only">{s.complete ? ', complete' : ', not complete'}</span>
+            </h3>
+            <button type="button" className="rnc-btn rnc-btn-link" aria-label={typeof s.label === 'string' ? `${editLabel} ${s.label}` : undefined} onClick={() => onEdit(s.step)}>{editLabel}</button>
+          </div>
+          {s.summary ? <p className="rnc-review-body">{s.summary}</p> : null}
+          {s.issues?.length ? <ul className="rnc-review-issues">{s.issues.map((t, j) => <li key={j}><Icon name="x-circle" size={16} />{t}</li>)}</ul> : null}
+        </section>
+      ))}
+    </div>
+  );
+}

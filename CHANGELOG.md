@@ -6,9 +6,12 @@ The Raffle Builder's setup form wizard, plus the 0.6.x fixes.
 
 - New entry point `@rafflenexuscanada/design-system/wizard`: `Wizard` and `Wizard.Page` on react-final-form with the app's props and behaviour (per-step validation, step bar with complete / not complete / Review, Review locked until every step is valid, Next that never blocks, autosave through `onSave`, QA mode with Complete form, read-only with no submit), and new optional `label`, `review`, `mutators`, `header`, `notice`, label overrides, `onReviewBlocked` and `isSubmitBlocked`. Parts: `WizardHeader`, `WizardDeadline`, `WizardSection`, `WizardSteps`. Older tools find it too (a `wizard/` folder and `typesVersions`). The design system's `Wizard` card.
 - `layout="v2"`: the Raffle Builder layout of RNC V2.1 (top bar, rail with progress, step summaries and QA checks, step title and intro, sections on panels, a live site preview beside Website, sticky footer). Fluid, with container queries. New props `toolbar`, `aside`, `preview`, `railLabel`; pages add `summary` and `description`; parts `WizardToolbar`, `WizardPreview`, `WizardSitePreview`.
+- Builder parts in the main entry: `AnimatedList` (added items grow in, removed ones fold away, the rest glide), `SortableList` (drag by a grip or Move earlier / later, announced, Escape cancels), `ExpandableRow`, `UploadTile` (choose or drop, size checks in words, Replace and Remove); and `WizardReview` in `/wizard`.
+- Wizard motion: step content slides in by direction with sections following, the V2 rail's card glides to the current step, step circles pop when a step completes or Review unlocks, the save status fades. All off under reduced motion.
+- The Wizard keeps fields registered across steps, so react-final-form 7 no longer resets a remounted field to its initial value.
 - `final-form-arrays` (3 or 4) is an optional peer dependency, needed only for `/wizard`.
-- Icon: added `check` (57).
-- Includes the design-system syncs 0.6.5 to 0.6.8 (the Wizard's styles), which weren't published on their own.
+- Icons: added `check`, `dots-six-vertical`, `trash`, `arrow-up`, `arrow-down` and `image` (62).
+- Includes the design-system syncs 0.6.5 to 0.6.9 (the Wizard's styles), which weren't published on their own.
 
 ## 0.6.5 (2026-10-15)
 

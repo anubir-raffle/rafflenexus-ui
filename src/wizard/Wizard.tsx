@@ -103,6 +103,22 @@ export interface WizardStep { label: string; state: WizardStepState; summary?: R
 /** The step bar: one button per step, each naming its state; the current step is marked. Scrolls sideways when narrow. */
 const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
+/**
+ * Keeps every field the form has seen registered (silently) until the wizard unmounts. Leaving a step unmounts its fields; without
+ * this, final-form forgets their state, and react-final-form 7 then resets a remounted field to its initial value (losing what
+ * people typed). Harmless with react-final-form 6.
+ */
+function KeepFieldState({ form }: { form: FormApi<any> }) {
+  const kept = useRef(new Map<string, () => void>());
+  useEffect(() => {
+    for (const name of form.getRegisteredFields()) {
+      if (!kept.current.has(name)) kept.current.set(name, form.registerField(name, () => {}, {}));
+    }
+  });
+  useEffect(() => () => { kept.current.forEach((off) => off()); kept.current.clear(); }, []);
+  return null;
+}
+
 export function WizardSteps({ steps, current, onSelect, label = 'Form steps', layout = 'v1' }: { steps: WizardStep[]; current: number; onSelect: (index: number) => void; label?: string; layout?: 'v1' | 'v2' }) {
   const nav = useRef<HTMLElement>(null);
   const list = useRef<HTMLOListElement>(null);
@@ -330,6 +346,7 @@ function WizardRoot<V extends Values = Values>({
                 {foot}
               </div>
             )}
+            <KeepFieldState form={form as FormApi<any>} />
             {onSave ? <FormSpy<V> subscription={{ active: true, values: true }} onChange={(st) => onSave({ values: st.values as V, active: st.active as string | undefined })} /> : null}
           </form>
         );
