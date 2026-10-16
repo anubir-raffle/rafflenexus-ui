@@ -56,5 +56,8 @@ p { color: var(--ink-body); }
 .demo-subrow.rnc-xrow { background: var(--ground); box-shadow: none; border: 1px solid var(--line); }
 .demo-subrow .rnc-xrow-inner { padding: 4px 12px 14px; }
 
-/* A split pot's winners: up to three across. */
-.rnc-alist.demo-split { grid-template-columns: repeat(auto-fill, minmax(max(140px, calc((100% - 20px) / 3)), 1fr)); }
+/* A split pot's winners: one row. Up to six share its width; from seven the row slides sideways, a sixth of it each. */
+.demo-split-track { overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x proximity; padding: 4px 4px 8px; margin: -4px -4px 0; }
+.rnc-alist.demo-split { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: max(96px, calc((100% - (var(--cols, 3) - 1) * 10px) / var(--cols, 3))); }
+.demo-split-remove.rnc-btn { position: absolute; top: -8px; right: -4px; color: var(--ink-muted); }
+.demo-split > li { scroll-snap-align: start; }

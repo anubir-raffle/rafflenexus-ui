@@ -43,7 +43,10 @@ type Prize = {
    * winner's `share` of the jackpot). Either way the winner gets `share` percent (Miguel, 2026-10-16).
    */
   fifty_mode?: 'jackpot' | 'guaranteed';
-  /** A split pot: the winners' share is divided between several winners, each a percent of it (Miguel, 2026-10-16). */
+  /**
+   * A split pot: several winners, each a percent of the whole pot; together they're the prize's share, and the single share field
+   * reads "Split Pot" (Miguel, 2026-10-16).
+   */
   split?: boolean; splits?: { id: string; pct: string }[];
 };
 /** A raffle sponsor: a logo only on the site (Miguel, 2026-10-16), with alt text for people who can't see it. `tier` is a Tier id. */
@@ -187,8 +190,8 @@ const rules = {
     if (!p.split) return undefined;
     const list = p.splits ?? [];
     if (list.some((w) => !/^\d+$/.test(w.pct) || Number(w.pct) < 1)) return 'Give every winner a whole percent, 1 or more';
-    const sum = list.reduce((n, w) => n + Number(w.pct), 0);
-    return sum !== 100 ? `Winners' shares add up to ${sum}%. Make them 100%.` : undefined;
+    const sum = splitTotal(p);
+    return sum > 99 ? `Winners' shares add up to ${sum}% of the pot. Keep them under 100%.` : undefined;
   },
   share: (v: string) => (!v ? "Enter the winner's share" : !/^\d+$/.test(v) || Number(v) < 1 || Number(v) > 99 ? 'Enter a whole percent from 1 to 99' : undefined),
   // Optional: the overall maximum holds the biggest pack, and the packs' own pools can't add up to more.
@@ -275,7 +278,7 @@ const errs = {
   },
   prizes: (v: Brief) => ({
     ...(!v.prizes.length && { prizes: 'Add a prize' }),
-    ...(v.prizes.some((p) => !p.title.trim() || (p.kind === 'fifty' ? rules.share(p.share ?? '') ?? rules.splits(p) : rules.value(p.value))) && { prize_fields: 'Give every prize a title and a value above $0 (a 50/50, its share of the pot)' }),
+    ...(v.prizes.some((p) => !p.title.trim() || (p.kind === 'fifty' ? (p.split ? rules.splits(p) : rules.share(p.share ?? '')) : rules.value(p.value))) && { prize_fields: 'Give every prize a title and a value above $0 (a 50/50, its share of the pot)' }),
     ...(v.prizes.some(prizeSponsorError) && { prize_sponsor: 'Name every prize sponsor you added' }),
   }),
 };
@@ -419,8 +422,12 @@ function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
 }
 
 /** A jackpot 50/50's default description, following its share (Miguel, 2026-10-16). Replaced only while people haven't edited it. */
-const fiftyDescription = (share?: string) => `<p>${share || '50'}% of the 50/50 Jackpot!</p>`;
-const isFiftyDescription = (html: string) => !html || /^<p>\d*% of the 50\/50 Jackpot!<\/p>$/.test(html);
+/** A split pot's winners together, as a percent of the pot. */
+const splitTotal = (p: Pick<Prize, 'splits'>) => (p.splits ?? []).reduce((n, w) => n + (Number(w.pct) || 0), 0);
+/** What the winners take in all: the share, or a split pot's total. */
+const fiftyPct = (p: Pick<Prize, 'share' | 'split' | 'splits'>) => (p.split ? String(splitTotal(p)) : p.share || '50');
+const fiftyTitle = (p: Pick<Prize, 'fifty_mode' | 'share' | 'split' | 'splits'>) => (p.fifty_mode === 'guaranteed' ? '50/50 guaranteed payout' : `${fiftyPct(p)}% of the 50/50 jackpot!`);
+const isFiftyTitle = (title: string) => !title.trim() || title === '50/50 guaranteed payout' || /^\d*% of the 50\/50 jackpot!$/.test(title);
 
 /**
  * What the site's prize card shows for a 50/50 (Miguel, 2026-10-16): a jackpot reads "Jackpot Amount" with "Winner takes half";
@@ -429,7 +436,7 @@ const isFiftyDescription = (html: string) => !html || /^<p>\d*% of the 50\/50 Ja
  */
 function fiftyCard(p: Prize) {
   if (p.fifty_mode === 'guaranteed') return { label: 'Guaranteed Payout', value: 'Live payout', note: p.split ? `Shared by ${p.splits?.length ?? 0} winners` : undefined };
-  const share = p.share || '50';
+  const share = fiftyPct(p);
   const part = share === '50' ? 'half' : `${share}%`;
   return { label: 'Jackpot Amount', value: 'Live jackpot', note: p.split ? `${p.splits?.length ?? 0} winners share ${part}` : `Winner takes ${part}` };
 }
@@ -439,19 +446,21 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   const add = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, title: '', value: '', description: '', sponsors: [] }]); toggle(id, true); focusSoon(`${id}-title`); };
   // One 50/50 per raffle: the winner gets a share of the pot, 50% unless the licence says otherwise.
   const hasFifty = v.prizes.some((p) => p.kind === 'fifty');
-  const addFifty = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, kind: 'fifty', fifty_mode: 'jackpot', share: '50', title: '50/50 jackpot', value: '', description: fiftyDescription('50'), sponsors: [] }]); toggle(id, true); focusSoon(`${id}-share`); };
+  const addFifty = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, kind: 'fifty', fifty_mode: 'jackpot', share: '50', title: fiftyTitle({ share: '50' }), value: '', description: '', sponsors: [] }]); toggle(id, true); focusSoon(`${id}-share`); };
   const prizeMeta = (p: Prize) => (p.kind === 'fifty'
-    ? (p.share ? `${p.share}% to ${p.split ? `${p.splits?.length ?? 0} winners` : 'the winner'} · shows the ${p.fifty_mode === 'guaranteed' ? 'payout' : 'jackpot'}` : 'No share yet')
+    ? (p.share || p.split ? `${fiftyPct(p)}% to ${p.split ? `${p.splits?.length ?? 0} winners` : 'the winner'} · shows the ${p.fifty_mode === 'guaranteed' ? 'payout' : 'jackpot'}` : 'No share yet')
     : p.value ? money(p.value) : 'No value yet');
   // Switching how a 50/50 shows also switches its default title, unless people wrote their own.
-  const FIFTY_TITLES = { jackpot: '50/50 jackpot', guaranteed: '50/50 guaranteed payout' } as const;
-  const setSplits = (p: Prize, splits: { id: string; pct: string }[]) => m.setPrizes(patch(v.prizes, p.id, { splits }));
-  const setSplit = (p: Prize, on: boolean) => m.setPrizes(patch(v.prizes, p.id, {
-    split: on, ...(on && !p.splits?.length && { splits: [{ id: uid('w'), pct: '50' }, { id: uid('w'), pct: '30' }, { id: uid('w'), pct: '20' }] }),
+  // Changing the winners keeps a default title in step with their total.
+  const setSplits = (p: Prize, splits: { id: string; pct: string }[]) => m.setPrizes(patch(v.prizes, p.id, {
+    splits, ...(isFiftyTitle(p.title) && { title: fiftyTitle({ ...p, splits }) }),
   }));
+  const setSplit = (p: Prize, on: boolean) => {
+    const splits = on && !p.splits?.length ? [{ id: uid('w'), pct: '25' }, { id: uid('w'), pct: '15' }, { id: uid('w'), pct: '10' }] : p.splits;
+    m.setPrizes(patch(v.prizes, p.id, { split: on, splits, ...(isFiftyTitle(p.title) && { title: fiftyTitle({ ...p, split: on, splits }) }) }));
+  };
   const setFiftyMode = (p: Prize, mode: 'jackpot' | 'guaranteed') => m.setPrizes(patch(v.prizes, p.id, {
-    fifty_mode: mode, ...(Object.values(FIFTY_TITLES).includes(p.title as never) && { title: FIFTY_TITLES[mode] }),
-    ...(isFiftyDescription(p.description) && { description: mode === 'jackpot' ? fiftyDescription(p.share) : '' }),
+    fifty_mode: mode, ...(isFiftyTitle(p.title) && { title: fiftyTitle({ fifty_mode: mode, share: p.share }) }),
   }));
   // A prize's sponsors (Miguel, 2026-10-16: "add option to add more sponsors to a prize").
   const setSponsor = (p: Prize, sid: string, change: Partial<PrizeSponsor>) => m.setPrizes(patch(v.prizes, p.id, { sponsors: patch(p.sponsors, sid, change) }));
@@ -484,9 +493,11 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                     ) : null}
                     <div style={grid(220)}>
                       <ItemText id={`${p.id}-title`} label="Prize title" value={p.title} readOnly={ro} maxLength={LIMIT.prize} required="Give the prize a title" onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { title: x }))} />
-                      {p.kind === 'fifty' ? (
+                      {p.kind === 'fifty' && p.split ? (
+                        <TextField id={`${p.id}-share`} label="Winner's share of the pot" value="Split Pot" disabled showCount={false} />
+                      ) : p.kind === 'fifty' ? (
                         <ItemText id={`${p.id}-share`} label="Winner's share of the pot" suffix="%" value={p.share ?? ''} readOnly={ro} inputMode="numeric" check={rules.share}
-                          onValue={(x) => { const share = x.replace(/\D/g, '').slice(0, 2); m.setPrizes(patch(v.prizes, p.id, { share, ...(isFiftyDescription(p.description) && { description: fiftyDescription(share) }) })); }} />
+                          onValue={(x) => { const share = x.replace(/\D/g, '').slice(0, 2); m.setPrizes(patch(v.prizes, p.id, { share, ...(isFiftyTitle(p.title) && { title: fiftyTitle({ fifty_mode: p.fifty_mode, share }) }) })); }} />
                       ) : (
                         <ItemText label="Value ($)" value={p.value} readOnly={ro} inputMode="decimal" check={rules.value} onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { value: x.replace(/[^0-9.]/g, '') }))} />
                       )}
@@ -497,19 +508,25 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                         <Switch label="Split the pot between several winners" checked={!!p.split} disabled={ro} onChange={(on) => setSplit(p, on)} />
                         {p.split ? (
                           <>
-                            <p className="rnc-field-hint" style={{ margin: 0 }}>{`Each winner's part of the winners' ${p.share || 50}%. They add up to 100%.`}</p>
+                            <p className="rnc-field-hint" style={{ margin: 0 }}>{`Each winner's share of the pot. In all: ${splitTotal(p)}%.`}</p>
+                            {/* One row: up to six winners share its width; from seven it slides sideways, a sixth each (Miguel, 2026-10-16). */}
+                            <div className="demo-split-track" style={{ ['--cols' as string]: Math.min(6, Math.max(1, p.splits?.length ?? 1)) }}>
                             <AnimatedList aria-label="Winners' shares" className="demo-split" items={p.splits ?? []} getKey={(w) => w.id} renderItem={(w, k) => (
-                              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <ItemText label={k > -1 ? `Winner ${k + 1}` : 'Winner'} suffix="%" value={w.pct} readOnly={ro} inputMode="numeric"
-                                    onValue={(x) => setSplits(p, patch(p.splits ?? [], w.id, { pct: x.replace(/\D/g, '').slice(0, 3) }))} />
-                                </div>
-                                {!ro && k > -1 && (p.splits?.length ?? 0) > 2 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove winner ${k + 1}`} style={{ marginBottom: 6 }}
+                              // The trash sits beside the label, so the field keeps the column's whole width.
+                              <div data-winner={w.id} style={{ position: 'relative', minWidth: 0 }}>
+                                <ItemText label={k > -1 ? `Winner ${k + 1}` : 'Winner'} suffix="%" value={w.pct} readOnly={ro} inputMode="numeric"
+                                  onValue={(x) => setSplits(p, patch(p.splits ?? [], w.id, { pct: x.replace(/\D/g, '').slice(0, 3) }))} />
+                                {!ro && k > -1 && (p.splits?.length ?? 0) > 2 ? <Button className="demo-split-remove" variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove winner ${k + 1}`}
                                   onClick={() => setSplits(p, (p.splits ?? []).filter((x) => x.id !== w.id))} /> : null}
                               </div>
                             )} />
+                            </div>
                             {rules.splits(p) ? <p className="rnc-field-error" role="alert" style={{ margin: 0 }}>{rules.splits(p)}</p> : null}
-                            {!ro ? <div><Button variant="secondary" size="sm" startIcon="plus" onClick={() => setSplits(p, [...(p.splits ?? []), { id: uid('w'), pct: '' }])}>Add a winner</Button></div> : null}
+                            {!ro ? <div><Button variant="secondary" size="sm" startIcon="plus" onClick={() => {
+                              const id = uid('w'); setSplits(p, [...(p.splits ?? []), { id, pct: '' }]);
+                              // Bring the new winner into view when the row slides.
+                              setTimeout(() => { const el = document.querySelector(`[data-winner="${id}"]`); el?.scrollIntoView({ block: 'nearest', inline: 'end', behavior: 'smooth' }); (el?.querySelector('input') as HTMLInputElement | null)?.focus({ preventScroll: true }); }, 60);
+                            }}>Add a winner</Button></div> : null}
                           </>
                         ) : null}
                       </div>
