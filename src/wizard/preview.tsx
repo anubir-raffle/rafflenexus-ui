@@ -95,8 +95,18 @@ export interface WizardSiteDate { when: ReactNode; what: ReactNode }
 /** A sponsor: a name, and a logo (an image URL) when there is one. */
 export interface WizardSiteSponsor { name: ReactNode; logo?: string }
 /** A prize. `sponsor` shows "Sponsored by" with the sponsor's logo (or name) on the prize. */
-/** One prize card: its photo (a gift icon on the site colour without one), value, title and optional sponsor. */
-export interface WizardSitePrize { title: ReactNode; value?: ReactNode; image?: string; sponsor?: WizardSiteSponsor }
+/** One prize card: its photo (a gift icon on the site colour without one), value, title and optional sponsors. */
+export interface WizardSitePrize {
+  title: ReactNode; value?: ReactNode; image?: string;
+  /** A small caption above the value, e.g. "Jackpot Amount" or "Guaranteed Payout" for a 50/50. */
+  label?: ReactNode;
+  /** A line under the title, e.g. "Winner takes half". */
+  note?: ReactNode;
+  /** One sponsor. Use `sponsors` for several. */
+  sponsor?: WizardSiteSponsor;
+  /** Several sponsors: one shows its logo and name, several show their logos (or names). */
+  sponsors?: WizardSiteSponsor[];
+}
 /** One social account, linked in the footer: the network's name and the full address. */
 export interface WizardSiteSocial { label: ReactNode; href: string }
 
@@ -251,14 +261,28 @@ export function WizardSitePreview({
             {prizes.map((p, i) => (
               <li key={i} className="rnc-wsite-prize">
                 <span className="rnc-wsite-prize-media">{p.image ? <img src={p.image} alt="" /> : <Icon name="gift" size={36} />}</span>
-                <span className="rnc-wsite-prize-main">{p.value ? <b>{p.value}</b> : null}<span className="rnc-wsite-prize-title">{p.title}</span></span>
-                {p.sponsor ? (
-                  <span className="rnc-wsite-prize-sponsor">
-                    <small>Sponsored by</small>
-                    {p.sponsor.logo ? <img src={p.sponsor.logo} alt="" /> : null}
-                    <span>{p.sponsor.name}</span>
-                  </span>
-                ) : null}
+                <span className="rnc-wsite-prize-main">
+                  {p.label ? <small className="rnc-wsite-prize-label">{p.label}</small> : null}
+                  {p.value ? <b>{p.value}</b> : null}
+                  <span className="rnc-wsite-prize-title">{p.title}</span>
+                  {p.note ? <span className="rnc-wsite-prize-note">{p.note}</span> : null}
+                </span>
+                {(() => {
+                  const list = p.sponsors?.length ? p.sponsors : p.sponsor ? [p.sponsor] : [];
+                  if (!list.length) return null;
+                  const one = list.length === 1;
+                  return (
+                    <span className="rnc-wsite-prize-sponsor">
+                      <small>Sponsored by</small>
+                      {list.map((sp, k) => (
+                        <span key={k} className="rnc-wsite-prize-sponsor-item">
+                          {sp.logo ? <img src={sp.logo} alt="" /> : null}
+                          {one || !sp.logo ? <span>{sp.name}</span> : null}
+                        </span>
+                      ))}
+                    </span>
+                  );
+                })()}
               </li>
             ))}
           </ul>

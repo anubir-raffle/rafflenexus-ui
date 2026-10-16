@@ -190,6 +190,17 @@ describe('WizardSitePreview prize cards and the phone header', () => {
     expect(cards[1]).toHaveTextContent('$2Cash');
   });
 
+  it('a prize card takes a caption, a note and several sponsors (logos only when there are several)', () => {
+    const logo = 'data:image/png;base64,AAAA';
+    const { container } = render(<WizardSitePreview heading="Win" prizes={[{ title: '50/50 jackpot', label: 'Jackpot Amount', value: 'Live jackpot', note: 'Winner takes half',
+      sponsors: [{ name: 'A', logo }, { name: 'B', logo }, { name: 'C' }] }]} />);
+    const card = container.querySelector('.rnc-wsite-prize')!;
+    expect(card.querySelector('.rnc-wsite-prize-label')).toHaveTextContent('Jackpot Amount');
+    expect(card.querySelector('.rnc-wsite-prize-note')).toHaveTextContent('Winner takes half');
+    expect(card.querySelectorAll('.rnc-wsite-prize-sponsor-item')).toHaveLength(3);
+    expect(card.querySelector('.rnc-wsite-prize-sponsor')).toHaveTextContent('Sponsored byC');
+  });
+
   it('on a phone the header is the logo and a menu; the presenting sponsor sits in a bar under it', () => {
     const sponsor = { name: 'Sample Credit Union', logo: 'data:image/png;base64,AAAA', label: 'Presented by' };
     const { container } = render(<WizardPreview url="x" device="mobile"><WizardSitePreview heading="Win" sponsor={sponsor} /></WizardPreview>);

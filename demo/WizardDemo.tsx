@@ -31,14 +31,17 @@ type Licence = {
   max_tickets: string;
 };
 /** A prize's sponsor (optional): a logo, a name and a line about them. */
-type PrizeSponsor = { name: string; logo?: string; description: string };
+type PrizeSponsor = { id: string; name: string; logo?: string; description: string };
 /**
  * A prize. Most have a fixed value; a 50/50 prize (`kind: 'fifty'`) pays the winner a share of the pot instead (`share`, a percent),
  * so it has no value (Miguel, 2026-10-16: "give option to add 5050 prize").
  */
 type Prize = {
-  id: string; title: string; value: string; description: string; image?: string; sponsor: PrizeSponsor; kind?: 'fixed' | 'fifty'; share?: string;
-  /** A 50/50 shows as a jackpot (a share of the pot) or a guaranteed payout (a fixed amount, in `value`). Miguel, 2026-10-16. */
+  id: string; title: string; value: string; description: string; image?: string; sponsors: PrizeSponsor[]; kind?: 'fixed' | 'fifty'; share?: string;
+  /**
+   * What the site shows for a 50/50: the whole jackpot as it grows, or the guaranteed payout, what the winner takes home (the
+   * winner's `share` of the jackpot). Either way the winner gets `share` percent (Miguel, 2026-10-16).
+   */
   fifty_mode?: 'jackpot' | 'guaranteed';
 };
 /** A raffle sponsor: a logo only on the site (Miguel, 2026-10-16), with alt text for people who can't see it. `tier` is a Tier id. */
@@ -123,10 +126,11 @@ const START: Brief = {
   }],
   prizes: [
     { id: 'z1', title: 'Lakeside home', value: '1250000', description: '<p>A four-bedroom home by the lake, <em>fully furnished</em>.</p>', image: art('Lakeside home', 1200, 900, '#126ab5', '#0c3f75'),
-      sponsor: { name: 'Sample Builders', logo: badge('SAMPLE BUILDERS', '#3b4656'), description: 'Built and furnished by Sample Builders.' } },
+      sponsors: [{ id: 'ps1', name: 'Sample Builders', logo: badge('SAMPLE BUILDERS', '#3b4656'), description: 'Built and furnished by Sample Builders.' },
+        { id: 'ps2', name: 'Sample Furniture', logo: badge('SAMPLE FURNITURE', '#5a400a'), description: 'Furnished by Sample Furniture.' }] },
     { id: 'z2', title: 'Electric SUV', value: '65000', description: '<p>A new all-electric SUV with three years of charging.</p>', image: art('Electric SUV', 1200, 900, '#2b7a3d', '#174a24'),
-      sponsor: { name: 'Sample Motors', logo: badge('SAMPLE MOTORS', '#7e0c20'), description: 'Courtesy of Sample Motors.' } },
-    { id: 'z3', title: '$10,000 cash', value: '10000', description: '<p>Paid by cheque within 30 days of the draw.</p>', sponsor: { name: '', description: '' } },
+      sponsors: [{ id: 'ps3', name: 'Sample Motors', logo: badge('SAMPLE MOTORS', '#7e0c20'), description: 'Courtesy of Sample Motors.' }] },
+    { id: 'z3', title: '$10,000 cash', value: '10000', description: '<p>Paid by cheque within 30 days of the draw.</p>', sponsors: [] },
   ],
   support_socials: { facebook: 'samplehospital', instagram: 'samplehospital', twitter: 'samplehospital', youtube: '@samplehospital', linkedin: 'company/samplehospital' },
   sponsors: [
@@ -217,7 +221,8 @@ const toHandle = (raw: string, s: (typeof SOCIALS)[number]) => {
   return x.replace(/\/+$/, '');
 };
 const socialError = (v?: string) => (v && !HANDLE.test(v) ? 'Use just the account name, like the part after the address' : undefined);
-const prizeSponsorError = (p: Prize) => ((p.sponsor.logo || p.sponsor.description.trim()) && !p.sponsor.name.trim() ? 'Name the prize sponsor' : undefined);
+const sponsorNameError = (sp: PrizeSponsor) => ((sp.logo || sp.description.trim()) && !sp.name.trim() ? 'Name the sponsor' : undefined);
+const prizeSponsorError = (p: Prize) => (p.sponsors.some(sponsorNameError) ? 'Name every sponsor' : undefined);
 const errs = {
   website: (v: Brief) => ({
     ...(rules.name(v.name) && { name: rules.name(v.name) }),
@@ -261,7 +266,7 @@ const errs = {
   },
   prizes: (v: Brief) => ({
     ...(!v.prizes.length && { prizes: 'Add a prize' }),
-    ...(v.prizes.some((p) => !p.title.trim() || (p.kind === 'fifty' && p.fifty_mode !== 'guaranteed' ? rules.share(p.share ?? '') : rules.value(p.value))) && { prize_fields: 'Give every prize a title and a value above $0 (a 50/50, its share of the pot)' }),
+    ...(v.prizes.some((p) => !p.title.trim() || (p.kind === 'fifty' ? rules.share(p.share ?? '') : rules.value(p.value))) && { prize_fields: 'Give every prize a title and a value above $0 (a 50/50, its share of the pot)' }),
     ...(v.prizes.some(prizeSponsorError) && { prize_sponsor: 'Name every prize sponsor you added' }),
   }),
 };
@@ -408,26 +413,38 @@ function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
 const fiftyDescription = (share?: string) => `<p>${share || '50'}% of the 50/50 Jackpot!</p>`;
 const isFiftyDescription = (html: string) => !html || /^<p>\d*% of the 50\/50 Jackpot!<\/p>$/.test(html);
 
-/** What a 50/50 pays, in words: "50% of the pot" or "$25,000 guaranteed". */
-function fiftyValue(p: Prize) {
-  if (p.fifty_mode === 'guaranteed') return p.value ? `${money(p.value)} guaranteed` : undefined;
-  return p.share ? `${p.share}% of the pot` : undefined;
+/**
+ * What the site's prize card shows for a 50/50 (Miguel, 2026-10-16): a jackpot reads "Jackpot Amount" with "Winner takes half";
+ * a guaranteed payout reads "Guaranteed Payout", the amount the winner takes home. The builder has no live sales, so a label
+ * stands in for the figure.
+ */
+function fiftyCard(p: Prize) {
+  if (p.fifty_mode === 'guaranteed') return { label: 'Guaranteed Payout', value: 'Live payout' };
+  const share = p.share || '50';
+  return { label: 'Jackpot Amount', value: 'Live jackpot', note: `Winner takes ${share === '50' ? 'half' : `${share}%`}` };
 }
 
 function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   const [isOpen, toggle] = useOpenRows();
-  const add = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, title: '', value: '', description: '', sponsor: { name: '', description: '' } }]); toggle(id, true); focusSoon(`${id}-title`); };
+  const add = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, title: '', value: '', description: '', sponsors: [] }]); toggle(id, true); focusSoon(`${id}-title`); };
   // One 50/50 per raffle: the winner gets a share of the pot, 50% unless the licence says otherwise.
   const hasFifty = v.prizes.some((p) => p.kind === 'fifty');
-  const addFifty = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, kind: 'fifty', fifty_mode: 'jackpot', share: '50', title: '50/50 jackpot', value: '', description: fiftyDescription('50'), sponsor: { name: '', description: '' } }]); toggle(id, true); focusSoon(`${id}-share`); };
-  const prizeMeta = (p: Prize) => (p.kind === 'fifty' ? fiftyValue(p) ?? (p.fifty_mode === 'guaranteed' ? 'No payout yet' : 'No share yet') : p.value ? money(p.value) : 'No value yet');
+  const addFifty = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, kind: 'fifty', fifty_mode: 'jackpot', share: '50', title: '50/50 jackpot', value: '', description: fiftyDescription('50'), sponsors: [] }]); toggle(id, true); focusSoon(`${id}-share`); };
+  const prizeMeta = (p: Prize) => (p.kind === 'fifty'
+    ? (p.share ? `${p.share}% to the winner · shows the ${p.fifty_mode === 'guaranteed' ? 'payout' : 'jackpot'}` : 'No share yet')
+    : p.value ? money(p.value) : 'No value yet');
   // Switching how a 50/50 shows also switches its default title, unless people wrote their own.
   const FIFTY_TITLES = { jackpot: '50/50 jackpot', guaranteed: '50/50 guaranteed payout' } as const;
   const setFiftyMode = (p: Prize, mode: 'jackpot' | 'guaranteed') => m.setPrizes(patch(v.prizes, p.id, {
     fifty_mode: mode, ...(Object.values(FIFTY_TITLES).includes(p.title as never) && { title: FIFTY_TITLES[mode] }),
     ...(isFiftyDescription(p.description) && { description: mode === 'jackpot' ? fiftyDescription(p.share) : '' }),
   }));
-  const setSponsor = (p: Prize, change: Partial<PrizeSponsor>) => m.setPrizes(patch(v.prizes, p.id, { sponsor: { ...p.sponsor, ...change } }));
+  // A prize's sponsors (Miguel, 2026-10-16: "add option to add more sponsors to a prize").
+  const setSponsor = (p: Prize, sid: string, change: Partial<PrizeSponsor>) => m.setPrizes(patch(v.prizes, p.id, { sponsors: patch(p.sponsors, sid, change) }));
+  // The sponsors block folds away (Miguel, 2026-10-16: "collapse the prize sponsor section"); adding a sponsor opens it.
+  const [sponsorsOpen, toggleSponsors] = useOpenRows();
+  const addSponsor = (p: Prize) => { const sid = uid('ps'); toggleSponsors(p.id, true); m.setPrizes(patch(v.prizes, p.id, { sponsors: [...p.sponsors, { id: sid, name: '', description: '' }] })); focusSoon(`${sid}-name`); };
+  const removeSponsor = (p: Prize, sid: string) => m.setPrizes(patch(v.prizes, p.id, { sponsors: p.sponsors.filter((x) => x.id !== sid) }));
   return (
     <WizardSection title="Prizes for the main draw" description="Drag to set the order they're drawn in. Open a prize to edit it.">
       <SortableList aria-label="Prizes" items={v.prizes} getKey={(p) => p.id} disabled={ro} itemLabel={(p, i) => p.title || `Prize ${i + 1}`} onReorder={(next) => m.setPrizes(next)}
@@ -446,14 +463,14 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                         <span className="rnc-field-label" id={`${p.id}-mode`}>Show as</span>
                         <SegmentedControl aria-labelledby={`${p.id}-mode`} name={`${p.id}-mode`} disabled={ro} value={p.fifty_mode ?? 'jackpot'}
                           options={[{ value: 'jackpot', label: 'Jackpot' }, { value: 'guaranteed', label: 'Guaranteed payout' }]} onChange={(x) => setFiftyMode(p, x as 'jackpot' | 'guaranteed')} />
+                        <p className="rnc-field-hint" style={{ margin: 0 }}>
+                          {p.fifty_mode === 'guaranteed' ? `Your site shows what the winner takes home: ${p.share || 50}% of the jackpot.` : 'Your site shows the whole jackpot as it grows.'}
+                        </p>
                       </div>
                     ) : null}
                     <div style={grid(220)}>
                       <ItemText id={`${p.id}-title`} label="Prize title" value={p.title} readOnly={ro} maxLength={LIMIT.prize} required="Give the prize a title" onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { title: x }))} />
-                      {p.kind === 'fifty' && p.fifty_mode === 'guaranteed' ? (
-                        <ItemText id={`${p.id}-share`} label="Guaranteed payout ($)" hint="The amount the winner gets, however many tickets sell." value={p.value} readOnly={ro} inputMode="decimal" check={rules.value}
-                          onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { value: x.replace(/[^0-9.]/g, '') }))} />
-                      ) : p.kind === 'fifty' ? (
+                      {p.kind === 'fifty' ? (
                         <ItemText id={`${p.id}-share`} label="Winner's share of the pot (%)" hint="Usually 50: the other half goes to the cause." value={p.share ?? ''} readOnly={ro} inputMode="numeric" check={rules.share}
                           onValue={(x) => { const share = x.replace(/\D/g, '').slice(0, 2); m.setPrizes(patch(v.prizes, p.id, { share, ...(isFiftyDescription(p.description) && { description: fiftyDescription(share) }) })); }} />
                       ) : (
@@ -464,20 +481,33 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                       src={p.image} alt={p.title || 'The prize'} disabled={ro} onFile={(_f, url) => m.setPrizes(patch(v.prizes, p.id, { image: url }))} onRemove={() => m.setPrizes(patch(v.prizes, p.id, { image: undefined }))} />
                     <RichTextArea label="Description" hint="What winners get. Shown on the prizes page." value={p.description} review={ro} maxLength={LIMIT.prizeText} minHeight={140}
                       onChange={(html) => m.setPrizes(patch(v.prizes, p.id, { description: html }))} />
-                    {/* Optional: the prize's own sponsor, shown as "Sponsored by" on the prize (Miguel, 2026-10-16). */}
-                    <fieldset style={{ display: 'grid', gap: 16, margin: 0, padding: 0, border: 0 }}>
-                      <legend className="rnc-field-label" style={{ marginBottom: 12 }}>Prize sponsor (optional)</legend>
-                      {/* Name and description on one side, the logo on the other, so neither column leaves a gap. */}
-                      <div style={grid(220)}>
-                        <div style={{ display: 'grid', gap: 16, alignContent: 'start', minWidth: 0 }}>
-                          <ItemText label="Sponsor name" value={p.sponsor.name} readOnly={ro} maxLength={LIMIT.sponsor} check={() => prizeSponsorError(p)} onValue={(x) => setSponsor(p, { name: x })} />
-                          <TextArea label="About the sponsor" hint="One or two lines, shown with the prize." value={p.sponsor.description} readOnly={ro} maxLength={LIMIT.sponsorText}
-                            onChange={(e) => setSponsor(p, { description: e.target.value })} />
+                    {/* Optional: the prize's sponsors, shown as "Sponsored by" on the prize. As many as it has. */}
+                    <ExpandableRow className="demo-subrow" title="Prize sponsors (optional)" meta={p.sponsors.length ? plural(p.sponsors.length, 'sponsor') : 'None'}
+                      open={sponsorsOpen(p.id)} onOpenChange={(o) => toggleSponsors(p.id, o)}>
+                    <div style={{ display: 'grid', gap: 12 }}>
+                      <AnimatedList aria-label={`Sponsors of ${p.title || 'this prize'}`} items={p.sponsors} getKey={(sp) => sp.id} renderItem={(sp, k) => (
+                        <div style={{ display: 'grid', gap: 12, padding: 'clamp(12px, 2vw, 16px)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                            <strong style={{ font: '600 14px/1.3 var(--font-sans)', color: 'var(--ink)' }}>{k > -1 ? `Sponsor ${k + 1}` : 'Sponsor'}</strong>
+                            {!ro && k > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${sp.name || `sponsor ${k + 1}`}`} onClick={() => removeSponsor(p, sp.id)} /> : null}
+                          </div>
+                          {k > -1 ? (
+                            // Name and description on one side, the logo on the other, so neither column leaves a gap.
+                            <div style={grid(220)}>
+                              <div style={{ display: 'grid', gap: 16, alignContent: 'start', minWidth: 0 }}>
+                                <ItemText id={`${sp.id}-name`} label="Sponsor name" value={sp.name} readOnly={ro} maxLength={LIMIT.sponsor} check={() => sponsorNameError(sp)} onValue={(x) => setSponsor(p, sp.id, { name: x })} />
+                                <TextArea label="About the sponsor" hint="One or two lines, shown with the prize." value={sp.description} readOnly={ro} maxLength={LIMIT.sponsorText}
+                                  onChange={(e) => setSponsor(p, sp.id, { description: e.target.value })} />
+                              </div>
+                              <UploadTile label="Sponsor logo" hint="At least 400 px wide. PNG or SVG on a clear background." src={sp.logo} alt={`${sp.name || 'Sponsor'} logo`} disabled={ro}
+                                onFile={(_f, url) => setSponsor(p, sp.id, { logo: url })} onRemove={() => setSponsor(p, sp.id, { logo: undefined })} />
+                            </div>
+                          ) : null}
                         </div>
-                        <UploadTile label="Sponsor logo" hint="At least 400 px wide. PNG or SVG on a clear background." src={p.sponsor.logo} alt={`${p.sponsor.name || 'Sponsor'} logo`} disabled={ro}
-                          onFile={(_f, url) => setSponsor(p, { logo: url })} onRemove={() => setSponsor(p, { logo: undefined })} />
-                      </div>
-                    </fieldset>
+                      )} />
+                      {!ro ? <div><Button variant="secondary" size="sm" startIcon="plus" onClick={() => addSponsor(p)}>{p.sponsors.length ? 'Add another sponsor' : 'Add a sponsor to this prize'}</Button></div> : null}
+                    </div>
+                    </ExpandableRow>
                   </div>
                 ) : null}
               </ExpandableRow>
@@ -710,7 +740,7 @@ function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice;
         slides={v.slides.map((s) => s.src)}
         packs={(first?.ticket_packs ?? []).filter((p) => p.price).map((p) => ({ label: plural(Number(p.tickets) || 0, 'ticket'), price: money(p.price) }))}
         dates={dates}
-        prizes={v.prizes.filter((p) => p.title).map((p) => ({ title: p.title, value: p.kind === 'fifty' ? fiftyValue(p) : p.value ? money(p.value) : undefined, image: p.image, sponsor: p.sponsor.name || p.sponsor.logo ? { name: p.sponsor.name, logo: p.sponsor.logo } : undefined }))}
+        prizes={v.prizes.filter((p) => p.title).map((p) => ({ title: p.title, ...(p.kind === 'fifty' ? fiftyCard(p) : { value: p.value ? money(p.value) : undefined }), image: p.image, sponsors: p.sponsors.filter((sp) => sp.name || sp.logo).map((sp) => ({ name: sp.name, logo: sp.logo })) }))}
         causeMedia={v.cause_media ? { kind: v.cause_media.kind, src: v.cause_media.src } : undefined}
         sponsor={v.presenting.logo ? { name: v.presenting.name, logo: v.presenting.logo, label: v.presenting.label.trim() || 'Presented by' } : undefined}
         sponsors={v.sponsors_tiered ? { tiers: v.sponsor_tiers.map((t) => ({ name: t.name, sponsors: v.sponsors.filter((x) => x.tier === t.id).map(logo) })) } : v.sponsors.map(logo)}

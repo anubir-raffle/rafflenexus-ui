@@ -958,10 +958,13 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-wsite-prize-media .rnc-icon { width: 44px; height: 44px; opacity: .85; }
 .rnc-wsite-prize-main { display: grid; align-content: start; gap: 4px; padding: 16px 18px; }
 .rnc-wsite-prize-title { font: 600 16px/1.35 var(--font-sans); color: #1d2b38; }
+.rnc-wsite-prize-label { font: 600 11px/1.3 var(--font-sans); letter-spacing: .04em; text-transform: uppercase; color: #5a6875; }
+.rnc-wsite-prize-note { font: 500 13px/1.4 var(--font-sans); color: #5a6875; }
 .rnc-wsite-prizes .rnc-wsite-prize-sponsor { margin: 0 18px; padding: 10px 0 14px; }
 /* A prize's sponsor: "Sponsored by" and its logo (or name), under the prize. */
 .rnc-wsite-prize-sponsor { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding-top: 10px; border-top: 1px solid #e3e9ef; font-weight: 500; font-size: 13px; color: #5a6875; }
 .rnc-wsite-prize-sponsor img { height: 22px; width: auto; max-width: 90px; object-fit: contain; }
+.rnc-wsite-prize-sponsor-item { display: inline-flex; align-items: center; gap: 6px; }
 .rnc-wsite-prizes b { font: 600 20px/1.2 var(--font-mono); color: var(--site-colour, #126ab5); white-space: nowrap; }
 .rnc-wsite-cause { max-width: 68ch; font-size: 17px; line-height: 1.6; color: #33414e; overflow-wrap: anywhere; }
 /* Where the money goes, with a photo or video: the text on the left, the media on the right; stacked on the phone preview. */
@@ -1098,15 +1101,16 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-xrow-toggle:hover { background: var(--surface-tint); }
 .rnc-xrow-toggle:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; }
 .rnc-xrow-chev { flex: none; color: var(--ink-muted); transition: transform .22s ease; }
-.rnc-xrow.is-open .rnc-xrow-chev { transform: rotate(90deg); }
+.rnc-xrow.is-open > .rnc-xrow-head .rnc-xrow-chev { transform: rotate(90deg); }
 .rnc-xrow-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 15px/1.3 var(--font-sans); }
 .rnc-xrow-meta { margin-left: auto; padding-left: 12px; white-space: nowrap; font: 500 13px/1.3 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
 .rnc-xrow-actions { display: flex; flex: none; gap: 4px; }
 .rnc-xrow-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .26s cubic-bezier(.2, .8, .2, 1); }
-.rnc-xrow.is-open .rnc-xrow-panel { grid-template-rows: 1fr; }
+/* Child combinators, so a row inside an open row keeps its own open or closed state. */
+.rnc-xrow.is-open > .rnc-xrow-panel { grid-template-rows: 1fr; }
 .rnc-xrow-panel > div { min-height: 0; overflow: hidden; }
 .rnc-xrow-inner { display: grid; gap: 16px; padding: 4px 16px 18px; }
-.rnc-xrow:not(.is-open) .rnc-xrow-panel > div { visibility: hidden; transition: visibility 0s .26s; }
+.rnc-xrow:not(.is-open) > .rnc-xrow-panel > div { visibility: hidden; transition: visibility 0s .26s; }
 /* A narrow row (a phone): the title may wrap, with what it holds (the value) under it, so it's never squeezed to nothing. */
 @container rnc-xrow (max-width: 440px) {
   .rnc-xrow-head { flex-wrap: wrap; padding: 4px 4px 4px 2px; }

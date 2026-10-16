@@ -51,3 +51,7 @@ p { color: var(--ink-body); }
 /* Sponsor logos without tiers: two to a row (one under about 330px). */
 .rnc-alist.demo-logo-grid { grid-template-columns: repeat(auto-fill, minmax(max(160px, calc((100% - 10px) / 2)), 1fr)); align-items: start; }
 .demo-logo-grid .rnc-sort-row { height: 100%; box-sizing: border-box; }
+
+/* A collapsible block inside an open row (a prize's sponsors): flat, ruled, no second shadow. */
+.demo-subrow.rnc-xrow { background: var(--ground); box-shadow: none; border: 1px solid var(--line); }
+.demo-subrow .rnc-xrow-inner { padding: 4px 12px 14px; }
