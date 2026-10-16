@@ -58,6 +58,8 @@ type Sponsor = { id: string; logo: string; alt: string; tier: string };
 type Tier = { id: string; name: string };
 /** A photo or a video for the cause, shown beside the cause text on the site. */
 type CauseMedia = { kind: 'image' | 'video'; src: string; name: string };
+/** A social link added on top of the five: a known network and its account name, or any other site with its name and address. */
+type SocialLink = { id: string; network: string; value: string; label?: string };
 /** The organization's social accounts: the part after the address (the app's support_socials). */
 type Presenting = { name: string; logo?: string; label: string };
 type Socials = { facebook?: string; instagram?: string; twitter?: string; youtube?: string; linkedin?: string };
@@ -71,6 +73,8 @@ type Brief = {
   slides: Slide[]; sales_open?: string; sales_close?: string; draw_at?: string; draw_location?: string; early_draws: Early[];
   ticket_pack_groups: Licence[]; prizes: Prize[]; client: { name: string; province: string };
   cause_media?: CauseMedia; support_socials: Socials;
+  /** More social links beyond the five above (Miguel, 2026-10-16: "give option to add social link"). */
+  social_links: SocialLink[];
   /** Sponsors, plain or in tiers. */
   sponsors: Sponsor[]; sponsors_tiered: boolean; sponsor_tiers: Tier[];
   /** An optional presenting sponsor beside the raffle's logo: its own logo, its name (the alt text) and the wording before it. */
@@ -147,6 +151,7 @@ const START: Brief = {
     { id: 'z4', kind: 'early', early_draw: 'e1', title: '$5,000 cash', value: '5000', description: '<p>Paid by cheque within 30 days of the early draw.</p>', sponsors: [] },
     { id: 'z3', title: '$10,000 cash', value: '10000', description: '<p>Paid by cheque within 30 days of the draw.</p>', sponsors: [] },
   ],
+  social_links: [],
   support_socials: { facebook: 'samplehospital', instagram: 'samplehospital', twitter: 'samplehospital', youtube: '@samplehospital', linkedin: 'company/samplehospital' },
   sponsors: [
     { id: 'sp1', logo: badge('SAMPLE CREDIT UNION', '#13324f'), alt: 'Sample Credit Union', tier: 't1' },
@@ -165,7 +170,7 @@ const set = (field: string) => (args: unknown[], state: any, utils: any) => util
 const MUTATORS = {
   setSlides: set('slides'), setLicences: set('ticket_pack_groups'), setPrizes: set('prizes'), setEarlyDraws: set('early_draws'),
   setLogo: set('logo'), setSharingImage: set('sharing_image'), setSubDomainType: set('sub_domain_type'), setColours: set('colours'),
-  setCauseMedia: set('cause_media'), setSponsors: set('sponsors'), setTiers: set('sponsor_tiers'), setTiered: set('sponsors_tiered'), setRules: set('rules'), setRulesHtml: set('rules_html'), setPresenting: set('presenting'),
+  setCauseMedia: set('cause_media'), setSponsors: set('sponsors'), setTiers: set('sponsor_tiers'), setTiered: set('sponsors_tiered'), setRules: set('rules'), setRulesHtml: set('rules_html'), setSocialLinks: set('social_links'), setPresenting: set('presenting'),
 };
 
 // The app's rules for the web address: a Raffle Nexus name, or a whole domain.
@@ -249,6 +254,18 @@ const toHandle = (raw: string, s: (typeof SOCIALS)[number]) => {
   for (const host of [s.host, s.also].filter(Boolean) as string[]) if (x.toLowerCase().startsWith(host)) x = x.slice(host.length);
   return x.replace(/\/+$/, '');
 };
+// Networks offered for an added social link; Other takes any address.
+const MORE_SOCIALS: { key: string; label: string; host?: string }[] = [
+  { key: 'tiktok', label: 'TikTok', host: 'tiktok.com/@' }, { key: 'threads', label: 'Threads', host: 'threads.net/@' },
+  { key: 'bluesky', label: 'Bluesky', host: 'bsky.app/profile/' }, { key: 'pinterest', label: 'Pinterest', host: 'pinterest.com/' },
+  { key: 'other', label: 'Other' },
+];
+const linkHref = (l: SocialLink) => { const n = MORE_SOCIALS.find((x) => x.key === l.network); return n?.host ? `https://${n.host}${l.value}` : l.value; };
+const linkError = (l: SocialLink) => {
+  if (!l.value.trim()) return undefined;
+  if (l.network === 'other') return !/^https:\/\/[^\s.]+\.[^\s]+$/i.test(l.value.trim()) ? 'Enter the full address, starting https://' : !l.label?.trim() ? 'Name the link' : undefined;
+  return !HANDLE.test(l.value) ? 'Use just the account name' : undefined;
+};
 const socialError = (v?: string) => (v && !HANDLE.test(v) ? 'Use just the account name, like the part after the address' : undefined);
 const sponsorNameError = (sp: PrizeSponsor) => ((sp.logo || sp.description.trim()) && !sp.name.trim() ? 'Name the sponsor' : undefined);
 const prizeSponsorError = (p: Prize) => (p.sponsors.some(sponsorNameError) ? 'Name every sponsor' : undefined);
@@ -261,6 +278,7 @@ const errs = {
     ...(!v.logo && { logo: 'Add your logo' }),
     ...(rules.support_email(v.support_email) && { support_email: rules.support_email(v.support_email) }),
     ...(SOCIALS.some((x) => socialError(v.support_socials[x.key])) && { socials: 'Fix the social account names' }),
+    ...(v.social_links.some(linkError) && { social_links: 'Fix the added social links' }),
   }),
   sponsors: (v: Brief) => ({
     // Sponsors are optional (Miguel, 2026-10-16): a blank one (no logo, no name) is skipped; a started one needs both.
@@ -1010,7 +1028,10 @@ function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice;
         causeMedia={v.cause_media ? { kind: v.cause_media.kind, src: v.cause_media.src } : undefined}
         sponsor={v.presenting.logo ? { name: v.presenting.name, logo: v.presenting.logo, label: v.presenting.label.trim() || 'Presented by' } : undefined}
         sponsors={v.sponsors_tiered ? { tiers: v.sponsor_tiers.map((t) => ({ name: t.name, sponsors: v.sponsors.filter((x) => x.tier === t.id && x.logo).map(logo) })) } : v.sponsors.filter((x) => x.logo).map(logo)}
-        socials={SOCIALS.filter((x) => v.support_socials[x.key]).map((x) => ({ label: x.label.split(' ')[0], href: `https://${x.host}${v.support_socials[x.key]}` }))}
+        socials={[
+          ...SOCIALS.filter((x) => v.support_socials[x.key]).map((x) => ({ label: x.label.split(' ')[0], href: `https://${x.host}${v.support_socials[x.key]}` })),
+          ...v.social_links.filter((l) => l.value.trim() && !linkError(l)).map((l) => ({ label: l.network === 'other' ? (l.label || 'Link') : MORE_SOCIALS.find((x) => x.key === l.network)!.label, href: linkHref(l) })),
+        ]}
         licence={numbers.length ? `${v.client.province} Gaming Event Licence #${numbers.join(', #')}` : undefined}
         badge={numbers.length ? { province: v.client.province as LicenceProvince, licences: numbers.map((n) => ({ number: n })) } : undefined}
       />
@@ -1139,6 +1160,29 @@ export function WizardDemo() {
                         error={meta.error && meta.touched ? meta.error : undefined} />}
                     </Field>
                   ))}
+                  {/* Links added on top of the five (Miguel, 2026-10-16). */}
+                  <AnimatedList aria-label="More social links" items={v.social_links} getKey={(l) => l.id} renderItem={(l, k) => {
+                    const net = MORE_SOCIALS.find((x) => x.key === l.network);
+                    const set = (change: Partial<SocialLink>) => m.setSocialLinks(patch(v.social_links, l.id, change));
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                        <div style={{ flex: 1, minWidth: 0, display: 'grid', gap: 12 }}>
+                          <div style={grid(160)}>
+                            <Select label="Network" disabled={ro} value={l.network} options={MORE_SOCIALS.map((x) => ({ value: x.key, label: x.label }))} onChange={(e) => set({ network: e.target.value, value: '' })} />
+                            {l.network === 'other' ? (
+                              <TextField label="Link name" value={l.label ?? ''} review={ro} maxLength={30} onChange={(e) => set({ label: e.target.value })} />
+                            ) : null}
+                          </div>
+                          <TextField label={l.network === 'other' ? 'Address' : `${net?.label ?? ''} account`} prefix={net?.host} value={l.value} review={ro} maxLength={l.network === 'other' ? 200 : LIMIT.social} showCount={false}
+                            inputMode={l.network === 'other' ? 'url' : 'text'} error={linkError(l)}
+                            onChange={(e) => { let x = e.target.value; if (net?.host) x = x.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(net.host, ''); set({ value: x.trim() }); }} />
+                        </div>
+                        {!ro && k > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove the ${l.network === 'other' ? (l.label || 'added') : net?.label} link`} style={{ marginTop: 30 }}
+                          onClick={() => m.setSocialLinks(v.social_links.filter((x) => x.id !== l.id))} /> : null}
+                      </div>
+                    );
+                  }} />
+                  {!ro ? <div><Button variant="secondary" size="sm" startIcon="plus" onClick={() => m.setSocialLinks([...v.social_links, { id: uid('sl'), network: 'tiktok', value: '' }])}>Add a social link</Button></div> : null}
                 </div>
               </WizardSection>
             </>
