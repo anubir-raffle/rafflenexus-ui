@@ -1150,6 +1150,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-upload.is-md .rnc-upload-swap, .rnc-upload.is-lg .rnc-upload-swap { width: 100%; }
 .rnc-upload.is-md .rnc-upload-swap { width: min(100%, 320px); }
 .rnc-upload-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.rnc-upload-zone:has(> .rnc-upload-remove) { padding-bottom: 44px; }
 .rnc-upload-remove.rnc-btn { position: absolute; right: 6px; bottom: 6px; color: var(--ink-muted); transition: color .2s ease, background-color .2s ease; }
 .rnc-upload-remove.rnc-btn:hover { color: var(--error); background: var(--error-soft); }
 .rnc-upload-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
