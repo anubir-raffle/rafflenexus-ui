@@ -1110,7 +1110,7 @@ export function WizardDemo() {
                 </Field>
                 {/* Optional: shown beside the cause text on the site (Miguel, 2026-10-16). */}
                 <UploadTile label="Cause photo or video (optional)" hint="Shown beside the cause. A photo at 1600 × 1200 (at least 800 × 600) or a short video in MP4 or WebM up to 50 MB."
-                  accept="image/*,video/mp4,video/webm" minWidth={800} minHeight={600} maxBytes={50 * 1024 * 1024} src={v.cause_media?.src} kind={v.cause_media?.kind} preview="lg" alt="The cause photo" disabled={ro}
+                  accept="image/*,video/mp4,video/webm" minWidth={800} minHeight={600} maxBytes={50 * 1024 * 1024} src={v.cause_media?.src} kind={v.cause_media?.kind} preview="md" alt="The cause photo" disabled={ro}
                   onFile={(f, url) => m.setCauseMedia({ kind: f.type.startsWith('video/') ? 'video' : 'image', src: url, name: f.name })} onRemove={() => m.setCauseMedia(undefined)} />
               </WizardSection>
               <WizardSection title="Branding" description="Your logo, the image shown when the site is shared, and the site's colours.">

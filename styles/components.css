@@ -1135,11 +1135,20 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-upload-zone img { display: block; max-width: 100%; max-height: 120px; object-fit: contain; }
 .rnc-upload-zone video { display: block; max-width: 100%; max-height: 140px; border-radius: 6px; background: #000000; }
 .rnc-upload.is-lg .rnc-upload-zone img, .rnc-upload.is-lg .rnc-upload-zone video { width: 100%; max-height: none; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; }
+.rnc-upload.is-md .rnc-upload-zone img, .rnc-upload.is-md .rnc-upload-zone video { width: min(100%, 320px); max-height: none; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; }
 /* A document (a PDF): its icon and file name instead of a picture. */
 .rnc-upload-file { display: inline-flex; align-items: center; gap: 10px; max-width: 100%; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
 .rnc-upload-file .rnc-icon { flex: none; color: var(--action); }
 /* Only the empty tile's picture icon: the Remove button's trash icon takes the button's colour and size. */
 .rnc-upload-zone > .rnc-icon { width: 28px; height: 28px; color: var(--action); }
+.rnc-upload-swap { position: relative; display: grid; place-items: center; max-width: 100%; padding: 0; border: 0; border-radius: 8px; background: none; cursor: pointer; overflow: hidden; }
+.rnc-upload-swap:disabled { cursor: default; }
+.rnc-upload-swap:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.rnc-upload-swap-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 6px; background: rgb(15 42 68 / .72); color: #ffffff; font: 600 13px/1 var(--font-sans); opacity: 0; transition: opacity .2s ease; }
+.rnc-upload-swap:hover:not(:disabled) .rnc-upload-swap-label, .rnc-upload-swap:focus-visible .rnc-upload-swap-label { opacity: 1; }
+@media (hover: none) { .rnc-upload-swap-label { top: auto; height: 24px; font-size: 11px; opacity: .9; } }
+.rnc-upload.is-md .rnc-upload-swap, .rnc-upload.is-lg .rnc-upload-swap { width: 100%; }
+.rnc-upload.is-md .rnc-upload-swap { width: min(100%, 320px); }
 .rnc-upload-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .rnc-upload-remove.rnc-btn { position: absolute; right: 6px; bottom: 6px; color: var(--ink-muted); transition: color .2s ease, background-color .2s ease; }
 .rnc-upload-remove.rnc-btn:hover { color: var(--error); background: var(--error-soft); }

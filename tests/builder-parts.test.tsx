@@ -149,6 +149,8 @@ describe('UploadTile', () => {
     expect(container.querySelector('.rnc-upload')).not.toHaveClass('is-lg');
     rerender(<UploadTile label="Cause" preview="lg" src="data:image/png;base64,AAAA" onFile={() => {}} />);
     expect(container.querySelector('.rnc-upload')).toHaveClass('is-lg');
+    rerender(<UploadTile label="Cause" preview="md" src="data:image/png;base64,AAAA" onFile={() => {}} />);
+    expect(container.querySelector('.rnc-upload')).toHaveClass('is-md');
   });
 
   it('refuses a file that is too large, in words', async () => {

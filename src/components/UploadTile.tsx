@@ -18,10 +18,10 @@ export interface UploadTileProps {
   fileName?: ReactNode;
   alt?: string;
   /**
-   * How big the chosen picture or video shows. "sm" (default) is a thumbnail. "lg" fills the tile's width at 4:3, cropped the way
-   * a site shows a photo, for pictures people need to judge (a cause photo).
+   * How big the chosen picture or video shows. "sm" (default) is a thumbnail. "md" is 4:3 up to 320 px wide, cropped the way a site
+   * shows a photo. "lg" fills the tile's width at 4:3.
    */
-  preview?: 'sm' | 'lg';
+  preview?: 'sm' | 'md' | 'lg';
   /** Default "image/*". Add video types (e.g. "image/*,video/mp4,video/webm") to take videos too. */
   accept?: string;
   /**
@@ -77,7 +77,7 @@ export function UploadTile({
   const drop = (e: DragEvent) => { e.preventDefault(); setOver(false); void take(e.dataTransfer.files?.[0]); };
   const shown = error ?? problem;
   return (
-    <div className={cx('rnc-upload', preview === 'lg' && 'is-lg')}>
+    <div className={cx('rnc-upload', preview !== 'sm' && `is-${preview}`)}>
       <span className="rnc-field-label" id={`${id}-l`}>{label}</span>
       {/* Always four parts (label, hint, tile, message), so tiles side by side line up on a shared grid. */}
       {hint ? <span className="rnc-field-hint" id={`${id}-h`}>{hint}</span> : <span aria-hidden="true" />}
@@ -91,11 +91,22 @@ export function UploadTile({
           const shownKind = kind ?? (src.startsWith('data:video') ? 'video' : 'image');
           if (shownKind === 'video') return <video src={src} key={src} muted playsInline controls preload="metadata" aria-label={alt || 'Uploaded video'} />;
           if (shownKind === 'file') return <span className="rnc-upload-file" key={src}><Icon name="clipboard-text" size={28} /><span>{fileName ?? 'File added'}</span></span>;
-          return <img src={src} alt={alt} key={src} />;
+          // An image is its own Replace button: "Replace" fades in over it on hover and focus (Miguel, 2026-10-16: "click to replace").
+          return (
+            <button type="button" className="rnc-upload-swap" key={src} disabled={disabled} aria-label={replaceLabel} aria-describedby={`${id}-l`} onClick={() => input.current?.click()}>
+              <img src={src} alt={alt} />
+              <span className="rnc-upload-swap-label" aria-hidden="true"><Icon name="upload-simple" size={16} />{replaceLabel}</span>
+            </button>
+          );
         })() : <><Icon name={/image|video/.test(accept) ? 'image' : 'clipboard-text'} size={28} /><span>Drop a file here, or</span></>}
-        <span className="rnc-upload-actions">
-          <Button variant="secondary" size="sm" disabled={disabled} aria-describedby={`${id}-l`} onClick={() => input.current?.click()}>{src ? replaceLabel : chooseLabel}</Button>
-        </span>
+        {(() => {
+          const isImage = !!src && (kind ?? (src.startsWith('data:video') ? 'video' : 'image')) === 'image';
+          return isImage ? null : (
+            <span className="rnc-upload-actions">
+              <Button variant="secondary" size="sm" disabled={disabled} aria-describedby={`${id}-l`} onClick={() => input.current?.click()}>{src ? replaceLabel : chooseLabel}</Button>
+            </span>
+          );
+        })()}
         {/* Remove is quiet: a trash icon in the corner (Miguel, 2026-10-16: "make remove or delete buttons less emphasized"). */}
         {src && onRemove ? <Button className="rnc-upload-remove" variant="ghost" size="sm" iconOnly startIcon="trash" disabled={disabled} aria-label={removeLabel} aria-describedby={`${id}-l`} onClick={onRemove} /> : null}
         <input ref={input} className="rnc-upload-input" type="file" accept={accept} tabIndex={-1} aria-hidden="true" onChange={(e) => { void take(e.target.files?.[0]); e.target.value = ''; }} />
