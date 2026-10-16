@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- The demo's sponsors are optional: a blank sponsor is skipped, a started one needs a logo and a name.
+- The demo's Rules of play shows the standard rules as the site will (the platform's wording, filled from the form: province, age, licences and packs with their pools, 50/50, early draws, dates, location, winners page, contacts, regulator). "Edit the rules" opens them in the rich text editor with tokens in braces ({draw date}, {licences and packs}…), so edited rules still follow the form; "Go back to the standard rules" undoes the edit. An uploaded PDF still replaces both.
+
 ## 0.7.4 (2026-10-16)
 
 - `AnimatedList` / `SortableList`: items only slide when the list itself changes (a move, an add, a removal, a drop). A row opening above them, or a field growing, no longer sets off a slide, so expanding an `ExpandableRow` inside a list stays steady.

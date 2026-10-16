@@ -7,7 +7,7 @@ import {
 } from '../src/wizard';
 import {
   AnimatedList, BrandColours, Button, DomainField, SegmentedControl, ExpandableRow, Icon, RichText, RichTextArea, Select, SortableList, StatusPill, Switch, TextArea, TextField, UploadTile,
-  domainUrl, richTextLength, richTextToPlain, type BrandColourSet, type DomainType, type LicenceProvince,
+  LICENCE_PROVINCES, domainUrl, richTextLength, richTextToPlain, type BrandColourSet, type DomainType, type LicenceProvince,
 } from '../src';
 import { DatePicker } from '../src/inputs';
 
@@ -77,6 +77,8 @@ type Brief = {
   presenting: Presenting;
   /** The organization's own rules of play (a PDF). Without it, the standard rules for the province are used. */
   rules?: { name: string; src: string };
+  /** The standard rules, edited by the organization (simple HTML). Unset: the standard rules, built from the form (Miguel, 2026-10-16). */
+  rules_html?: string;
   /** The site's colours, picked from the logo (the app's leading_color is the primary). */
   colours: BrandColourSet;
 };
@@ -163,7 +165,7 @@ const set = (field: string) => (args: unknown[], state: any, utils: any) => util
 const MUTATORS = {
   setSlides: set('slides'), setLicences: set('ticket_pack_groups'), setPrizes: set('prizes'), setEarlyDraws: set('early_draws'),
   setLogo: set('logo'), setSharingImage: set('sharing_image'), setSubDomainType: set('sub_domain_type'), setColours: set('colours'),
-  setCauseMedia: set('cause_media'), setSponsors: set('sponsors'), setTiers: set('sponsor_tiers'), setTiered: set('sponsors_tiered'), setRules: set('rules'), setPresenting: set('presenting'),
+  setCauseMedia: set('cause_media'), setSponsors: set('sponsors'), setTiers: set('sponsor_tiers'), setTiered: set('sponsors_tiered'), setRules: set('rules'), setRulesHtml: set('rules_html'), setPresenting: set('presenting'),
 };
 
 // The app's rules for the web address: a Raffle Nexus name, or a whole domain.
@@ -261,8 +263,9 @@ const errs = {
     ...(SOCIALS.some((x) => socialError(v.support_socials[x.key])) && { socials: 'Fix the social account names' }),
   }),
   sponsors: (v: Brief) => ({
-    ...(v.sponsors.some((x) => !x.logo) && { sponsor_logo: 'Add a logo for every sponsor' }),
-    ...(v.sponsors.some((x) => !x.alt.trim()) && { sponsor_alt: 'Describe every sponsor logo (alt text): usually the sponsor’s name' }),
+    // Sponsors are optional (Miguel, 2026-10-16): a blank one (no logo, no name) is skipped; a started one needs both.
+    ...(v.sponsors.some((x) => !x.logo && x.alt.trim()) && { sponsor_logo: 'Add a logo for every sponsor you named' }),
+    ...(v.sponsors.some((x) => x.logo && !x.alt.trim()) && { sponsor_alt: 'Describe every sponsor logo (alt text): usually the sponsor’s name' }),
     ...(v.sponsors_tiered && v.sponsor_tiers.some((t) => !t.name.trim()) && { tier_names: 'Name every tier' }),
     ...(v.sponsors_tiered && v.sponsors.some((x) => !v.sponsor_tiers.some((t) => t.id === x.tier)) && { tier_pick: 'Put every sponsor in a tier' }),
     ...(v.presenting.logo && !v.presenting.name.trim() && { presenting_name: 'Name the presenting sponsor' }),
@@ -666,7 +669,7 @@ function ImageSwap({ src, name, kind = 'logo', minWidth, minHeight, disabled, on
     r.readAsDataURL(file);
   };
   const cls = `demo-swap is-${kind}`;
-  if (disabled) return <span className={`${cls} is-static`}><img src={src} alt="" /></span>;
+  if (disabled) return <span className={`${cls} is-static${src ? '' : ' is-empty'}`}>{src ? <img src={src} alt="" /> : null}</span>;
   return (
     <span className="demo-swap-wrap">
       {src ? (
@@ -772,7 +775,7 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
 
   return (
     <>
-      <WizardSection title="Sponsor logos" description="Shown on your raffle site under “Thank you to our sponsors”. Logos only, in the order here. Give each logo alt text: usually the sponsor’s name.">
+      <WizardSection title="Sponsor logos (optional)" description="Shown on your raffle site under “Thank you to our sponsors”. Logos only, in the order here. Give each logo alt text: usually the sponsor’s name.">
         <Switch label="Group sponsors into tiers" checked={v.sponsors_tiered} disabled={ro} onChange={setTiered} />
         {v.sponsors_tiered ? (
           <>
@@ -870,6 +873,109 @@ function EarlyDraws({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) 
 }
 
 const address = (v: Brief) => (v.sub_domain ? domainUrl(v.sub_domain_type, v.sub_domain).replace('https://', '') : '');
+
+/** Minimum age and time zone by province, for the rules. */
+const PROVINCE_RULES: Record<string, { age: number; tz: string }> = {
+  BC: { age: 19, tz: 'Pacific time' }, AB: { age: 18, tz: 'Mountain time' }, SK: { age: 19, tz: 'Central time' }, MB: { age: 18, tz: 'Central time' }, ON: { age: 18, tz: 'Eastern time' },
+};
+const escapeHtml = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const ordinal = (n: number) => `${n}${['th', 'st', 'nd', 'rd'][n % 100 > 10 && n % 100 < 14 ? 0 : n % 10 < 4 ? n % 10 : 0]}`;
+
+/**
+ * The standard rules of play as a template, from the platform's current wording (Miguel, 2026-10-16). Data that changes is a token
+ * in braces ("perhaps use tokens for data that should be dynamic"), filled from the form by `fillRules`, so the rules follow the
+ * form even after the organization edits the wording. A paragraph that's all bold is a section heading, numbered when shown; a
+ * block token on a line of
+ * its own (e.g. {licences and packs}) becomes several lines, or nothing (a 50/50 section only when there's a 50/50 prize).
+ */
+const RULES_TEMPLATE = [
+  '<p><strong>Tickets</strong></p>',
+  '<p>Tickets may be sold and purchased only in {province}.</p>',
+  '<p>Ticket purchasers must be {minimum age} years of age or older.</p>',
+  '<p><strong>Raffle</strong></p>',
+  '<p>{licences and packs}</p>',
+  '<p>{50/50 section}</p>',
+  '<p><strong>Important Dates &amp; Draw Information</strong></p>',
+  '<p>{early draws}</p>',
+  '<p><em>Deadline</em></p>',
+  '<p>Final ticket sales deadline: {sales close}</p>',
+  '<p><em>Draw</em></p>',
+  '<p>Prize draw: {draw date}</p>',
+  '<p>{prize draws}</p>',
+  '<p>If for some reason, the draw cannot take place on the draw date listed, a substitute draw date and time will be selected. All ticket purchasers will be able to see the amended draw date and time information posted on the same website the ticket was purchased.</p>',
+  '<p>Draw will be held at {draw location}.</p>',
+  '<p>The winning ticket is drawn using Random Number Generator software (RNG).</p>',
+  '<p>All ticket holders are welcome to attend the draw.</p>',
+  '<p>Winners will be posted online at {winners page}.</p>',
+  '<p><strong>Winner</strong></p>',
+  '<p>Winner will be contacted by phone by {organization}.</p>',
+  '<p>Winners consent to release of their names by licensee.</p>',
+  "<p>If a winning ticket bears a minor's name, the prize will be lawfully delivered to the minor's parent, legal guardian or trustee.</p>",
+  '<p>No tickets will be purchased by the Board of Directors of {organization} or employees involved with the conduct and management of the ticket raffle.</p>',
+  '<p><strong>Privacy</strong></p>',
+  '<p>{organization} does not sell, rent or exchange any personal information collected from our supporters with any other organization or entity.</p>',
+  '<p><strong>Complaints</strong></p>',
+  '<p>Any complaints can be directed to the raffle administrators by emailing: {support email}. Administrators will review the complaint and take action if necessary.</p>',
+  '<p><strong>Delay in Draw</strong></p>',
+  '<p>Should a delay occur in the draw time on draw day, every effort will be made to make the draw as soon as possible. Should an alternate day need to be announced, after approval by the {regulator}, all ticket purchasers will be notified via email.</p>',
+  '<p><strong>Other</strong></p>',
+  '<p>Please email our team at {support email} should you require a refund for any ticket purchases or would like to issue a complaint, and we would be happy to assist you.</p>',
+].join('');
+
+/** The tokens, for the editor's hint. */
+const RULES_TOKENS = ['organization', 'support email', 'province', 'minimum age', 'regulator', 'licences and packs', '50/50 section', 'early draws', 'sales close', 'draw date', 'prize draws', 'draw location', 'winners page'];
+
+/** Fills the rules' tokens from the form. Missing details show in brackets, so the review shows what's still to come. */
+function fillRules(html: string, v: Brief) {
+  const prov = LICENCE_PROVINCES[v.client.province as LicenceProvince] ?? LICENCE_PROVINCES.BC;
+  const extra = PROVINCE_RULES[v.client.province] ?? PROVINCE_RULES.BC;
+  const at = (d?: string) => (isDate(d) ? `${moment(d).format('MMMM D, YYYY [at] h:mm a')} ${extra.tz}` : '[date not set]');
+  const price = (x: string) => `$${(Number(x) || 0).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const p = (t: string) => `<p>${escapeHtml(t)}</p>`;
+  const em = (t: string) => `<p><em>${escapeHtml(t)}</em></p>`;
+  const fifty = v.prizes.find((x) => x.kind === 'fifty');
+  const blocks: Record<string, string> = {
+    'licences and packs': v.ticket_pack_groups.map((g) => [
+      em(`${prov.licenceLabel} #${g.licence_number || '[licence number]'}`),
+      ...g.ticket_packs.filter((pk) => pk.tickets).map((pk) => p(`${pk.tickets} for ${price(pk.price)}; ${g.unlimited ? 'unlimited' : pk.pool ? Number(pk.pool).toLocaleString('en-CA') : '[pool not set]'} tickets`)),
+      ...(g.max_tickets ? [p(`Maximum tickets overall: ${Number(g.max_tickets).toLocaleString('en-CA')}.`)] : []),
+    ].join('')).join(''),
+    '50/50 section': fifty ? [
+      '<p><strong>50/50</strong></p>',
+      p(fiftyPct(fifty) === '50' ? 'The 50/50 is a draw where the money received in ticket sales is divided evenly between the winner and the charity.'
+        : `The 50/50 is a draw where ${fiftyPct(fifty)}% of the money received in ticket sales goes to the winner and the rest to the charity.`),
+      ...(fifty.split ? [p(`The winners' share is split between ${fifty.splits?.length ?? 0} winning tickets: ${(fifty.splits ?? []).map((w, i) => `${ordinal(i + 1)} ${w.pct || 0}% of the pot`).join(', ')}.`)] : []),
+    ].join('') : '',
+    'early draws': v.early_draws.map((d, i) => {
+      const name = d.name.trim() || `Early draw ${i + 1}`;
+      return em(`${name} deadline`) + p(`${name} ticket sales deadline: ${at(d.cutoff)}`) + p(`${name} draw: ${at(d.date)}`);
+    }).join(''),
+    'prize draws': v.prizes.filter((x) => x.kind !== 'early' && isDate(x.draw_at) && x.title).map((x) => p(`${x.title} draw: ${at(x.draw_at)}`)).join(''),
+  };
+  const words: Record<string, string> = {
+    organization: v.client.name || '[organization]', 'support email': v.support_email || '[support email]', province: prov.name, 'minimum age': String(extra.age),
+    regulator: prov.regulator, 'sales close': at(v.sales_close), 'draw date': at(v.draw_at), 'draw location': v.draw_location?.trim() || '[draw location]',
+    'winners page': `https://${address(v) || '[your site]'}/winners`,
+  };
+  let out = html.replace(/<p>\s*\{([^}]+)\}\s*<\/p>/g, (all, k: string) => (k in blocks ? blocks[k] : all));
+  out = out.replace(/\{([^}]+)\}/g, (all, k: string) => (k in words ? escapeHtml(words[k]) : k in blocks ? blocks[k].replace(/<\/?p>/g, ' ') : all));
+  // A paragraph that's all bold is a section heading: number them in order (the 50/50 section only counts when it's there).
+  let n = 0;
+  return out.replace(/<p><strong>([^<]+)<\/strong><\/p>/g, (_all, t: string) => `<p><strong>${++n}. ${t}</strong></p>`);
+}
+
+/** The rules as the site shows them, in a scrolling document. */
+function RulesPreview({ html, title }: { html: string; title: string }) {
+  return (
+    <section className="demo-rules" aria-label={title}>
+      <p className="demo-rules-head">{title}</p>
+      <div className="demo-rules-doc" tabIndex={0}>
+        <h3>Rules of Play</h3>
+        <RichText html={html} />
+      </div>
+    </section>
+  );
+}
 
 /** Everything the raffle site shows, from the brief so far. */
 function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice; onDevice: (d: PreviewDevice) => void }) {
@@ -1063,20 +1169,36 @@ export function WizardDemo() {
         <Wizard.Page label="Prizes" summary={(v) => plural(v.prizes.length, 'prize')} description="Every prize, with a value and a description." validate={errs.prizes}>
           {(m, v) => <Prizes v={v} m={m} ro={ro} />}
         </Wizard.Page>
-        <Wizard.Page label="Sponsors" summary={(v) => (v.sponsors.length ? `${plural(v.sponsors.length, 'sponsor')}${v.sponsors_tiered ? ` in ${plural(v.sponsor_tiers.length, 'tier')}` : ''}` : 'None')} description="The businesses supporting your raffle, shown as logos on your site." validate={errs.sponsors}>
+        <Wizard.Page label="Sponsors" summary={(v) => (v.sponsors.length ? `${plural(v.sponsors.length, 'sponsor')}${v.sponsors_tiered ? ` in ${plural(v.sponsor_tiers.length, 'tier')}` : ''}` : 'None')} description="Optional. The businesses supporting your raffle, shown as logos on your site." validate={errs.sponsors}>
           {(m, v) => <Sponsors v={v} m={m} ro={ro} />}
         </Wizard.Page>
         {/* Every province: the standard rules are used unless the organization uploads its own (Miguel, 2026-10-16). */}
-        <Wizard.Page label="Rules of play" summary={(v) => (v.rules ? 'Your own rules' : 'Standard rules')} description="The rules your raffle runs by, linked from every page of your site.">
+        <Wizard.Page label="Rules of play" summary={(v) => (v.rules ? 'Your own rules' : v.rules_html ? 'Standard rules, edited' : 'Standard rules')} description="The rules your raffle runs by, linked from every page of your site.">
           {(m, v) => (
             <WizardSection title="Rules of play" description="We use our standard rules of play unless you upload your own.">
               <p style={{ margin: 0, display: 'flex', gap: 8, alignItems: 'center', color: 'var(--ink-body)' }}>
                 <Icon name="check-circle" size={18} style={{ color: 'var(--verified)' }} />
-                {v.rules ? `Using your own rules: ${v.rules.name}` : 'Using the standard rules of play.'}
+                {v.rules ? `Using your own rules: ${v.rules.name}` : v.rules_html ? 'Using the standard rules of play, edited.' : 'Using the standard rules of play.'}
               </p>
               <UploadTile label="Your own rules (optional)" hint="A PDF, up to 10 MB. Remove it to go back to the standard rules." accept="application/pdf" maxBytes={10 * 1024 * 1024}
                 kind="file" src={v.rules?.src} fileName={v.rules?.name} disabled={ro}
                 onFile={(f, url) => m.setRules({ name: f.name, src: url })} onRemove={() => m.setRules(undefined)} />
+              {/* The standard rules, to review and edit, unless they've uploaded their own (Miguel, 2026-10-16). Tokens in braces fill from
+                  the form, so even edited rules stay up to date. */}
+              {v.rules ? null : v.rules_html !== undefined ? (
+                <div style={{ display: 'grid', gap: 12 }}>
+                  <RichTextArea label="Your rules of play" hint={`Words in braces fill in from your form, so the rules stay up to date: ${RULES_TOKENS.map((t) => `{${t}}`).join(', ')}.`}
+                    value={v.rules_html} review={ro} showCount={false} minHeight={420} onChange={(html) => m.setRulesHtml(html)} />
+                  {!ro ? <div><Button variant="ghost" size="sm" onClick={() => m.setRulesHtml(undefined)}>Go back to the standard rules</Button></div> : null}
+                  <RulesPreview html={fillRules(v.rules_html, v as Brief)} title="How your rules read on your site" />
+                </div>
+              ) : (
+                <>
+                  <RulesPreview html={fillRules(RULES_TEMPLATE, v as Brief)} title="The standard rules of play, as your site will show them" />
+                  <p className="rnc-field-hint" style={{ margin: 0 }}>Built from this form: change a date, a pack or a contact and the rules follow. Bracketed text fills in when you complete its step.</p>
+                  {!ro ? <div><Button variant="secondary" size="sm" onClick={() => m.setRulesHtml(RULES_TEMPLATE)}>Edit the rules</Button></div> : null}
+                </>
+              )}
             </WizardSection>
           )}
         </Wizard.Page>
@@ -1089,7 +1211,7 @@ export function WizardDemo() {
               { label: 'Licences and tickets', step: 3, complete: !messages(errs.licences(v)).length, summary: v.ticket_pack_groups.map((g) => `#${g.licence_number || '(no number)'}: ${g.ticket_packs.map(packName).join(', ') || 'no packs'} ${[g.unlimited && 'unlimited tickets', g.max_tickets && `up to ${Number(g.max_tickets).toLocaleString('en-CA')} tickets overall`].filter(Boolean).join(', ').replace(/^(.+)$/, ' ($1)')}`).join('. '), issues: messages(errs.licences(v)) },
               { label: 'Prizes', step: 4, complete: !messages(errs.prizes(v)).length, summary: v.prizes.map((p) => p.title || 'New prize').join(', '), issues: messages(errs.prizes(v)) },
               { label: 'Sponsors', step: 5, complete: !messages(errs.sponsors(v)).length, summary: `${v.sponsors.length ? `${plural(v.sponsors.length, 'sponsor logo')}${v.sponsors_tiered ? `, in ${plural(v.sponsor_tiers.length, 'tier')}` : ''}.` : 'No sponsor logos.'}${v.presenting.logo ? ` ${v.presenting.label.trim() || 'Presented by'} ${v.presenting.name || 'a sponsor'}.` : ''}`, issues: messages(errs.sponsors(v)) },
-              { label: 'Rules of play', step: 6, complete: true, summary: v.rules ? `Your own rules (${v.rules.name}).` : 'The standard rules of play.', issues: [] },
+              { label: 'Rules of play', step: 6, complete: true, summary: v.rules ? `Your own rules (${v.rules.name}).` : v.rules_html ? 'The standard rules of play, edited.' : 'The standard rules of play.', issues: [] },
             ]} />
           )}
         </Wizard.Page>
