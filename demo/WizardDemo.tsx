@@ -375,8 +375,8 @@ function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
           action={i > -1 ? <Switch label="Unlimited tickets" checked={g.unlimited} disabled={ro} onChange={(on) => m.setLicences(patch(list, g.id, { unlimited: on }))} /> : null}>
           {i > -1 ? (
             <>
-              {/* One column, so the fields line up whatever their hints. */}
-              <div style={{ display: 'grid', gap: 16, maxWidth: 560 }}>
+              {/* Side by side when there's room (the preview hidden), one column beside the preview. Both have a one-line hint, so the inputs line up. */}
+              <div style={grid(260)}>
                 <ItemText id={`${g.id}-number`} label="Licence number" hint="As it appears on your licence." value={g.licence_number} readOnly={ro} maxLength={LIMIT.licence} showCount={false}
                   check={(x) => rules.licence(x) ?? (list.some((o) => o.id !== g.id && o.licence_number === x) ? "This licence number is already entered" : undefined)} onValue={(x) => m.setLicences(patch(list, g.id, { licence_number: x }))} />
                 <ItemText label="Maximum tickets overall" hint="Optional." value={g.max_tickets} readOnly={ro} inputMode="numeric"
