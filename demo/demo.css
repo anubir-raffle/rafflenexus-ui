@@ -65,3 +65,11 @@ p { color: var(--ink-body); }
 /* A sponsor tier: its logos and an Add a sponsor button; a logo dropped anywhere on it joins the tier. */
 .demo-tier { display: grid; gap: 16px; padding: clamp(12px, 2vw, 18px); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--ground); transition: border-color .2s ease, background-color .2s ease; }
 .demo-tier.is-over { border-color: var(--action); background: var(--lead-soft); }
+
+/* A row's empty picture slot (a sponsor just added): dashed, with "Add logo". */
+.demo-swap.is-empty { place-items: center; border-style: dashed; background: var(--ground); }
+.demo-swap-empty { display: inline-flex; align-items: center; gap: 6px; font: 600 13px/1 var(--font-sans); color: var(--action); }
+.demo-swap.is-empty:hover { background: var(--lead-soft); }
+/* Sponsors without tiers: the same add-and-drop area, without the tier frame. */
+.demo-tier.is-plain { padding: 0; border-color: transparent; background: none; }
+.demo-tier.is-plain.is-over { padding: 8px; border-color: var(--action); background: var(--lead-soft); }

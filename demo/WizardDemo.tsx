@@ -251,6 +251,7 @@ const errs = {
     ...(SOCIALS.some((x) => socialError(v.support_socials[x.key])) && { socials: 'Fix the social account names' }),
   }),
   sponsors: (v: Brief) => ({
+    ...(v.sponsors.some((x) => !x.logo) && { sponsor_logo: 'Add a logo for every sponsor' }),
     ...(v.sponsors.some((x) => !x.alt.trim()) && { sponsor_alt: 'Describe every sponsor logo (alt text): usually the sponsor’s name' }),
     ...(v.sponsors_tiered && v.sponsor_tiers.some((t) => !t.name.trim()) && { tier_names: 'Name every tier' }),
     ...(v.sponsors_tiered && v.sponsors.some((x) => !v.sponsor_tiers.some((t) => t.id === x.tier)) && { tier_pick: 'Put every sponsor in a tier' }),
@@ -640,10 +641,17 @@ function ImageSwap({ src, name, kind = 'logo', minWidth, minHeight, disabled, on
   if (disabled) return <span className={`${cls} is-static`}><img src={src} alt="" /></span>;
   return (
     <span className="demo-swap-wrap">
-      <button type="button" className={cls} aria-label={`Replace ${name}`} onClick={() => input.current?.click()}>
-        <img src={src} alt="" />
-        <span className="demo-swap-label" aria-hidden="true"><Icon name="upload-simple" size={16} />Replace</span>
-      </button>
+      {src ? (
+        <button type="button" className={cls} aria-label={`Replace ${name}`} onClick={() => input.current?.click()}>
+          <img src={src} alt="" />
+          <span className="demo-swap-label" aria-hidden="true"><Icon name="upload-simple" size={16} />Replace</span>
+        </button>
+      ) : (
+        // No picture yet (a sponsor just added): an empty slot that uploads one.
+        <button type="button" className={`${cls} is-empty`} aria-label={`Add ${name}`} onClick={() => input.current?.click()}>
+          <span className="demo-swap-empty" aria-hidden="true"><Icon name="image" size={18} />Add logo</span>
+        </button>
+      )}
       <input ref={input} type="file" accept="image/*" hidden onChange={(e) => { take(e.target.files?.[0]); e.target.value = ''; }} />
       <span className="demo-swap-error" role="alert">{problem}</span>
     </span>
@@ -654,23 +662,22 @@ function ImageSwap({ src, name, kind = 'logo', minWidth, minHeight, disabled, on
  * A tier's box: its logos, an "Add a sponsor" button, and a drop target for logo files (Miguel, 2026-10-16: "user should be able to
  * add sponsors to each tier"). It lights up while a file is dragged over it.
  */
-function TierBox({ name, ro, onLogo, children }: { name: string; ro: boolean; onLogo: (url: string) => void; children: ReactNode }) {
+function TierBox({ name, ro, onLogo, onAdd, plain, children }: { name: string; ro: boolean; onLogo: (url: string) => void; onAdd: () => void; plain?: boolean; children: ReactNode }) {
   const [over, setOver] = useState(false);
-  const input = useRef<HTMLInputElement>(null);
   const take = (file?: File) => {
     if (!file || !file.type.startsWith('image/')) return;
     const r = new FileReader(); r.onload = () => onLogo(String(r.result)); r.readAsDataURL(file);
   };
   return (
-    <section aria-label={name} className={`demo-tier${over ? ' is-over' : ''}`}
+    <section aria-label={name} className={`demo-tier${plain ? ' is-plain' : ''}${over ? ' is-over' : ''}`}
       onDragOver={(e) => { if (ro) return; e.preventDefault(); setOver(true); }} onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setOver(false); }}
       onDrop={(e) => { if (ro) return; e.preventDefault(); setOver(false); take(e.dataTransfer.files?.[0]); }}>
       {children}
       {!ro ? (
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px 12px' }}>
-          <Button variant="secondary" size="sm" startIcon="plus" aria-label={`Add a sponsor to ${name}`} onClick={() => input.current?.click()}>Add a sponsor</Button>
+          {/* Adds an empty sponsor, its logo still to come (Miguel, 2026-10-16). */}
+          <Button variant="secondary" size="sm" startIcon="plus" aria-label={`Add a sponsor to ${name}`} onClick={onAdd}>Add a sponsor</Button>
           <span className="rnc-field-hint">Or drop a logo here. At least 400 px wide, PNG or SVG.</span>
-          <input ref={input} type="file" accept="image/*" hidden onChange={(e) => { take(e.target.files?.[0]); e.target.value = ''; }} />
         </div>
       ) : null}
     </section>
@@ -687,6 +694,10 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   const tierName = (t: Tier, i: number) => t.name.trim() || `Tier ${i + 1}`;
   const byTier = (list: Sponsor[], order: Tier[] = tiers) => [...order.flatMap((t) => list.filter((x) => x.tier === t.id)), ...list.filter((x) => !order.some((t) => t.id === x.tier))];
   const add = (url: string, tier = '') => m.setSponsors(byTier([...v.sponsors, { id: uid('sp'), logo: url, alt: '', tier }]));
+  const addEmpty = (tier = '') => {
+    const id = uid('sp'); m.setSponsors(byTier([...v.sponsors, { id, logo: '', alt: '', tier }]));
+    setTimeout(() => (document.querySelector(`[data-sponsor="${id}"] button`) as HTMLButtonElement | null)?.focus(), 60);
+  };
   const moveTo = (x: Sponsor, tier: string) => m.setSponsors(byTier([...v.sponsors.filter((o) => o.id !== x.id), { ...x, tier }]));
   const reorderIn = (tier: string, next: Sponsor[]) => m.setSponsors(byTier([...v.sponsors.filter((x) => x.tier !== tier), ...next]));
   const setTiered = (on: boolean) => {
@@ -710,7 +721,7 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
         // Two lines, so the row isn't cramped beside the preview: the logo and the row's buttons, then the fields at full width.
         <div className="rnc-sort-row" style={{ flexWrap: 'wrap', rowGap: 12 }}>
           {columns ? null : t.grip}
-          <ImageSwap src={x.logo} name={`the ${x.alt || `logo ${t.index + 1}`} logo`} disabled={ro || t.index < 0} onFile={(url) => m.setSponsors(patch(v.sponsors, x.id, { logo: url }))} />
+          <span data-sponsor={x.id} style={{ display: 'contents' }}><ImageSwap src={x.logo} name={`the ${x.alt || `sponsor ${t.index + 1}`} logo`} disabled={ro || t.index < 0} onFile={(url) => m.setSponsors(patch(v.sponsors, x.id, { logo: url }))} /></span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
             {t.moves}
             {!ro && t.index > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${x.alt || `logo ${t.index + 1}`}`} onClick={() => m.setSponsors(v.sponsors.filter((o) => o.id !== x.id))} /> : null}
@@ -718,7 +729,7 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
           {t.index > -1 ? (
             <div className="rnc-sort-body" style={{ order: 10, flex: '1 1 100%' }}>
               <div style={grid(200)}>
-                <TextField label={`Alt text for logo ${t.index + 1}`} value={x.alt} review={ro} maxLength={LIMIT.sponsor} error={x.alt ? undefined : 'Describe the logo (the sponsor’s name)'}
+                <TextField label={`Alt text for logo ${t.index + 1}`} value={x.alt} review={ro} maxLength={LIMIT.sponsor} error={x.alt || !x.logo ? undefined : 'Describe the logo (the sponsor’s name)'}
                   onChange={(e) => m.setSponsors(patch(v.sponsors, x.id, { alt: e.target.value }))} />
                 {v.sponsors_tiered && tiers.length > 1 ? (
                   <Select label="Tier" value={x.tier} disabled={ro} options={tiers.map((tt, n) => ({ value: tt.id, label: tierName(tt, n) }))} onChange={(e) => moveTo(x, e.target.value)} />
@@ -730,7 +741,6 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
       )}
     />
   );
-  const upload = (label: string, tier?: string) => (ro ? null : <UploadTile label={label} hint="At least 400 px wide. PNG or SVG on a clear background." onFile={(_f, url) => add(url, tier)} />);
 
   return (
     <>
@@ -745,7 +755,7 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                 const list = v.sponsors.filter((x) => x.tier === t.id);
                 const name = tierName(t, Math.max(0, tt.index));
                 return (
-                  <TierBox name={name} ro={ro} onLogo={(url) => add(url, t.id)}>
+                  <TierBox name={name} ro={ro} onLogo={(url) => add(url, t.id)} onAdd={() => addEmpty(t.id)}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       {tt.grip}
                       <strong style={{ flex: 1, minWidth: 0, font: '600 15px/1.3 var(--font-sans)', color: 'var(--ink)' }}>
@@ -771,8 +781,9 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
           </>
         ) : (
           <>
-            {v.sponsors.length ? logos(v.sponsors, 'Sponsor logos', (next) => m.setSponsors(next), true) : null}
-            {upload('Add a sponsor logo')}
+            <TierBox name="Sponsors" plain ro={ro} onLogo={(url) => add(url)} onAdd={() => addEmpty()}>
+              {v.sponsors.length ? logos(v.sponsors, 'Sponsor logos', (next) => m.setSponsors(next), true) : <p className="rnc-field-hint" style={{ margin: 0 }}>No sponsors yet.</p>}
+            </TierBox>
           </>
         )}
       </WizardSection>
@@ -846,7 +857,7 @@ function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice;
         prizes={v.prizes.filter((p) => p.title).map((p) => ({ title: p.title, ...(p.kind === 'fifty' ? fiftyCard(p) : { value: p.value ? money(p.value) : undefined }), image: p.image, sponsors: p.sponsors.filter((sp) => sp.name || sp.logo).map((sp) => ({ name: sp.name, logo: sp.logo })) }))}
         causeMedia={v.cause_media ? { kind: v.cause_media.kind, src: v.cause_media.src } : undefined}
         sponsor={v.presenting.logo ? { name: v.presenting.name, logo: v.presenting.logo, label: v.presenting.label.trim() || 'Presented by' } : undefined}
-        sponsors={v.sponsors_tiered ? { tiers: v.sponsor_tiers.map((t) => ({ name: t.name, sponsors: v.sponsors.filter((x) => x.tier === t.id).map(logo) })) } : v.sponsors.map(logo)}
+        sponsors={v.sponsors_tiered ? { tiers: v.sponsor_tiers.map((t) => ({ name: t.name, sponsors: v.sponsors.filter((x) => x.tier === t.id && x.logo).map(logo) })) } : v.sponsors.filter((x) => x.logo).map(logo)}
         socials={SOCIALS.filter((x) => v.support_socials[x.key]).map((x) => ({ label: x.label.split(' ')[0], href: `https://${x.host}${v.support_socials[x.key]}` }))}
         licence={numbers.length ? `${v.client.province} Gaming Event Licence #${numbers.join(', #')}` : undefined}
         badge={numbers.length ? { province: v.client.province as LicenceProvince, licences: numbers.map((n) => ({ number: n })) } : undefined}
