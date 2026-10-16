@@ -471,7 +471,7 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                     <div style={grid(220)}>
                       <ItemText id={`${p.id}-title`} label="Prize title" value={p.title} readOnly={ro} maxLength={LIMIT.prize} required="Give the prize a title" onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { title: x }))} />
                       {p.kind === 'fifty' ? (
-                        <ItemText id={`${p.id}-share`} label="Winner's share of the pot (%)" hint="Usually 50: the other half goes to the cause." value={p.share ?? ''} readOnly={ro} inputMode="numeric" check={rules.share}
+                        <ItemText id={`${p.id}-share`} label="Winner's share of the pot (%)" value={p.share ?? ''} readOnly={ro} inputMode="numeric" check={rules.share}
                           onValue={(x) => { const share = x.replace(/\D/g, '').slice(0, 2); m.setPrizes(patch(v.prizes, p.id, { share, ...(isFiftyDescription(p.description) && { description: fiftyDescription(share) }) })); }} />
                       ) : (
                         <ItemText label="Value ($)" value={p.value} readOnly={ro} inputMode="decimal" check={rules.value} onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { value: x.replace(/[^0-9.]/g, '') }))} />
