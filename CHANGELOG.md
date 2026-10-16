@@ -3,7 +3,7 @@
 ## 0.7.3 (2026-10-16)
 
 - Wizard V2: **Hide preview / Show preview** beside the step's title gives the form the full width; the preview stays mounted (it keeps Desktop or Mobile) and stays hidden across steps. Props `previewToggle`, `defaultPreviewHidden`, `previewHidden` / `onPreviewHiddenChange`, `hidePreviewLabel`, `showPreviewLabel`.
-- Wizard V2: the live preview no longer animates when the step changes; only the step's title and form do.
+- Wizard V2: the live preview no longer animates when the step changes. The step's title, then each section, slides in from the left one after another (Back and Next alike).
 - `WizardCelebration` (in `/wizard`) and Wizard `celebrate`: after a successful submit, confetti in the brand's colours, a card that springs in with a check drawing itself, "Your raffle is ready to build" and what happens next. A modal dialog (focus on Done, Escape closes). Fades only under reduced motion. Off by default; skipped when `onSubmit` returns submission errors.
 - `WizardSitePreview`: prizes are cards (photo, or a gift icon on the site colour; value; title; sponsor), up to three across; `prizes[].image`. On a phone the header is the logo and a menu button, and a presenting sponsor sits in a pill under it.
 - Wizard: `reviewUnlocked`, for testing: Review opens before every step is complete; Submit stays disabled until it is. The demo has "Open Review early (testing)".

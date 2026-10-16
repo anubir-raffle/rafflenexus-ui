@@ -847,13 +847,16 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-wizard-steps.has-marker .rnc-wizard-step[aria-current="step"] { background: none; box-shadow: none; }
 @media (prefers-reduced-motion: no-preference) {
   .rnc-wizard-rail-marker.is-ready { transition: transform .34s cubic-bezier(.2, .8, .2, 1), width .34s cubic-bezier(.2, .8, .2, 1), height .34s cubic-bezier(.2, .8, .2, 1); }
-  .rnc-wizard-enter.is-forward { animation: rnc-wz-in-fwd .28s cubic-bezier(.2, .8, .2, 1) both; }
-  .rnc-wizard-enter.is-back { animation: rnc-wz-in-back .28s cubic-bezier(.2, .8, .2, 1) both; }
-  .rnc-wizard-enter.is-moved .rnc-wizard-section { animation: rnc-wz-rise .36s cubic-bezier(.2, .8, .2, 1) both; }
-  .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(2) { animation-delay: .05s; }
-  .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(3) { animation-delay: .1s; }
-  .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(4) { animation-delay: .15s; }
-  .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(n+5) { animation-delay: .2s; }
+  /* A new step: its title, then each section, slides in from the left and settles, one after another (Miguel, 2026-10-16:
+     "make the section animate from left to right of each tab"). The step itself only fades, so the motion reads as one sweep. */
+  .rnc-wizard-enter.is-moved { animation: rnc-wz-fade .2s ease both; }
+  .rnc-wizard-enter.is-moved .rnc-wizard-page-head,
+  .rnc-wizard-enter.is-moved .rnc-wizard-section { animation: rnc-wz-in-left .42s cubic-bezier(.2, .8, .2, 1) both; }
+  .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(1) { animation-delay: .04s; }
+  .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(2) { animation-delay: .1s; }
+  .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(3) { animation-delay: .16s; }
+  .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(4) { animation-delay: .22s; }
+  .rnc-wizard-enter.is-moved .rnc-wizard-section:nth-of-type(n+5) { animation-delay: .28s; }
   .rnc-wizard-step-dot.is-pop { animation: rnc-wz-pop .42s cubic-bezier(.3, 1.6, .5, 1); }
   .rnc-wizard-blocked { animation: rnc-wz-drop .24s ease-out both; }
   .rnc-wizard-save-msg { animation: rnc-wz-fade .22s ease both; }
@@ -863,6 +866,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 @keyframes rnc-wz-in-fwd { from { opacity: 0; transform: translateX(24px); } }
 @keyframes rnc-wz-in-back { from { opacity: 0; transform: translateX(-24px); } }
 @keyframes rnc-wz-rise { from { opacity: 0; transform: translateY(10px); } }
+@keyframes rnc-wz-in-left { from { opacity: 0; transform: translateX(-32px); } }
 @keyframes rnc-wz-pop { 0% { transform: scale(.6); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
 @keyframes rnc-wz-drop { from { opacity: 0; transform: translateY(-6px); } }
 @keyframes rnc-wz-fade { from { opacity: 0; } }
