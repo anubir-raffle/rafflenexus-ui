@@ -922,6 +922,8 @@ const RULES_TEMPLATE = [
   '<p>Please email our team at {support email} should you require a refund for any ticket purchases or would like to issue a complaint, and we would be happy to assist you.</p>',
 ].join('');
 
+/** The template for editing: tokens marked so the rules editor shows them semibold (Miguel, 2026-10-16). */
+const RULES_EDIT_TEMPLATE = RULES_TEMPLATE.replace(/\{([^}]+)\}/g, '<strong>{$1}</strong>');
 /** The tokens, for the editor's hint. */
 const RULES_TOKENS = ['organization', 'support email', 'province', 'minimum age', 'regulator', 'licences and packs', '50/50 section', 'early draws', 'sales close', 'draw date', 'prize draws', 'draw location', 'winners page'];
 
@@ -957,7 +959,9 @@ function fillRules(html: string, v: Brief) {
     regulator: prov.regulator, 'sales close': at(v.sales_close), 'draw date': at(v.draw_at), 'draw location': v.draw_location?.trim() || '[draw location]',
     'winners page': `https://${address(v) || '[your site]'}/winners`,
   };
-  let out = html.replace(/<p>\s*\{([^}]+)\}\s*<\/p>/g, (all, k: string) => (k in blocks ? blocks[k] : all));
+  // Tokens are marked bold in the editor; drop that before filling, so it doesn't reach the site or turn a line into a heading.
+  let out = html.replace(/<strong>\s*(\{[^}]+\})\s*<\/strong>/g, '$1');
+  out = out.replace(/<p>\s*\{([^}]+)\}\s*<\/p>/g, (all, k: string) => (k in blocks ? blocks[k] : all));
   out = out.replace(/\{([^}]+)\}/g, (all, k: string) => (k in words ? escapeHtml(words[k]) : k in blocks ? blocks[k].replace(/<\/?p>/g, ' ') : all));
   // A paragraph that's all bold is a section heading: number them in order (the 50/50 section only counts when it's there).
   let n = 0;
@@ -1187,8 +1191,11 @@ export function WizardDemo() {
                   the form, so even edited rules stay up to date. */}
               {v.rules ? null : v.rules_html !== undefined ? (
                 <div style={{ display: 'grid', gap: 12 }}>
-                  <RichTextArea label="Your rules of play" hint={`Words in braces fill in from your form, so the rules stay up to date: ${RULES_TOKENS.map((t) => `{${t}}`).join(', ')}.`}
+                  <div className="demo-rules-editor">
+                  <RichTextArea label="Your rules of play"
+                    hint={<>Words in braces fill in from your form, so the rules stay up to date: {RULES_TOKENS.map((t, i) => <span key={t}>{i ? ', ' : ''}<b className="demo-token">{`{${t}}`}</b></span>)}.</>}
                     value={v.rules_html} review={ro} showCount={false} minHeight={420} onChange={(html) => m.setRulesHtml(html)} />
+                  </div>
                   {!ro ? <div><Button variant="ghost" size="sm" onClick={() => m.setRulesHtml(undefined)}>Go back to the standard rules</Button></div> : null}
                   <RulesPreview html={fillRules(v.rules_html, v as Brief)} title="How your rules read on your site" />
                 </div>
@@ -1196,7 +1203,7 @@ export function WizardDemo() {
                 <>
                   <RulesPreview html={fillRules(RULES_TEMPLATE, v as Brief)} title="The standard rules of play, as your site will show them" />
                   <p className="rnc-field-hint" style={{ margin: 0 }}>Built from this form: change a date, a pack or a contact and the rules follow. Bracketed text fills in when you complete its step.</p>
-                  {!ro ? <div><Button variant="secondary" size="sm" onClick={() => m.setRulesHtml(RULES_TEMPLATE)}>Edit the rules</Button></div> : null}
+                  {!ro ? <div><Button variant="secondary" size="sm" onClick={() => m.setRulesHtml(RULES_EDIT_TEMPLATE)}>Edit the rules</Button></div> : null}
                 </>
               )}
             </WizardSection>

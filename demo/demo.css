@@ -84,3 +84,7 @@ p { color: var(--ink-body); }
 .demo-rules-doc p { margin: 0 0 6px; }
 .demo-rules-block + .demo-rules-block { margin-top: 10px; }
 .demo-rules-sub { font-weight: 600; }
+
+/* The rules editor: tokens (and headings) semibold; tokens in the hint too. */
+.demo-rules-editor [contenteditable] strong, .demo-rules-editor [contenteditable] b { font-weight: 600; }
+.demo-token { font-weight: 600; color: var(--ink); }
