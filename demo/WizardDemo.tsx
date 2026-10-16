@@ -6,22 +6,24 @@ import {
   type PreviewDevice, type WizardMutators, type WizardSiteDate, type WizardSiteSponsor,
 } from '../src/wizard';
 import {
-  AnimatedList, BrandColours, Button, SegmentedControl, DomainField, ExpandableRow, Icon, RichText, RichTextArea, Select, SortableList, StatusPill, Switch, TextArea, TextField, UploadTile,
+  AnimatedList, BrandColours, Button, DomainField, ExpandableRow, Icon, RichText, RichTextArea, Select, SortableList, StatusPill, Switch, TextArea, TextField, UploadTile,
   domainUrl, richTextLength, richTextToPlain, type BrandColourSet, type DomainType, type LicenceProvince,
 } from '../src';
 import { DatePicker } from '../src/inputs';
 
 // A sample brief, the way the Raffle Builder's setup form holds it. Every name and figure is made up.
 type Slide = { id: string; src: string; alt: string };
-type Pack = { id: string; name: string; tickets: string; price: string };
+/** A ticket pack: its price, how many tickets it holds, and (optional) how many tickets are in its pool; unlimited when the licence is. */
+type Pack = { id: string; name: string; tickets: string; price: string; pool: string };
 /** A licence and the ticket packs it covers (the app's ticket_pack_groups). */
 type Licence = {
   id: string; licence_number: string; ticket_packs: Pack[];
   /**
-   * Optional: the most tickets the licence lets the raffle sell, or unlimited; '' when not set (Miguel, 2026-10-16: "allow option
-   * for unlimited tickets", "set maximum and unlimited should be optional").
+   * Unlimited tickets: every pack's "Tickets in the pool" is unlimited. Otherwise each pack takes its own pool (Miguel, 2026-10-16:
+   * "if unlimited is set, number of tickets for sale should just be set to unlimited", "tickets in the pool would be unlimited by
+   * default if unlimited is selected").
    */
-  ticket_limit: '' | 'max' | 'unlimited'; tickets_available: string;
+  unlimited: boolean;
 };
 /** A prize's sponsor (optional): a logo, a name and a line about them. */
 type PrizeSponsor = { name: string; logo?: string; description: string };
@@ -104,8 +106,8 @@ const START: Brief = {
   sales_open: '2026-11-02 09:00:00', sales_close: '2026-12-18 23:59:00', draw_at: '2026-12-19 12:00:00', draw_location: 'Foundation office',
   early_draws: [{ id: 'e1', date: '2026-11-20 12:00:00', prize: '$5,000 cash' }],
   ticket_pack_groups: [{
-    id: 'g1', licence_number: '000000', ticket_limit: 'max', tickets_available: '100000',
-    ticket_packs: [{ id: 'p1', name: 'Single ticket', tickets: '1', price: '25' }, { id: 'p2', name: 'Pack of 3', tickets: '3', price: '60' }],
+    id: 'g1', licence_number: '000000', unlimited: false,
+    ticket_packs: [{ id: 'p1', name: 'Single ticket', tickets: '1', price: '25', pool: '40000' }, { id: 'p2', name: 'Pack of 3', tickets: '3', price: '60', pool: '60000' }],
   }],
   prizes: [
     { id: 'z1', title: 'Lakeside home', value: '1250000', description: '<p>A four-bedroom home by the lake, <em>fully furnished</em>.</p>', image: art('Lakeside home', 1200, 900, '#126ab5', '#0c3f75'),
@@ -163,12 +165,13 @@ const rules = {
   price: (v: string) => (!v ? 'Enter the price' : !(amount(v) > 0) ? 'Enter a price above $0' : undefined),
   tickets: (v: string) => (!v ? 'Enter how many tickets' : !/^\d+$/.test(v) || Number(v) < 1 ? 'Enter a whole number, 1 or more' : undefined),
   value: (v: string) => (!v ? "Enter the prize's value" : !(amount(v) > 0) ? 'Enter a value above $0' : undefined),
-  // Optional: only a maximum that's been typed in is checked.
-  ticketsAvailable: (l: Licence) => {
-    if (l.ticket_limit !== 'max' || !l.tickets_available) return undefined;
-    const most = Math.max(0, ...l.ticket_packs.map((p) => Number(p.tickets) || 0));
-    return !/^\d+$/.test(l.tickets_available) || Number(l.tickets_available) < 1 ? 'Enter a whole number, 1 or more'
-        : Number(l.tickets_available) < most ? `Enter at least ${most.toLocaleString('en-CA')}: your biggest pack has that many tickets` : undefined;
+  // Optional: only a pool that's been typed in is checked. It holds whole packs.
+  pool: (p: Pack, l: Licence) => {
+    if (l.unlimited || !p.pool) return undefined;
+    const size = Number(p.tickets) || 1;
+    return !/^\d+$/.test(p.pool) || Number(p.pool) < 1 ? 'Enter a whole number, 1 or more'
+      : Number(p.pool) < size ? `Enter at least ${size.toLocaleString('en-CA')}: one pack has that many tickets`
+        : Number(p.pool) % size ? `Use a multiple of ${size}: each pack has ${size} tickets` : undefined;
   },
   earlyDate: (v: string, b: Brief) => (!v ? 'Enter the date'
     : past(v) ? 'Pick a time from now on'
@@ -227,7 +230,7 @@ const errs = {
       ...(g.some((l) => rules.licence(l.licence_number)) && { licence_number: 'Enter every licence number, as on the licence' }),
       ...(new Set(numbers).size < numbers.length && { licence_twice: 'The same licence number is entered twice' }),
       ...(g.some((l) => !l.ticket_packs.length) && { packs: 'Give every licence at least one ticket pack' }),
-      ...(g.some((l) => rules.ticketsAvailable(l)) && { tickets_available: 'Check each licence’s maximum tickets' }),
+      ...(g.some((l) => l.ticket_packs.some((p) => rules.pool(p, l))) && { pool: 'Check each pack’s tickets in the pool' }),
       ...(packs.some((p) => !p.name.trim() || rules.price(p.price) || rules.tickets(p.tickets)) && { pack_fields: 'Give every pack a name, a price above $0 and a whole number of tickets' }),
       ...(repeats && { repeats: 'Two packs in one licence have the same number of tickets' }),
     };
@@ -251,10 +254,10 @@ function Text({ name, label, hint, readOnly, id, maxLength, type, inputMode }: {
 }
 /** A field for one item in a list. It edits the item by id through a mutator (like the app's setTicketPacks), so removing or
  *  reordering rows never mixes their values up. Its error shows once someone leaves it empty. */
-function ItemText({ id, label, hint, value, onValue, readOnly, required, check, maxLength, inputMode }: { id?: string; label: string; hint?: string; value: string; onValue: (v: string) => void; readOnly?: boolean; required?: string; check?: (v: string) => string | undefined; maxLength?: number; inputMode?: 'numeric' | 'decimal' | 'text' }) {
+function ItemText({ id, label, hint, value, onValue, readOnly, required, check, maxLength, inputMode, optional }: { id?: string; label: string; hint?: string; optional?: boolean; value: string; onValue: (v: string) => void; readOnly?: boolean; required?: string; check?: (v: string) => string | undefined; maxLength?: number; inputMode?: 'numeric' | 'decimal' | 'text' }) {
   const [left, setLeft] = useState(false);
   const problem = check ? check(value) : required && !value.trim() ? required : undefined;
-  return <TextField id={id} label={label} hint={hint} value={value} review={readOnly} maxLength={maxLength} inputMode={inputMode} onChange={(e) => onValue(e.target.value)} onBlur={() => setLeft(true)} error={left ? problem : undefined} />;
+  return <TextField id={id} label={label} hint={hint} optional={optional} value={value} review={readOnly} maxLength={maxLength} inputMode={inputMode} onChange={(e) => onValue(e.target.value)} onBlur={() => setLeft(true)} error={left ? problem : undefined} />;
 }
 const patch = <T extends { id: string }>(list: T[], id: string, change: Partial<T>) => list.map((x) => (x.id === id ? { ...x, ...change } : x));
 /** Focus a field once it exists (after an item is added and its row opens). */
@@ -308,21 +311,31 @@ function Slides({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
 function Packs({ licence, setPacks, ro }: { licence: Licence; setPacks: (packs: Pack[]) => void; ro: boolean }) {
   const [isOpen, toggle] = useOpenRows();
   const packs = licence.ticket_packs;
-  const add = () => { const id = uid('p'); setPacks([...packs, { id, name: '', tickets: '', price: '' }]); toggle(id, true); focusSoon(`${id}-name`); };
+  const add = () => { const id = uid('p'); setPacks([...packs, { id, name: '', tickets: '', price: '', pool: '' }]); toggle(id, true); focusSoon(`${id}-name`); };
   return (
     <div style={{ display: 'grid', gap: 12 }}>
       <p className="rnc-field-label" style={{ margin: 0 }}>Ticket packs for this licence</p>
       <AnimatedList aria-label={`Ticket packs for licence ${licence.licence_number || 'without a number'}`} items={packs} getKey={(p) => p.id} renderItem={(p, i) => (
         <ExpandableRow
-          title={p.name || 'New pack'} meta={p.price ? `${money(p.price)} · ${plural(Number(p.tickets) || 0, 'ticket')}` : 'No price yet'}
+          title={p.name || 'New pack'} meta={p.price ? `${money(p.price)} · ${plural(Number(p.tickets) || 0, 'ticket')}${licence.unlimited ? ' · unlimited' : p.pool ? ` · ${Number(p.pool).toLocaleString('en-CA')} in the pool` : ''}` : 'No price yet'}
           open={isOpen(p.id)} onOpenChange={(o) => toggle(p.id, o)}
           actions={!ro && i > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${p.name || 'this pack'}`} onClick={() => setPacks(packs.filter((x) => x.id !== p.id))} /> : null}
         >
           {i > -1 ? (
             <div style={grid(170)}>
               <ItemText id={`${p.id}-name`} label="Pack name" value={p.name} readOnly={ro} maxLength={LIMIT.pack} required="Name the pack" onValue={(x) => setPacks(patch(packs, p.id, { name: x }))} />
-              <ItemText label="Tickets in the pack" value={p.tickets} readOnly={ro} inputMode="numeric" check={(x) => rules.tickets(x) ?? (packs.some((o) => o.id !== p.id && o.tickets && o.tickets === x) ? 'Another pack in this licence has this many tickets' : undefined)} onValue={(x) => setPacks(patch(packs, p.id, { tickets: x.replace(/\D/g, '') }))} />
+            </div>
+          ) : null}
+          {i > -1 ? (
+            // Price, Tickets quantity, Tickets in the pool (Miguel, 2026-10-16). The pool reads "Unlimited", turned off, when the licence is unlimited.
+            <div style={grid(170)}>
               <ItemText label="Price ($)" value={p.price} readOnly={ro} inputMode="decimal" check={rules.price} onValue={(x) => setPacks(patch(packs, p.id, { price: x.replace(/[^0-9.]/g, '') }))} />
+              <ItemText label="Tickets quantity" value={p.tickets} readOnly={ro} inputMode="numeric" check={(x) => rules.tickets(x) ?? (packs.some((o) => o.id !== p.id && o.tickets && o.tickets === x) ? 'Another pack in this licence has this many tickets' : undefined)} onValue={(x) => setPacks(patch(packs, p.id, { tickets: x.replace(/\D/g, '') }))} />
+              {licence.unlimited ? (
+                <TextField label="Tickets in the pool" value="Unlimited" disabled showCount={false} />
+              ) : (
+                <ItemText label="Tickets in the pool" optional value={p.pool} readOnly={ro} inputMode="numeric" check={() => rules.pool(p, licence)} onValue={(x) => setPacks(patch(packs, p.id, { pool: x.replace(/\D/g, '') }))} />
+              )}
             </div>
           ) : null}
         </ExpandableRow>
@@ -335,7 +348,7 @@ function Packs({ licence, setPacks, ro }: { licence: Licence; setPacks: (packs: 
 /** Every licence the raffle sells under, each with its own ticket packs. Add a licence; remove one while there's more than one. */
 function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   const list = v.ticket_pack_groups;
-  const add = () => { const id = uid('g'); m.setLicences([...list, { id, licence_number: '', ticket_packs: [], ticket_limit: '', tickets_available: '' }]); focusSoon(`${id}-number`); };
+  const add = () => { const id = uid('g'); m.setLicences([...list, { id, licence_number: '', ticket_packs: [], unlimited: false }]); focusSoon(`${id}-number`); };
   return (
     <>
       <AnimatedList aria-label="Licences" className="demo-licences" items={list} getKey={(g) => g.id} renderItem={(g, i) => (
@@ -345,21 +358,10 @@ function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
               <div style={grid(240)}>
                 <ItemText id={`${g.id}-number`} label="Licence number" hint="As it appears on your licence." value={g.licence_number} readOnly={ro} maxLength={LIMIT.licence}
                   check={(x) => rules.licence(x) ?? (list.some((o) => o.id !== g.id && o.licence_number === x) ? "This licence number is already entered" : undefined)} onValue={(x) => m.setLicences(patch(list, g.id, { licence_number: x }))} />
-                {/* A maximum, or unlimited (Miguel, 2026-10-16: "allow option for unlimited tickets", "allow option for max tickets"). */}
-                <div style={{ display: 'grid', gap: 10, alignContent: 'start', minWidth: 0 }}>
-                  <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-                    <span className="rnc-field-label" id={`${g.id}-cap`}>Tickets for sale <em style={{ fontStyle: 'normal', fontWeight: 400, color: 'var(--ink-muted)' }}>(optional)</em></span>
-                    {g.ticket_limit && !ro ? <Button variant="link" size="sm" aria-label={`Clear tickets for sale for licence ${i + 1}`} onClick={() => m.setLicences(patch(list, g.id, { ticket_limit: '', tickets_available: '' }))}>Clear</Button> : null}
-                  </span>
-                  <SegmentedControl aria-labelledby={`${g.id}-cap`} name={`${g.id}-cap`} disabled={ro} value={g.ticket_limit}
-                    options={[{ value: 'max', label: 'Set a maximum' }, { value: 'unlimited', label: 'Unlimited' }]}
-                    onChange={(x) => m.setLicences(patch(list, g.id, { ticket_limit: x as Licence['ticket_limit'] }))} />
-                  {g.ticket_limit === 'unlimited' ? (
-                    <p className="rnc-field-hint" style={{ margin: 0 }}>Sell as many tickets as people buy.</p>
-                  ) : g.ticket_limit === 'max' ? (
-                    <ItemText label="Maximum tickets (optional)" hint="The most this licence lets you sell." value={g.tickets_available} readOnly={ro} inputMode="numeric"
-                      check={() => rules.ticketsAvailable(g)} onValue={(x) => m.setLicences(patch(list, g.id, { tickets_available: x.replace(/[^0-9]/g, '') }))} />
-                  ) : null}
+                {/* Unlimited tickets: every pack's "Tickets in the pool" reads Unlimited. */}
+                <div style={{ display: 'grid', gap: 6, alignContent: 'start', minWidth: 0, gridColumn: '1 / -1' }}>
+                  <Switch label="Unlimited tickets" checked={g.unlimited} disabled={ro} onChange={(on) => m.setLicences(patch(list, g.id, { unlimited: on }))} />
+                  <p className="rnc-field-hint" style={{ margin: 0 }}>{g.unlimited ? 'Every pack’s tickets in the pool is unlimited.' : 'Off: set each pack’s tickets in the pool.'}</p>
                 </div>
               </div>
               <Packs licence={g} ro={ro} setPacks={(packs) => m.setLicences(patch(list, g.id, { ticket_packs: packs }))} />
@@ -830,7 +832,7 @@ export function WizardDemo() {
               { label: 'Website', step: 0, complete: !messages(errs.website(v)).length, summary: `${v.name}, at ${address(v) || 'no address yet'}. ${richTextToPlain(v.cause).split('\n')[0]}`, issues: messages(errs.website(v)) },
               { label: 'Slideshow', step: 1, complete: !messages(errs.slides(v)).length, summary: `${plural(v.slides.length, 'slide')}.`, issues: messages(errs.slides(v)) },
               { label: 'Dates', step: 2, complete: !messages(errs.dates(v)).length, summary: `Sales ${when(v.sales_open) || 'not set'} to ${when(v.sales_close) || 'not set'}. Draw ${when(v.draw_at) || 'not set'}.`, issues: messages(errs.dates(v)) },
-              { label: 'Licences and tickets', step: 3, complete: !messages(errs.licences(v)).length, summary: v.ticket_pack_groups.map((g) => `#${g.licence_number || '(no number)'}: ${g.ticket_packs.map((p) => `${p.name || 'New pack'} ${money(p.price)}`).join(', ') || 'no packs'} ${g.ticket_limit === 'unlimited' ? ' (unlimited tickets)' : g.ticket_limit === 'max' && g.tickets_available ? ` (up to ${Number(g.tickets_available).toLocaleString('en-CA')} tickets)` : ''}`).join('. '), issues: messages(errs.licences(v)) },
+              { label: 'Licences and tickets', step: 3, complete: !messages(errs.licences(v)).length, summary: v.ticket_pack_groups.map((g) => `#${g.licence_number || '(no number)'}: ${g.ticket_packs.map((p) => `${p.name || 'New pack'} ${money(p.price)}`).join(', ') || 'no packs'} ${g.unlimited ? ' (unlimited tickets)' : ''}`).join('. '), issues: messages(errs.licences(v)) },
               { label: 'Prizes', step: 4, complete: !messages(errs.prizes(v)).length, summary: v.prizes.map((p) => p.title || 'New prize').join(', '), issues: messages(errs.prizes(v)) },
               { label: 'Sponsors', step: 5, complete: !messages(errs.sponsors(v)).length, summary: `${v.sponsors.length ? `${plural(v.sponsors.length, 'sponsor logo')}${v.sponsors_tiered ? `, in ${plural(v.sponsor_tiers.length, 'tier')}` : ''}.` : 'No sponsor logos.'}${v.presenting.logo ? ` ${v.presenting.label.trim() || 'Presented by'} ${v.presenting.name || 'a sponsor'}.` : ''}`, issues: messages(errs.sponsors(v)) },
               { label: 'Rules of play', step: 6, complete: true, summary: v.rules ? `Your own rules (${v.rules.name}).` : `The standard rules for ${v.client.province}.`, issues: [] },
