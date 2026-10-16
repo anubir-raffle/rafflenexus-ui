@@ -419,23 +419,25 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   );
 }
 
-/** A sponsor row's logo with a Replace button under it: picks a new image and keeps the row (alt text, tier, place) as it is. */
+/**
+ * A sponsor row's logo. Click it (or Enter / Space) to pick a new image; "Replace" fades in over it on hover and focus
+ * (Miguel, 2026-10-16). The row keeps its alt text, tier and place.
+ */
 function LogoSwap({ src, name, disabled, onFile }: { src: string; name: string; disabled?: boolean; onFile: (url: string) => void }) {
   const input = useRef<HTMLInputElement>(null);
   const take = (file?: File) => {
     if (!file || !file.type.startsWith('image/')) return;
     const r = new FileReader(); r.onload = () => onFile(String(r.result)); r.readAsDataURL(file);
   };
+  if (disabled) return <span className="demo-logo-swap is-static"><img src={src} alt="" /></span>;
   return (
-    <span style={{ display: 'grid', justifyItems: 'center', gap: 4, flex: 'none' }}>
-      <img src={src} alt="" style={{ width: 'clamp(72px, 12vw, 120px)', height: 48, objectFit: 'contain', borderRadius: 6, background: '#ffffff' }} />
-      {disabled ? null : (
-        <>
-          <Button variant="link" size="sm" aria-label={`Replace the ${name} logo`} onClick={() => input.current?.click()}>Replace</Button>
-          <input ref={input} type="file" accept="image/*" hidden onChange={(e) => { take(e.target.files?.[0]); e.target.value = ''; }} />
-        </>
-      )}
-    </span>
+    <>
+      <button type="button" className="demo-logo-swap" aria-label={`Replace the ${name} logo`} onClick={() => input.current?.click()}>
+        <img src={src} alt="" />
+        <span className="demo-logo-swap-label" aria-hidden="true"><Icon name="upload-simple" size={16} />Replace</span>
+      </button>
+      <input ref={input} type="file" accept="image/*" hidden onChange={(e) => { take(e.target.files?.[0]); e.target.value = ''; }} />
+    </>
   );
 }
 
