@@ -3,7 +3,7 @@
 ## 0.7.4 (2026-10-16)
 
 - `AnimatedList` / `SortableList`: items only slide when the list itself changes (a move, an add, a removal, a drop). A row opening above them, or a field growing, no longer sets off a slide, so expanding an `ExpandableRow` inside a list stays steady.
-- The demo's prizes and ticket packs open and close on their own (opening one no longer folds another away), the prize photo shows as a thumbnail, sponsor logos without tiers sit two to a row, and each ticket pack has Price, Tickets quantity and Tickets in the pool (optional; whole packs), with no name to type: its name comes from its tickets and price ("3 tickets for $60"). A licence's "Unlimited tickets" switch sets every pack's pool to Unlimited.
+- The demo's prizes and ticket packs open and close on their own (opening one no longer folds another away), the prize photo shows as a thumbnail, sponsor logos without tiers sit two to a row, and each ticket pack has Price, Tickets quantity and Tickets in the pool (required unless unlimited; whole packs), with no name to type: its name comes from its tickets and price ("3 tickets for $60"). A licence's "Unlimited tickets" switch sets every pack's pool to Unlimited, and an optional "Maximum tickets overall" caps the licence either way (some licences are unlimited per pack with an overall maximum); the packs' pools can't add up to more.
 
 ## 0.7.3 (2026-10-16)
 
