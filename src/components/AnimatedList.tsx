@@ -40,6 +40,7 @@ function useListMotion<T>(items: T[], getKey: (item: T, index: number) => Key) {
   const nodes = useRef(new Map<Key, HTMLElement>());
   const rects = useRef(new Map<Key, Spot>());
   const override = useRef<Map<Key, Spot> | null>(null);
+  const lastOrder = useRef<string | null>(null);
 
   // Work out who arrived and who left since the last render
   const keyString = keys.join('\u0001');
@@ -62,12 +63,18 @@ function useListMotion<T>(items: T[], getKey: (item: T, index: number) => Key) {
   // FLIP: after every change, slide moved items from their old place. Positions are layout positions (no transform), so the
   // re-renders a move sets off (the announcement, the form, autosave) leave a slide under way alone; an item that moves again
   // mid-slide starts from where it is on screen, not from a jump.
+  // Only a change to the list itself slides items (a move, an add, a removal, a drop). Something else changing their place, such as
+  // a row above opening or a field growing, just updates where they are (Miguel, 2026-10-16: "weird animation happening on click").
   useIsoLayoutEffect(() => {
-    const old = override.current ?? rects.current;
+    const dropped = override.current;
+    const old = dropped ?? rects.current;
     override.current = null;
     const fresh = new Map<Key, Spot>();
     nodes.current.forEach((el, k) => fresh.set(k, spot(el)));
-    if (!prefersReducedMotion()) {
+    const order = [...nodes.current.keys()].join('\u0001') + '|' + keyString;
+    const listChanged = lastOrder.current !== null && lastOrder.current !== order;
+    lastOrder.current = order;
+    if ((listChanged || dropped) && !prefersReducedMotion()) {
       fresh.forEach((r, k) => {
         const o = old.get(k); const el = nodes.current.get(k);
         if (!o || !el || el.classList.contains('is-dragging')) return;

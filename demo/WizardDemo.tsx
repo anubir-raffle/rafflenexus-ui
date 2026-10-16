@@ -303,16 +303,16 @@ function Slides({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
 
 /** One licence's ticket packs: open a pack to edit it, add or remove packs. */
 function Packs({ licence, setPacks, ro }: { licence: Licence; setPacks: (packs: Pack[]) => void; ro: boolean }) {
-  const [open, setOpen] = useState<string | null>(null);
+  const [isOpen, toggle] = useOpenRows();
   const packs = licence.ticket_packs;
-  const add = () => { const id = uid('p'); setPacks([...packs, { id, name: '', tickets: '', price: '' }]); setOpen(id); focusSoon(`${id}-name`); };
+  const add = () => { const id = uid('p'); setPacks([...packs, { id, name: '', tickets: '', price: '' }]); toggle(id, true); focusSoon(`${id}-name`); };
   return (
     <div style={{ display: 'grid', gap: 12 }}>
       <p className="rnc-field-label" style={{ margin: 0 }}>Ticket packs for this licence</p>
       <AnimatedList aria-label={`Ticket packs for licence ${licence.licence_number || 'without a number'}`} items={packs} getKey={(p) => p.id} renderItem={(p, i) => (
         <ExpandableRow
           title={p.name || 'New pack'} meta={p.price ? `${money(p.price)} · ${plural(Number(p.tickets) || 0, 'ticket')}` : 'No price yet'}
-          open={open === p.id} onOpenChange={(o) => setOpen(o ? p.id : null)}
+          open={isOpen(p.id)} onOpenChange={(o) => toggle(p.id, o)}
           actions={!ro && i > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${p.name || 'this pack'}`} onClick={() => setPacks(packs.filter((x) => x.id !== p.id))} /> : null}
         >
           {i > -1 ? (
@@ -370,8 +370,8 @@ function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
 }
 
 function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
-  const [open, setOpen] = useState<string | null>(null);
-  const add = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, title: '', value: '', description: '', sponsor: { name: '', description: '' } }]); setOpen(id); focusSoon(`${id}-title`); };
+  const [isOpen, toggle] = useOpenRows();
+  const add = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, title: '', value: '', description: '', sponsor: { name: '', description: '' } }]); toggle(id, true); focusSoon(`${id}-title`); };
   const setSponsor = (p: Prize, change: Partial<PrizeSponsor>) => m.setPrizes(patch(v.prizes, p.id, { sponsor: { ...p.sponsor, ...change } }));
   return (
     <WizardSection title="Prizes for the main draw" description="Drag to set the order they're drawn in. Open a prize to edit it.">
@@ -381,7 +381,7 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
             <div style={{ paddingTop: 6 }}>{t.grip}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <ExpandableRow
-                title={p.title || 'New prize'} meta={p.value ? money(p.value) : 'No value yet'} open={open === p.id} onOpenChange={(o) => setOpen(o ? p.id : null)}
+                title={p.title || 'New prize'} meta={p.value ? money(p.value) : 'No value yet'} open={isOpen(p.id)} onOpenChange={(o) => toggle(p.id, o)}
                 actions={!ro && t.index > -1 ? <>{t.moves}<Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${p.title || 'this prize'}`} onClick={() => m.setPrizes(v.prizes.filter((x) => x.id !== p.id))} /></> : null}
               >
                 {t.index > -1 ? (
@@ -390,7 +390,7 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                       <ItemText id={`${p.id}-title`} label="Prize title" value={p.title} readOnly={ro} maxLength={LIMIT.prize} required="Give the prize a title" onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { title: x }))} />
                       <ItemText label="Value ($)" value={p.value} readOnly={ro} inputMode="decimal" check={rules.value} onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { value: x.replace(/[^0-9.]/g, '') }))} />
                     </div>
-                    <UploadTile label="Prize photo (optional)" hint="Shown on the prize's card. 1200 × 900 works best. At least 600 × 450." minWidth={600} minHeight={450} preview="lg"
+                    <UploadTile label="Prize photo (optional)" hint="Shown on the prize's card. 1200 × 900 works best. At least 600 × 450." minWidth={600} minHeight={450}
                       src={p.image} alt={p.title || 'The prize'} disabled={ro} onFile={(_f, url) => m.setPrizes(patch(v.prizes, p.id, { image: url }))} onRemove={() => m.setPrizes(patch(v.prizes, p.id, { image: undefined }))} />
                     <RichTextArea label="Description" hint="What winners get. Shown on the prizes page." value={p.description} review={ro} maxLength={LIMIT.prizeText} minHeight={140}
                       onChange={(html) => m.setPrizes(patch(v.prizes, p.id, { description: html }))} />
@@ -418,6 +418,16 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
       {!ro ? <div><Button variant="secondary" startIcon="plus" onClick={add}>Add a prize to this draw</Button></div> : null}
     </WizardSection>
   );
+}
+
+/**
+ * Which expandable rows are open. Each opens and closes on its own: opening one doesn't fold another away above it, which would
+ * move the row people just clicked (Miguel, 2026-10-16: "the prize click to expand jumps too much").
+ */
+function useOpenRows() {
+  const [open, setOpen] = useState<Set<string>>(() => new Set());
+  const toggle = (id: string, on: boolean) => setOpen((o) => { const n = new Set(o); if (on) n.add(id); else n.delete(id); return n; });
+  return [(id: string) => open.has(id), toggle] as const;
 }
 
 /**

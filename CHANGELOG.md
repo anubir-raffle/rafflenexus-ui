@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.7.4 (2026-10-16)
+
+- `AnimatedList` / `SortableList`: items only slide when the list itself changes (a move, an add, a removal, a drop). A row opening above them, or a field growing, no longer sets off a slide, so expanding an `ExpandableRow` inside a list stays steady.
+- The demo's prizes and ticket packs open and close on their own (opening one no longer folds another away), and the prize photo shows as a thumbnail.
+
 ## 0.7.3 (2026-10-16)
 
 - Wizard V2: **Hide preview / Show preview** beside the step's title gives the form the full width; the preview stays mounted (it keeps Desktop or Mobile) and stays hidden across steps. Props `previewToggle`, `defaultPreviewHidden`, `previewHidden` / `onPreviewHiddenChange`, `hidePreviewLabel`, `showPreviewLabel`.
