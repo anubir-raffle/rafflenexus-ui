@@ -47,3 +47,7 @@ p { color: var(--ink-body); }
 .demo-swap-error { max-width: 22ch; font-size: 12px; line-height: 1.35; color: var(--error); }
 .demo-swap-error:empty { display: none; }
 @media (hover: none) { .demo-swap-label { top: auto; height: 22px; font-size: 11px; opacity: .9; } }
+
+/* Sponsor logos without tiers: two to a row (one under about 330px). */
+.rnc-alist.demo-logo-grid { grid-template-columns: repeat(auto-fill, minmax(max(160px, calc((100% - 10px) / 2)), 1fr)); align-items: start; }
+.demo-logo-grid .rnc-sort-row { height: 100%; box-sizing: border-box; }

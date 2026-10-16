@@ -495,12 +495,13 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
     m.setTiers(rest); m.setSponsors(byTier(v.sponsors.map((x) => (x.tier === t.id ? { ...x, tier: into.id } : x)), rest));
   };
 
-  const logos = (list: Sponsor[], label: string, onReorder: (next: Sponsor[]) => void) => (
-    <SortableList aria-label={label} items={list} getKey={(x) => x.id} disabled={ro} itemLabel={(x, i) => x.alt || `Logo ${i + 1}`} onReorder={onReorder}
+  // Without tiers the logos sit two to a row (Miguel, 2026-10-16); dragging needs one column, so there the arrows reorder them.
+  const logos = (list: Sponsor[], label: string, onReorder: (next: Sponsor[]) => void, columns = false) => (
+    <SortableList aria-label={label} items={list} className={columns ? 'demo-logo-grid' : undefined} getKey={(x) => x.id} disabled={ro} itemLabel={(x, i) => x.alt || `Logo ${i + 1}`} onReorder={onReorder}
       renderItem={(x, t) => (
         // Two lines, so the row isn't cramped beside the preview: the logo and the row's buttons, then the fields at full width.
         <div className="rnc-sort-row" style={{ flexWrap: 'wrap', rowGap: 12 }}>
-          {t.grip}
+          {columns ? null : t.grip}
           <ImageSwap src={x.logo} name={`the ${x.alt || `logo ${t.index + 1}`} logo`} disabled={ro || t.index < 0} onFile={(url) => m.setSponsors(patch(v.sponsors, x.id, { logo: url }))} />
           <span style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
             {t.moves}
@@ -563,7 +564,7 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
           </>
         ) : (
           <>
-            {v.sponsors.length ? logos(v.sponsors, 'Sponsor logos', (next) => m.setSponsors(next)) : null}
+            {v.sponsors.length ? logos(v.sponsors, 'Sponsor logos', (next) => m.setSponsors(next), true) : null}
             {upload('Add a sponsor logo')}
           </>
         )}
