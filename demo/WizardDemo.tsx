@@ -37,7 +37,9 @@ type PrizeSponsor = { id: string; name: string; logo?: string; description: stri
  * so it has no value (Miguel, 2026-10-16: "give option to add 5050 prize").
  */
 type Prize = {
-  id: string; title: string; value: string; description: string; image?: string; sponsors: PrizeSponsor[]; kind?: 'fixed' | 'fifty'; share?: string;
+  id: string; title: string; value: string; description: string; image?: string; sponsors: PrizeSponsor[]; kind?: 'fixed' | 'fifty' | 'early'; share?: string;
+  /** An early bird prize: the early draw it's drawn at (Miguel, 2026-10-16: "associate the early bird prize to an early draw"). */
+  early_draw?: string;
   /**
    * What the site shows for a 50/50: the whole jackpot as it grows, or the guaranteed payout, what the winner takes home (the
    * winner's `share` of the jackpot). Either way the winner gets `share` percent (Miguel, 2026-10-16).
@@ -59,7 +61,11 @@ type CauseMedia = { kind: 'image' | 'video'; src: string; name: string };
 /** The organization's social accounts: the part after the address (the app's support_socials). */
 type Presenting = { name: string; logo?: string; label: string };
 type Socials = { facebook?: string; instagram?: string; twitter?: string; youtube?: string; linkedin?: string };
-type Early = { id: string; date: string; prize: string };
+/**
+ * An early draw: its name, the cut-off for tickets in it, and when it's drawn (`date`). Its prizes are early bird prizes on the
+ * Prizes step (Miguel, 2026-10-16).
+ */
+type Early = { id: string; name: string; cutoff: string; date: string };
 type Brief = {
   name?: string; sub_domain?: string; sub_domain_type: DomainType; heading?: string; subheading?: string; cause?: string; logo?: string; sharing_image?: string; support_email?: string;
   slides: Slide[]; sales_open?: string; sales_close?: string; draw_at?: string; draw_location?: string; early_draws: Early[];
@@ -107,8 +113,8 @@ const LIMIT = {
   sponsorText: 120, // "one or two lines" with the prize
   tier: 30, //         the heading over a tier's logos
   wording: 24, //      small text in the header, before the presenting sponsor's logo
-  earlyPrize: 30, //   a stop on the dates timeline, three or four across
   social: 60, //       an account name or address
+  earlyName: 30, //    a stop on the dates timeline and an option in the prize's early draw list
 };
 
 const START: Brief = {
@@ -125,7 +131,7 @@ const START: Brief = {
     { id: 's3', src: tile('50/50 jackpot', '#8a6410', '#5a400a'), alt: 'The 50/50 jackpot' },
   ],
   sales_open: '2026-11-02 09:00:00', sales_close: '2026-12-18 23:59:00', draw_at: '2026-12-19 12:00:00', draw_location: 'Foundation office',
-  early_draws: [{ id: 'e1', date: '2026-11-20 12:00:00', prize: '$5,000 cash' }],
+  early_draws: [{ id: 'e1', name: 'Early Bird', cutoff: '2026-11-19 23:59:00', date: '2026-11-20 12:00:00' }],
   ticket_pack_groups: [{
     id: 'g1', licence_number: '000000', unlimited: false, max_tickets: '',
     ticket_packs: [{ id: 'p1', tickets: '1', price: '25', pool: '40000' }, { id: 'p2', tickets: '3', price: '60', pool: '60000' }],
@@ -136,6 +142,7 @@ const START: Brief = {
         { id: 'ps2', name: 'Sample Furniture', logo: badge('SAMPLE FURNITURE', '#5a400a'), description: 'Furnished by Sample Furniture.' }] },
     { id: 'z2', title: 'Electric SUV', value: '65000', description: '<p>A new all-electric SUV with three years of charging.</p>', image: art('Electric SUV', 1200, 900, '#2b7a3d', '#174a24'),
       sponsors: [{ id: 'ps3', name: 'Sample Motors', logo: badge('SAMPLE MOTORS', '#7e0c20'), description: 'Courtesy of Sample Motors.' }] },
+    { id: 'z4', kind: 'early', early_draw: 'e1', title: '$5,000 cash', value: '5000', description: '<p>Paid by cheque within 30 days of the early draw.</p>', sponsors: [] },
     { id: 'z3', title: '$10,000 cash', value: '10000', description: '<p>Paid by cheque within 30 days of the draw.</p>', sponsors: [] },
   ],
   support_socials: { facebook: 'samplehospital', instagram: 'samplehospital', twitter: 'samplehospital', youtube: '@samplehospital', linkedin: 'company/samplehospital' },
@@ -195,7 +202,7 @@ const rules = {
     return sum > 99 ? `Winners' shares add up to ${sum}% of the pot. Keep them under 100%.` : undefined;
   },
   // Not an early draw: the prize's own date, which can fall after sales close too.
-  prizeDraw: (p: Prize, b: Brief) => (!p.draw_at ? undefined : !moment(p.draw_at).isValid() ? 'Enter the full date and time' : past(p.draw_at) ? 'Pick a time from now on'
+  prizeDraw: (p: Prize, b: Brief) => (!p.draw_at ? undefined : !isDate(p.draw_at) ? 'Enter the full date and time' : past(p.draw_at) ? 'Pick a time from now on'
     : b.sales_open && !moment(p.draw_at).isAfter(moment(b.sales_open)) ? 'Draw it after sales open' : undefined),
   share: (v: string) => (!v ? "Enter the winner's share" : !/^\d+$/.test(v) || Number(v) < 1 || Number(v) > 99 ? 'Enter a whole percent from 1 to 99' : undefined),
   // Optional: the overall maximum holds the biggest pack, and the packs' own pools can't add up to more.
@@ -216,6 +223,10 @@ const rules = {
       : Number(p.pool) < size ? `Enter at least ${size.toLocaleString('en-CA')}: one pack has that many tickets`
         : Number(p.pool) % size ? `Use a multiple of ${size}: each pack has ${size} tickets` : undefined;
   },
+  earlyCutoff: (d: Early, b: Brief) => (!d.cutoff ? 'Enter the cut-off' : !isDate(d.cutoff) ? 'Enter the full date and time'
+    : past(d.cutoff) ? 'Pick a time from now on'
+      : b.sales_open && !moment(d.cutoff).isAfter(moment(b.sales_open)) ? 'The cut-off comes after sales open'
+        : d.date && isDate(d.date) && !moment(d.cutoff).isBefore(moment(d.date)) ? 'The cut-off comes before the draw' : undefined),
   earlyDate: (v: string, b: Brief) => (!v ? 'Enter the date'
     : past(v) ? 'Pick a time from now on'
       : (b.sales_open && !moment(v).isAfter(moment(b.sales_open))) || (b.sales_close && !moment(v).isBefore(moment(b.sales_close))) ? 'Early draws happen while sales are open' : undefined),
@@ -263,7 +274,7 @@ const errs = {
     ...(rules.sales_close(v.sales_close, v) && { sales_close: rules.sales_close(v.sales_close, v) }),
     ...(rules.draw_at(v.draw_at, v) && { draw_at: rules.draw_at(v.draw_at, v) }),
     ...(rules.draw_location(v.draw_location) && { draw_location: rules.draw_location(v.draw_location) }),
-    ...(v.early_draws.some((d) => rules.earlyDate(d.date, v) || !d.prize.trim()) && { early: 'Give every early draw a prize and a time while sales are open' }),
+    ...(v.early_draws.some((d) => !d.name.trim() || rules.earlyCutoff(d, v) || rules.earlyDate(d.date, v)) && { early: 'Give every early draw a name, a cut-off and a draw time while sales are open' }),
   }),
   licences: (v: Brief) => {
     const g = v.ticket_pack_groups;
@@ -286,6 +297,7 @@ const errs = {
     ...(v.prizes.some((p) => !p.title.trim() || (p.kind === 'fifty' ? (p.split ? rules.splits(p) : rules.share(p.share ?? '')) : rules.value(p.value))) && { prize_fields: 'Give every prize a title and a value above $0 (a 50/50, its share of the pot)' }),
     ...(v.prizes.some(prizeSponsorError) && { prize_sponsor: 'Name every prize sponsor you added' }),
     ...(v.prizes.some((p) => rules.prizeDraw(p, v)) && { prize_draw: 'Check each prize’s own draw date' }),
+    ...(v.prizes.some((p) => p.kind === 'early' && !v.early_draws.some((d) => d.id === p.early_draw)) && { prize_early: 'Pick the early draw for every early bird prize' }),
   }),
 };
 const messages = (o: Record<string, string | false | undefined>) => Object.values(o).filter(Boolean) as string[];
@@ -436,6 +448,8 @@ function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
 }
 
 /** A jackpot 50/50's default description, following its share (Miguel, 2026-10-16). Replaced only while people haven't edited it. */
+/** A stored date the app's way ("YYYY-MM-DD HH:mm:ss"), checked strictly so half-typed picker text never gets parsed. */
+const isDate = (v?: string) => !!v && moment(v, 'YYYY-MM-DD HH:mm:ss', true).isValid();
 /** A split pot's winners together, as a percent of the pot. */
 const splitTotal = (p: Pick<Prize, 'splits'>) => (p.splits ?? []).reduce((n, w) => n + (Number(w.pct) || 0), 0);
 /** What the winners take in all: the share, or a split pot's total. */
@@ -461,7 +475,10 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   // One 50/50 per raffle: the winner gets a share of the pot, 50% unless the licence says otherwise.
   const hasFifty = v.prizes.some((p) => p.kind === 'fifty');
   const addFifty = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, kind: 'fifty', fifty_mode: 'jackpot', share: '50', title: fiftyTitle({ share: '50' }), value: '', description: '', sponsors: [] }]); toggle(id, true); focusSoon(`${id}-share`); };
-  const prizeMeta = (p: Prize) => `${prizeAmount(p)}${p.draw_at && moment(p.draw_at).isValid() ? ` · drawn ${moment(p.draw_at).format('MMM D')}` : ''}`;
+  // Early bird prizes are drawn at an early draw: offered once there is one (Miguel, 2026-10-16).
+  const earlyLabel = (id?: string) => { const i = v.early_draws.findIndex((d) => d.id === id); if (i < 0) return undefined; const d = v.early_draws[i]; return `${d.name.trim() || `Early draw ${i + 1}`}${d.date && isDate(d.date) ? `, ${moment(d.date).format('MMM D')}` : ''}`; };
+  const addEarly = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, kind: 'early', early_draw: v.early_draws[0]?.id, title: '', value: '', description: '', sponsors: [] }]); toggle(id, true); focusSoon(`${id}-title`); };
+  const prizeMeta = (p: Prize) => `${prizeAmount(p)}${p.kind === 'early' ? ` · ${earlyLabel(p.early_draw) ?? 'no early draw'}` : p.draw_at && isDate(p.draw_at) ? ` · drawn ${moment(p.draw_at).format('MMM D')}` : ''}`;
   const prizeAmount = (p: Prize) => (p.kind === 'fifty'
     ? (p.share || p.split ? `${fiftyPct(p)}% to ${p.split ? `${p.splits?.length ?? 0} winners` : 'the winner'} · shows the ${p.fifty_mode === 'guaranteed' ? 'payout' : 'jackpot'}` : 'No share yet')
     : p.value ? money(p.value) : 'No value yet');
@@ -484,7 +501,7 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   const addSponsor = (p: Prize) => { const sid = uid('ps'); toggleSponsors(p.id, true); m.setPrizes(patch(v.prizes, p.id, { sponsors: [...p.sponsors, { id: sid, name: '', description: '' }] })); focusSoon(`${sid}-name`); };
   const removeSponsor = (p: Prize, sid: string) => m.setPrizes(patch(v.prizes, p.id, { sponsors: p.sponsors.filter((x) => x.id !== sid) }));
   return (
-    <WizardSection title="Prizes for the main draw" description="Drag to set the order they're drawn in. Open a prize to edit it.">
+    <WizardSection title="Prizes" description="Drag to set the order they're drawn in. Open a prize to edit it. Early bird prizes are drawn at their early draw.">
       <SortableList aria-label="Prizes" items={v.prizes} getKey={(p) => p.id} disabled={ro} itemLabel={(p, i) => p.title || `Prize ${i + 1}`} onReorder={(next) => m.setPrizes(next)}
         renderItem={(p, t) => (
           <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
@@ -546,13 +563,23 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                         ) : null}
                       </div>
                     ) : null}
-                    {/* Its own draw date, or the main draw. */}
+                    {p.kind === 'early' ? (
+                      // Which early draw it's drawn at.
+                      <div style={{ maxWidth: 420 }}>
+                        <Select label="Early draw" disabled={ro} value={p.early_draw ?? ''}
+                          error={v.early_draws.some((d) => d.id === p.early_draw) ? undefined : 'Pick the early draw it’s drawn at'}
+                          options={[...(v.early_draws.some((d) => d.id === p.early_draw) ? [] : [{ value: '', label: 'Choose an early draw' }]), ...v.early_draws.map((d) => ({ value: d.id, label: earlyLabel(d.id)! }))]}
+                          onChange={(e) => m.setPrizes(patch(v.prizes, p.id, { early_draw: e.target.value }))} />
+                      </div>
+                    ) : (
+                    // Its own draw date, or the main draw.
                     <div style={{ display: 'grid', gap: 6, maxWidth: 420 }}>
                       <DatePicker label="Draw date (optional)" disabled={ro} disablePast
                         meta={rules.prizeDraw(p, v) ? { error: rules.prizeDraw(p, v), touched: true } : null}
                         input={{ name: `draw-${p.id}`, value: p.draw_at ?? '', onChange: (x: string | null) => m.setPrizes(patch(v.prizes, p.id, { draw_at: x ?? '' })) }} />
                       <p className="rnc-field-hint" style={{ margin: 0 }}>{v.draw_at ? `Leave it empty to draw this prize at the main draw (${moment(v.draw_at).format('MMM D, YYYY')}).` : 'Leave it empty to draw this prize at the main draw.'}</p>
                     </div>
+                    )}
                     <UploadTile label="Prize photo (optional)" hint="Shown on the prize's card. 1200 × 900 works best. At least 600 × 450." minWidth={600} minHeight={450}
                       src={p.image} alt={p.title || 'The prize'} disabled={ro} onFile={(_f, url) => m.setPrizes(patch(v.prizes, p.id, { image: url }))} onRemove={() => m.setPrizes(patch(v.prizes, p.id, { image: undefined }))} />
                     <RichTextArea label="Description" hint="What winners get. Shown on the prizes page." value={p.description} review={ro} maxLength={LIMIT.prizeText} minHeight={140}
@@ -595,6 +622,8 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           <Button variant="secondary" startIcon="plus" onClick={add}>Add a prize to this draw</Button>
           {!hasFifty ? <Button variant="secondary" startIcon="plus" onClick={addFifty}>Add a 50/50 prize</Button> : null}
+          <Button variant="secondary" startIcon="plus" onClick={addEarly} disabled={!v.early_draws.length} aria-describedby={v.early_draws.length ? undefined : 'early-bird-note'}>Add an early bird prize</Button>
+          {!v.early_draws.length ? <span id="early-bird-note" className="rnc-field-hint" style={{ alignSelf: 'center' }}>Add an early draw on the Dates step first.</span> : null}
         </div>
       ) : null}
     </WizardSection>
@@ -806,24 +835,33 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
 }
 
 function EarlyDraws({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
-  const add = () => { const id = uid('e'); m.setEarlyDraws([...v.early_draws, { id, date: '', prize: '' }]); };
+  const add = () => { const id = uid('e'); m.setEarlyDraws([...v.early_draws, { id, name: '', cutoff: '', date: '' }]); focusSoon(`${id}-name`); };
   const outside = (d: Moment) => (!!v.sales_open && d.isBefore(moment(v.sales_open), 'day')) || (!!v.sales_close && d.isAfter(moment(v.sales_close), 'day'));
+  const set = (d: Early, change: Partial<Early>) => m.setEarlyDraws(patch(v.early_draws, d.id, change));
   return (
-    <WizardSection title="Early draws" size="md" description="Extra draws while sales are open, each with its own prize.">
+    <WizardSection title="Early draws" size="md" description="Extra draws while sales are open. Their prizes go on the Prizes step as early bird prizes.">
       <AnimatedList aria-label="Early draws" items={v.early_draws} getKey={(d) => d.id} renderItem={(d, i) => (
         <div className="rnc-sort-row" style={{ alignItems: 'flex-start' }}>
           <span className="rnc-sort-pos" aria-hidden="true" style={{ marginTop: 36 }}>{i > -1 ? i + 1 : ''}</span>
-          <div className="rnc-sort-body" style={{ ...grid(220), gap: 12 }}>
+          {/* Name, cut-off, draw time (Miguel, 2026-10-16). */}
+          <div className="rnc-sort-body" style={{ display: 'grid', gap: 12 }}>
             {i > -1 ? (
               <>
-                <DatePicker label={`Early draw ${i + 1}`} disabled={ro} disablePast disableDates={outside}
+                <div style={{ maxWidth: 360 }}>
+                  <ItemText id={`${d.id}-name`} label="Early draw name" value={d.name} readOnly={ro} maxLength={LIMIT.earlyName} required="Name the early draw" onValue={(x) => set(d, { name: x })} />
+                </div>
+                <div style={{ ...grid(230), gap: 12 }}>
+                <DatePicker label="Cut off date" disabled={ro} disablePast disableDates={outside}
+                  meta={d.cutoff && rules.earlyCutoff(d, v) ? { error: rules.earlyCutoff(d, v), touched: true } : null}
+                  input={{ name: `cutoff-${d.id}`, value: d.cutoff, onChange: (x: string | null) => set(d, { cutoff: x ?? '' }) }} />
+                <DatePicker label="Draws are at" disabled={ro} disablePast disableDates={outside}
                   meta={d.date && rules.earlyDate(d.date, v) ? { error: rules.earlyDate(d.date, v), touched: true } : null}
-                  input={{ name: `early-${d.id}`, value: d.date, onChange: (x: string | null) => m.setEarlyDraws(patch(v.early_draws, d.id, { date: x ?? '' })) }} />
-                <ItemText label="Prize" value={d.prize} readOnly={ro} maxLength={LIMIT.earlyPrize} required="Enter the prize" onValue={(x) => m.setEarlyDraws(patch(v.early_draws, d.id, { prize: x }))} />
+                  input={{ name: `early-${d.id}`, value: d.date, onChange: (x: string | null) => set(d, { date: x ?? '' }) }} />
+                </div>
               </>
             ) : null}
           </div>
-          {!ro && i > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove early draw ${i + 1}`} style={{ marginTop: 32 }} onClick={() => m.setEarlyDraws(v.early_draws.filter((x) => x.id !== d.id))} /> : null}
+          {!ro && i > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${d.name || `early draw ${i + 1}`}`} style={{ marginTop: 32 }} onClick={() => m.setEarlyDraws(v.early_draws.filter((x) => x.id !== d.id))} /> : null}
         </div>
       )} />
       {!ro ? <div><Button variant="secondary" startIcon="plus" onClick={add}>Add an early draw</Button></div> : null}
@@ -838,10 +876,15 @@ function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice;
   const first = v.ticket_pack_groups[0];
   const dates = [
     v.sales_open ? { at: v.sales_open, what: 'Sales open' } : null,
-    ...v.early_draws.filter((d) => d.date).map((d, i) => ({ at: d.date, what: `Early draw ${i + 1}${d.prize ? `: ${d.prize}` : ''}` })),
+    ...v.early_draws.filter((d) => d.date).map((d) => {
+      const name = d.name.trim() || `Early draw ${v.early_draws.indexOf(d) + 1}`;
+      const prizes = v.prizes.filter((p) => p.kind === 'early' && p.early_draw === d.id && p.title).map((p) => p.title);
+      return { at: d.date, what: `${name}${prizes.length ? `: ${prizes.join(', ')}` : ''}` };
+    }),
+    ...v.early_draws.filter((d) => d.cutoff && isDate(d.cutoff)).map((d) => ({ at: d.cutoff, what: `${d.name.trim() || `Early draw ${v.early_draws.indexOf(d) + 1}`} cut-off` })),
     v.sales_close ? { at: v.sales_close, what: 'Sales close' } : null,
     v.draw_at ? { at: v.draw_at, what: `Main draw${v.draw_location ? `, ${v.draw_location}` : ''}` } : null,
-    ...v.prizes.filter((p) => p.draw_at && p.title && moment(p.draw_at).isValid()).map((p) => ({ at: p.draw_at!, what: `${p.title} draw` })),
+    ...v.prizes.filter((p) => p.draw_at && p.title && isDate(p.draw_at)).map((p) => ({ at: p.draw_at!, what: `${p.title} draw` })),
   ].filter(Boolean).sort((a, b) => moment(a!.at).valueOf() - moment(b!.at).valueOf()).map((d): WizardSiteDate => ({ when: when(d!.at), what: d!.what }));
   const numbers = v.ticket_pack_groups.map((g) => g.licence_number).filter(Boolean);
   const logo = (x: Sponsor): WizardSiteSponsor => ({ name: x.alt, logo: x.logo });
@@ -853,7 +896,7 @@ function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice;
         slides={v.slides.map((s) => s.src)}
         packs={(first?.ticket_packs ?? []).filter((p) => p.price).map((p) => ({ label: plural(Number(p.tickets) || 0, 'ticket'), price: money(p.price) }))}
         dates={dates}
-        prizes={v.prizes.filter((p) => p.title).map((p) => ({ title: p.title, ...(p.kind === 'fifty' ? fiftyCard(p) : { value: p.value ? money(p.value) : undefined }), image: p.image, sponsors: p.sponsors.filter((sp) => sp.name || sp.logo).map((sp) => ({ name: sp.name, logo: sp.logo })) }))}
+        prizes={v.prizes.filter((p) => p.title).map((p) => ({ title: p.title, ...(p.kind === 'fifty' ? fiftyCard(p) : { value: p.value ? money(p.value) : undefined, label: p.kind === 'early' ? 'Early bird prize' : undefined }), image: p.image, sponsors: p.sponsors.filter((sp) => sp.name || sp.logo).map((sp) => ({ name: sp.name, logo: sp.logo })) }))}
         causeMedia={v.cause_media ? { kind: v.cause_media.kind, src: v.cause_media.src } : undefined}
         sponsor={v.presenting.logo ? { name: v.presenting.name, logo: v.presenting.logo, label: v.presenting.label.trim() || 'Presented by' } : undefined}
         sponsors={v.sponsors_tiered ? { tiers: v.sponsor_tiers.map((t) => ({ name: t.name, sponsors: v.sponsors.filter((x) => x.tier === t.id && x.logo).map(logo) })) } : v.sponsors.filter((x) => x.logo).map(logo)}
