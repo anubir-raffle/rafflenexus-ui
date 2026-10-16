@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { Field } from 'react-final-form';
 import moment, { type Moment } from 'moment';
 import {
@@ -48,6 +48,8 @@ type Prize = {
    * reads "Split Pot" (Miguel, 2026-10-16).
    */
   split?: boolean; splits?: { id: string; pct: string }[];
+  /** Optional: the prize's own draw date; empty means the main draw (Miguel, 2026-10-16: "some raffles have different draw dates"). */
+  draw_at?: string;
 };
 /** A raffle sponsor: a logo only on the site (Miguel, 2026-10-16), with alt text for people who can't see it. `tier` is a Tier id. */
 type Sponsor = { id: string; logo: string; alt: string; tier: string };
@@ -193,6 +195,9 @@ const rules = {
     const sum = splitTotal(p);
     return sum > 99 ? `Winners' shares add up to ${sum}% of the pot. Keep them under 100%.` : undefined;
   },
+  // Not an early draw: the prize's own date, which can fall after sales close too.
+  prizeDraw: (p: Prize, b: Brief) => (!p.draw_at ? undefined : !moment(p.draw_at).isValid() ? 'Enter the full date and time' : past(p.draw_at) ? 'Pick a time from now on'
+    : b.sales_open && !moment(p.draw_at).isAfter(moment(b.sales_open)) ? 'Draw it after sales open' : undefined),
   share: (v: string) => (!v ? "Enter the winner's share" : !/^\d+$/.test(v) || Number(v) < 1 || Number(v) > 99 ? 'Enter a whole percent from 1 to 99' : undefined),
   // Optional: the overall maximum holds the biggest pack, and the packs' own pools can't add up to more.
   maxTickets: (l: Licence) => {
@@ -252,7 +257,7 @@ const errs = {
     ...(v.presenting.logo && !v.presenting.name.trim() && { presenting_name: 'Name the presenting sponsor' }),
     ...(v.presenting.logo && !v.presenting.label.trim() && { presenting_label: 'Add the presenting sponsor’s wording, like Presented by' }),
   }),
-  slides: (v: Brief) => ({ ...(!v.slides.length && { slides: 'Add at least one slide' }), ...(v.slides.some((s) => !s.alt.trim()) && { slides_alt: 'Describe every slide (alt text)' }) }),
+  slides: (v: Brief) => ({ ...(!v.slides.length && { slides: 'Add at least one slide' }), ...(v.slides.length > MAX_SLIDES && { slides_max: `Use ${MAX_SLIDES} slides at most` }), ...(v.slides.some((s) => !s.alt.trim()) && { slides_alt: 'Describe every slide (alt text)' }) }),
   dates: (v: Brief) => ({
     ...(rules.sales_open(v.sales_open) && { sales_open: rules.sales_open(v.sales_open) }),
     ...(rules.sales_close(v.sales_close, v) && { sales_close: rules.sales_close(v.sales_close, v) }),
@@ -280,6 +285,7 @@ const errs = {
     ...(!v.prizes.length && { prizes: 'Add a prize' }),
     ...(v.prizes.some((p) => !p.title.trim() || (p.kind === 'fifty' ? (p.split ? rules.splits(p) : rules.share(p.share ?? '')) : rules.value(p.value))) && { prize_fields: 'Give every prize a title and a value above $0 (a 50/50, its share of the pot)' }),
     ...(v.prizes.some(prizeSponsorError) && { prize_sponsor: 'Name every prize sponsor you added' }),
+    ...(v.prizes.some((p) => rules.prizeDraw(p, v)) && { prize_draw: 'Check each prize’s own draw date' }),
   }),
 };
 const messages = (o: Record<string, string | false | undefined>) => Object.values(o).filter(Boolean) as string[];
@@ -313,10 +319,13 @@ function DateField({ name, label, readOnly, helperText, disableDates }: { name: 
   );
 }
 
+/** The most slides a raffle site rotates through (Miguel, 2026-10-16). */
+const MAX_SLIDES = 10;
+
 function Slides({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   return (
     <>
-      <WizardSection title="Slides" description="They rotate on your raffle site in this order. Drag a slide by its grip, or use the arrows. Each needs alt text: what it shows, for people who can't see it.">
+      <WizardSection title="Slides" description={`Up to ${MAX_SLIDES}. They rotate on your raffle site in this order. Drag a slide by its grip, or use the arrows. Each needs alt text: what it shows, for people who can't see it.`}>
         <SortableList
           aria-label="Slides" items={v.slides} getKey={(s) => s.id} disabled={ro} itemLabel={(_s, i) => `Slide ${i + 1}`}
           onReorder={(next) => m.setSlides(next)}
@@ -340,8 +349,13 @@ function Slides({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
       </WizardSection>
       {!ro ? (
         <WizardSection title="Add a slide" size="md">
-          <UploadTile label="New slide" hint="1300 × 1000 works best. At least 650 × 500. PNG or JPG." minWidth={650} minHeight={500}
-            onFile={(_f, url) => m.setSlides([...v.slides, { id: uid('s'), src: url, alt: '' }])} />
+          {/* At most ten slides (Miguel, 2026-10-16). */}
+          {v.slides.length < MAX_SLIDES ? (
+            <UploadTile label="New slide" hint={`${v.slides.length} of ${MAX_SLIDES} slides. 1300 × 1000 works best. At least 650 × 500. PNG or JPG.`} minWidth={650} minHeight={500}
+              onFile={(_f, url) => m.setSlides([...v.slides, { id: uid('s'), src: url, alt: '' }].slice(0, MAX_SLIDES))} />
+          ) : (
+            <p style={{ margin: 0, color: 'var(--ink-body)' }}>{`You have ${MAX_SLIDES} slides, the most a site can show. Remove one to add another.`}</p>
+          )}
         </WizardSection>
       ) : null}
     </>
@@ -447,7 +461,8 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   // One 50/50 per raffle: the winner gets a share of the pot, 50% unless the licence says otherwise.
   const hasFifty = v.prizes.some((p) => p.kind === 'fifty');
   const addFifty = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, kind: 'fifty', fifty_mode: 'jackpot', share: '50', title: fiftyTitle({ share: '50' }), value: '', description: '', sponsors: [] }]); toggle(id, true); focusSoon(`${id}-share`); };
-  const prizeMeta = (p: Prize) => (p.kind === 'fifty'
+  const prizeMeta = (p: Prize) => `${prizeAmount(p)}${p.draw_at && moment(p.draw_at).isValid() ? ` · drawn ${moment(p.draw_at).format('MMM D')}` : ''}`;
+  const prizeAmount = (p: Prize) => (p.kind === 'fifty'
     ? (p.share || p.split ? `${fiftyPct(p)}% to ${p.split ? `${p.splits?.length ?? 0} winners` : 'the winner'} · shows the ${p.fifty_mode === 'guaranteed' ? 'payout' : 'jackpot'}` : 'No share yet')
     : p.value ? money(p.value) : 'No value yet');
   // Switching how a 50/50 shows also switches its default title, unless people wrote their own.
@@ -531,6 +546,13 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                         ) : null}
                       </div>
                     ) : null}
+                    {/* Its own draw date, or the main draw. */}
+                    <div style={{ display: 'grid', gap: 6, maxWidth: 420 }}>
+                      <DatePicker label="Draw date (optional)" disabled={ro} disablePast
+                        meta={rules.prizeDraw(p, v) ? { error: rules.prizeDraw(p, v), touched: true } : null}
+                        input={{ name: `draw-${p.id}`, value: p.draw_at ?? '', onChange: (x: string | null) => m.setPrizes(patch(v.prizes, p.id, { draw_at: x ?? '' })) }} />
+                      <p className="rnc-field-hint" style={{ margin: 0 }}>{v.draw_at ? `Leave it empty to draw this prize at the main draw (${moment(v.draw_at).format('MMM D, YYYY')}).` : 'Leave it empty to draw this prize at the main draw.'}</p>
+                    </div>
                     <UploadTile label="Prize photo (optional)" hint="Shown on the prize's card. 1200 × 900 works best. At least 600 × 450." minWidth={600} minHeight={450}
                       src={p.image} alt={p.title || 'The prize'} disabled={ro} onFile={(_f, url) => m.setPrizes(patch(v.prizes, p.id, { image: url }))} onRemove={() => m.setPrizes(patch(v.prizes, p.id, { image: undefined }))} />
                     <RichTextArea label="Description" hint="What winners get. Shown on the prizes page." value={p.description} review={ro} maxLength={LIMIT.prizeText} minHeight={140}
@@ -629,6 +651,33 @@ function ImageSwap({ src, name, kind = 'logo', minWidth, minHeight, disabled, on
 }
 
 /**
+ * A tier's box: its logos, an "Add a sponsor" button, and a drop target for logo files (Miguel, 2026-10-16: "user should be able to
+ * add sponsors to each tier"). It lights up while a file is dragged over it.
+ */
+function TierBox({ name, ro, onLogo, children }: { name: string; ro: boolean; onLogo: (url: string) => void; children: ReactNode }) {
+  const [over, setOver] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  const take = (file?: File) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const r = new FileReader(); r.onload = () => onLogo(String(r.result)); r.readAsDataURL(file);
+  };
+  return (
+    <section aria-label={name} className={`demo-tier${over ? ' is-over' : ''}`}
+      onDragOver={(e) => { if (ro) return; e.preventDefault(); setOver(true); }} onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setOver(false); }}
+      onDrop={(e) => { if (ro) return; e.preventDefault(); setOver(false); take(e.dataTransfer.files?.[0]); }}>
+      {children}
+      {!ro ? (
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px 12px' }}>
+          <Button variant="secondary" size="sm" startIcon="plus" aria-label={`Add a sponsor to ${name}`} onClick={() => input.current?.click()}>Add a sponsor</Button>
+          <span className="rnc-field-hint">Or drop a logo here. At least 400 px wide, PNG or SVG.</span>
+          <input ref={input} type="file" accept="image/*" hidden onChange={(e) => { take(e.target.files?.[0]); e.target.value = ''; }} />
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+/**
  * The raffle's sponsors: logos only, with alt text; in tiers or one list; one of them may be shown beside the raffle's logo.
  * In tiers, each tier is its own group (Miguel, 2026-10-16: "organize that more intuitively"): its name, its logos in order, and its
  * own upload. A logo changes tier from its row. The stored list follows the tiers' order, so the site shows what the form shows.
@@ -696,7 +745,7 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                 const list = v.sponsors.filter((x) => x.tier === t.id);
                 const name = tierName(t, Math.max(0, tt.index));
                 return (
-                  <section aria-label={name} style={{ display: 'grid', gap: 16, padding: 'clamp(12px, 2vw, 18px)', border: '1px solid var(--line)', borderRadius: 'var(--radius-md)', background: 'var(--ground)' }}>
+                  <TierBox name={name} ro={ro} onLogo={(url) => add(url, t.id)}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       {tt.grip}
                       <strong style={{ flex: 1, minWidth: 0, font: '600 15px/1.3 var(--font-sans)', color: 'var(--ink)' }}>
@@ -711,11 +760,10 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                     {tt.index > -1 ? (
                       <>
                         <ItemText id={`${t.id}-name`} label="Tier name" value={t.name} readOnly={ro} maxLength={LIMIT.tier} required="Name the tier" onValue={(x) => m.setTiers(patch(tiers, t.id, { name: x }))} />
-                        {list.length ? logos(list, `${name} logos`, (next) => reorderIn(t.id, next)) : <p className="rnc-field-hint" style={{ margin: 0 }}>No logos in this tier yet.</p>}
-                        {upload(`Add a logo to ${name}`, t.id)}
+                        {list.length ? logos(list, `${name} logos`, (next) => reorderIn(t.id, next), true) : <p className="rnc-field-hint" style={{ margin: 0 }}>No sponsors in this tier yet.</p>}
                       </>
                     ) : null}
-                  </section>
+                  </TierBox>
                 );
               }}
             />
@@ -783,6 +831,7 @@ function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice;
     ...v.early_draws.filter((d) => d.date).map((d, i) => ({ at: d.date, what: `Early draw ${i + 1}${d.prize ? `: ${d.prize}` : ''}` })),
     v.sales_close ? { at: v.sales_close, what: 'Sales close' } : null,
     v.draw_at ? { at: v.draw_at, what: `Main draw${v.draw_location ? `, ${v.draw_location}` : ''}` } : null,
+    ...v.prizes.filter((p) => p.draw_at && p.title && moment(p.draw_at).isValid()).map((p) => ({ at: p.draw_at!, what: `${p.title} draw` })),
   ].filter(Boolean).sort((a, b) => moment(a!.at).valueOf() - moment(b!.at).valueOf()).map((d): WizardSiteDate => ({ when: when(d!.at), what: d!.what }));
   const numbers = v.ticket_pack_groups.map((g) => g.licence_number).filter(Boolean);
   const logo = (x: Sponsor): WizardSiteSponsor => ({ name: x.alt, logo: x.logo });

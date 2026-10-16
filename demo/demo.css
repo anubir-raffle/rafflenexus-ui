@@ -61,3 +61,7 @@ p { color: var(--ink-body); }
 .rnc-alist.demo-split { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: max(96px, calc((100% - (var(--cols, 3) - 1) * 10px) / var(--cols, 3))); }
 .demo-split-remove.rnc-btn { position: absolute; top: -8px; right: -4px; color: var(--ink-muted); }
 .demo-split > li { scroll-snap-align: start; }
+
+/* A sponsor tier: its logos and an Add a sponsor button; a logo dropped anywhere on it joins the tier. */
+.demo-tier { display: grid; gap: 16px; padding: clamp(12px, 2vw, 18px); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--ground); transition: border-color .2s ease, background-color .2s ease; }
+.demo-tier.is-over { border-color: var(--action); background: var(--lead-soft); }
