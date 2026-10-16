@@ -101,7 +101,6 @@ const LIMIT = {
   cause: 800, //       stays beside the cause photo instead of running far below it
   alt: 125, //         what screen readers read out comfortably in one go
   sponsor: 60, //      a sponsor's name (a logo's alt text, the prize and presenting sponsor)
-  location: 40, //     the last stop on the dates timeline
   licence: 20, //      as printed on the licence
   prize: 50, //        one line beside the prize's value
   prizeText: 600, //   the prizes page, beside the prize's picture
@@ -1008,7 +1007,7 @@ export function WizardDemo() {
               <WizardSection title="Main draw" description="It must come after sales close.">
                 <div style={grid(240)}>
                   <DateField name="draw_at" label="Draw date and time" readOnly={ro} disableDates={(d) => !!v.sales_close && d.isBefore(day(v.sales_close)!, 'day')} />
-                  <Text name="draw_location" label="Draw location" maxLength={LIMIT.location} readOnly={ro} />
+                  <Text name="draw_location" label="Draw location" readOnly={ro} />
                 </div>
               </WizardSection>
               <EarlyDraws v={v} m={m} ro={ro} />
