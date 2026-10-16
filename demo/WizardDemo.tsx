@@ -13,8 +13,8 @@ import { DatePicker } from '../src/inputs';
 
 // A sample brief, the way the Raffle Builder's setup form holds it. Every name and figure is made up.
 type Slide = { id: string; src: string; alt: string };
-/** A ticket pack: its price, how many tickets it holds, and (optional) how many tickets are in its pool; unlimited when the licence is. */
-type Pack = { id: string; name: string; tickets: string; price: string; pool: string };
+/** A ticket pack, named by its ticket count ("3 tickets"; no name of its own, Miguel 2026-10-16): its price, how many tickets it holds, and (optional) how many tickets are in its pool; unlimited when the licence is. */
+type Pack = { id: string; tickets: string; price: string; pool: string };
 /** A licence and the ticket packs it covers (the app's ticket_pack_groups). */
 type Licence = {
   id: string; licence_number: string; ticket_packs: Pack[];
@@ -80,7 +80,6 @@ const LIMIT = {
   sponsor: 60, //      a sponsor's name (a logo's alt text, the prize and presenting sponsor)
   location: 40, //     the last stop on the dates timeline
   licence: 20, //      as printed on the licence
-  pack: 24, //         the small line in a pack card, two or three cards across
   prize: 50, //        one line beside the prize's value
   prizeText: 600, //   the prizes page, beside the prize's picture
   sponsorText: 120, // "one or two lines" with the prize
@@ -107,7 +106,7 @@ const START: Brief = {
   early_draws: [{ id: 'e1', date: '2026-11-20 12:00:00', prize: '$5,000 cash' }],
   ticket_pack_groups: [{
     id: 'g1', licence_number: '000000', unlimited: false,
-    ticket_packs: [{ id: 'p1', name: 'Single ticket', tickets: '1', price: '25', pool: '40000' }, { id: 'p2', name: 'Pack of 3', tickets: '3', price: '60', pool: '60000' }],
+    ticket_packs: [{ id: 'p1', tickets: '1', price: '25', pool: '40000' }, { id: 'p2', tickets: '3', price: '60', pool: '60000' }],
   }],
   prizes: [
     { id: 'z1', title: 'Lakeside home', value: '1250000', description: '<p>A four-bedroom home by the lake, <em>fully furnished</em>.</p>', image: art('Lakeside home', 1200, 900, '#126ab5', '#0c3f75'),
@@ -231,7 +230,7 @@ const errs = {
       ...(new Set(numbers).size < numbers.length && { licence_twice: 'The same licence number is entered twice' }),
       ...(g.some((l) => !l.ticket_packs.length) && { packs: 'Give every licence at least one ticket pack' }),
       ...(g.some((l) => l.ticket_packs.some((p) => rules.pool(p, l))) && { pool: 'Check each pack’s tickets in the pool' }),
-      ...(packs.some((p) => !p.name.trim() || rules.price(p.price) || rules.tickets(p.tickets)) && { pack_fields: 'Give every pack a name, a price above $0 and a whole number of tickets' }),
+      ...(packs.some((p) => rules.price(p.price) || rules.tickets(p.tickets)) && { pack_fields: 'Give every pack a price above $0 and a whole number of tickets' }),
       ...(repeats && { repeats: 'Two packs in one licence have the same number of tickets' }),
     };
   },
@@ -311,25 +310,21 @@ function Slides({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
 function Packs({ licence, setPacks, ro }: { licence: Licence; setPacks: (packs: Pack[]) => void; ro: boolean }) {
   const [isOpen, toggle] = useOpenRows();
   const packs = licence.ticket_packs;
-  const add = () => { const id = uid('p'); setPacks([...packs, { id, name: '', tickets: '', price: '', pool: '' }]); toggle(id, true); focusSoon(`${id}-name`); };
+  const add = () => { const id = uid('p'); setPacks([...packs, { id, tickets: '', price: '', pool: '' }]); toggle(id, true); focusSoon(`${id}-price`); };
+  const packName = (p: Pack) => (Number(p.tickets) ? plural(Number(p.tickets), 'ticket') : 'New pack');
   return (
     <div style={{ display: 'grid', gap: 12 }}>
       <p className="rnc-field-label" style={{ margin: 0 }}>Ticket packs for this licence</p>
       <AnimatedList aria-label={`Ticket packs for licence ${licence.licence_number || 'without a number'}`} items={packs} getKey={(p) => p.id} renderItem={(p, i) => (
         <ExpandableRow
-          title={p.name || 'New pack'} meta={p.price ? `${money(p.price)} · ${plural(Number(p.tickets) || 0, 'ticket')}${licence.unlimited ? ' · unlimited' : p.pool ? ` · ${Number(p.pool).toLocaleString('en-CA')} in the pool` : ''}` : 'No price yet'}
+          title={packName(p)} meta={p.price ? `${money(p.price)}${licence.unlimited ? ' · unlimited' : p.pool ? ` · ${Number(p.pool).toLocaleString('en-CA')} in the pool` : ''}` : 'No price yet'}
           open={isOpen(p.id)} onOpenChange={(o) => toggle(p.id, o)}
-          actions={!ro && i > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${p.name || 'this pack'}`} onClick={() => setPacks(packs.filter((x) => x.id !== p.id))} /> : null}
+          actions={!ro && i > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove the ${packName(p)} pack`} onClick={() => setPacks(packs.filter((x) => x.id !== p.id))} /> : null}
         >
-          {i > -1 ? (
-            <div style={grid(170)}>
-              <ItemText id={`${p.id}-name`} label="Pack name" value={p.name} readOnly={ro} maxLength={LIMIT.pack} required="Name the pack" onValue={(x) => setPacks(patch(packs, p.id, { name: x }))} />
-            </div>
-          ) : null}
           {i > -1 ? (
             // Price, Tickets quantity, Tickets in the pool (Miguel, 2026-10-16). The pool reads "Unlimited", turned off, when the licence is unlimited.
             <div style={grid(170)}>
-              <ItemText label="Price ($)" value={p.price} readOnly={ro} inputMode="decimal" check={rules.price} onValue={(x) => setPacks(patch(packs, p.id, { price: x.replace(/[^0-9.]/g, '') }))} />
+              <ItemText id={`${p.id}-price`} label="Price ($)" value={p.price} readOnly={ro} inputMode="decimal" check={rules.price} onValue={(x) => setPacks(patch(packs, p.id, { price: x.replace(/[^0-9.]/g, '') }))} />
               <ItemText label="Tickets quantity" value={p.tickets} readOnly={ro} inputMode="numeric" check={(x) => rules.tickets(x) ?? (packs.some((o) => o.id !== p.id && o.tickets && o.tickets === x) ? 'Another pack in this licence has this many tickets' : undefined)} onValue={(x) => setPacks(patch(packs, p.id, { tickets: x.replace(/\D/g, '') }))} />
               {licence.unlimited ? (
                 <TextField label="Tickets in the pool" value="Unlimited" disabled showCount={false} />
@@ -641,7 +636,7 @@ function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice;
         org={v.client.name} logo={v.logo} logoAlt={`${v.client.name} logo`} heading={v.heading} subheading={v.subheading}
         cause={richTextLength(v.cause) ? <RichText html={v.cause} /> : undefined} colour={v.colours.primary} secondary={v.colours.secondary} accent={v.colours.accent}
         slides={v.slides.map((s) => s.src)}
-        packs={(first?.ticket_packs ?? []).filter((p) => p.price).map((p) => ({ label: plural(Number(p.tickets) || 0, 'ticket'), note: p.name, price: money(p.price) }))}
+        packs={(first?.ticket_packs ?? []).filter((p) => p.price).map((p) => ({ label: plural(Number(p.tickets) || 0, 'ticket'), price: money(p.price) }))}
         dates={dates}
         prizes={v.prizes.filter((p) => p.title).map((p) => ({ title: p.title, value: p.value ? money(p.value) : undefined, image: p.image, sponsor: p.sponsor.name || p.sponsor.logo ? { name: p.sponsor.name, logo: p.sponsor.logo } : undefined }))}
         causeMedia={v.cause_media ? { kind: v.cause_media.kind, src: v.cause_media.src } : undefined}
@@ -832,7 +827,7 @@ export function WizardDemo() {
               { label: 'Website', step: 0, complete: !messages(errs.website(v)).length, summary: `${v.name}, at ${address(v) || 'no address yet'}. ${richTextToPlain(v.cause).split('\n')[0]}`, issues: messages(errs.website(v)) },
               { label: 'Slideshow', step: 1, complete: !messages(errs.slides(v)).length, summary: `${plural(v.slides.length, 'slide')}.`, issues: messages(errs.slides(v)) },
               { label: 'Dates', step: 2, complete: !messages(errs.dates(v)).length, summary: `Sales ${when(v.sales_open) || 'not set'} to ${when(v.sales_close) || 'not set'}. Draw ${when(v.draw_at) || 'not set'}.`, issues: messages(errs.dates(v)) },
-              { label: 'Licences and tickets', step: 3, complete: !messages(errs.licences(v)).length, summary: v.ticket_pack_groups.map((g) => `#${g.licence_number || '(no number)'}: ${g.ticket_packs.map((p) => `${p.name || 'New pack'} ${money(p.price)}`).join(', ') || 'no packs'} ${g.unlimited ? ' (unlimited tickets)' : ''}`).join('. '), issues: messages(errs.licences(v)) },
+              { label: 'Licences and tickets', step: 3, complete: !messages(errs.licences(v)).length, summary: v.ticket_pack_groups.map((g) => `#${g.licence_number || '(no number)'}: ${g.ticket_packs.map((p) => `${Number(p.tickets) ? plural(Number(p.tickets), 'ticket') : 'New pack'} ${money(p.price)}`).join(', ') || 'no packs'} ${g.unlimited ? ' (unlimited tickets)' : ''}`).join('. '), issues: messages(errs.licences(v)) },
               { label: 'Prizes', step: 4, complete: !messages(errs.prizes(v)).length, summary: v.prizes.map((p) => p.title || 'New prize').join(', '), issues: messages(errs.prizes(v)) },
               { label: 'Sponsors', step: 5, complete: !messages(errs.sponsors(v)).length, summary: `${v.sponsors.length ? `${plural(v.sponsors.length, 'sponsor logo')}${v.sponsors_tiered ? `, in ${plural(v.sponsor_tiers.length, 'tier')}` : ''}.` : 'No sponsor logos.'}${v.presenting.logo ? ` ${v.presenting.label.trim() || 'Presented by'} ${v.presenting.name || 'a sponsor'}.` : ''}`, issues: messages(errs.sponsors(v)) },
               { label: 'Rules of play', step: 6, complete: true, summary: v.rules ? `Your own rules (${v.rules.name}).` : `The standard rules for ${v.client.province}.`, issues: [] },
