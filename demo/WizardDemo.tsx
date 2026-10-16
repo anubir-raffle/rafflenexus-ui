@@ -307,17 +307,24 @@ function Slides({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
 }
 
 /** One licence's ticket packs: open a pack to edit it, add or remove packs. */
+/** A pack's name, from its tickets and price: "3 tickets for $60" (Miguel, 2026-10-16: "determine pack name based on the price and tickets quantity"). */
+function packName(p: Pack) {
+  const t = Number(p.tickets); const price = Number(p.price);
+  if (t && price) return `${plural(t, 'ticket')} for ${money(p.price)}`;
+  if (t) return plural(t, 'ticket');
+  return price ? `${money(p.price)} pack` : 'New pack';
+}
+
 function Packs({ licence, setPacks, ro }: { licence: Licence; setPacks: (packs: Pack[]) => void; ro: boolean }) {
   const [isOpen, toggle] = useOpenRows();
   const packs = licence.ticket_packs;
   const add = () => { const id = uid('p'); setPacks([...packs, { id, tickets: '', price: '', pool: '' }]); toggle(id, true); focusSoon(`${id}-price`); };
-  const packName = (p: Pack) => (Number(p.tickets) ? plural(Number(p.tickets), 'ticket') : 'New pack');
   return (
     <div style={{ display: 'grid', gap: 12 }}>
       <p className="rnc-field-label" style={{ margin: 0 }}>Ticket packs for this licence</p>
       <AnimatedList aria-label={`Ticket packs for licence ${licence.licence_number || 'without a number'}`} items={packs} getKey={(p) => p.id} renderItem={(p, i) => (
         <ExpandableRow
-          title={packName(p)} meta={p.price ? `${money(p.price)}${licence.unlimited ? ' · unlimited' : p.pool ? ` · ${Number(p.pool).toLocaleString('en-CA')} in the pool` : ''}` : 'No price yet'}
+          title={packName(p)} meta={licence.unlimited ? 'Unlimited' : p.pool ? `${Number(p.pool).toLocaleString('en-CA')} in the pool` : undefined}
           open={isOpen(p.id)} onOpenChange={(o) => toggle(p.id, o)}
           actions={!ro && i > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove the ${packName(p)} pack`} onClick={() => setPacks(packs.filter((x) => x.id !== p.id))} /> : null}
         >
@@ -827,7 +834,7 @@ export function WizardDemo() {
               { label: 'Website', step: 0, complete: !messages(errs.website(v)).length, summary: `${v.name}, at ${address(v) || 'no address yet'}. ${richTextToPlain(v.cause).split('\n')[0]}`, issues: messages(errs.website(v)) },
               { label: 'Slideshow', step: 1, complete: !messages(errs.slides(v)).length, summary: `${plural(v.slides.length, 'slide')}.`, issues: messages(errs.slides(v)) },
               { label: 'Dates', step: 2, complete: !messages(errs.dates(v)).length, summary: `Sales ${when(v.sales_open) || 'not set'} to ${when(v.sales_close) || 'not set'}. Draw ${when(v.draw_at) || 'not set'}.`, issues: messages(errs.dates(v)) },
-              { label: 'Licences and tickets', step: 3, complete: !messages(errs.licences(v)).length, summary: v.ticket_pack_groups.map((g) => `#${g.licence_number || '(no number)'}: ${g.ticket_packs.map((p) => `${Number(p.tickets) ? plural(Number(p.tickets), 'ticket') : 'New pack'} ${money(p.price)}`).join(', ') || 'no packs'} ${g.unlimited ? ' (unlimited tickets)' : ''}`).join('. '), issues: messages(errs.licences(v)) },
+              { label: 'Licences and tickets', step: 3, complete: !messages(errs.licences(v)).length, summary: v.ticket_pack_groups.map((g) => `#${g.licence_number || '(no number)'}: ${g.ticket_packs.map(packName).join(', ') || 'no packs'} ${g.unlimited ? ' (unlimited tickets)' : ''}`).join('. '), issues: messages(errs.licences(v)) },
               { label: 'Prizes', step: 4, complete: !messages(errs.prizes(v)).length, summary: v.prizes.map((p) => p.title || 'New prize').join(', '), issues: messages(errs.prizes(v)) },
               { label: 'Sponsors', step: 5, complete: !messages(errs.sponsors(v)).length, summary: `${v.sponsors.length ? `${plural(v.sponsors.length, 'sponsor logo')}${v.sponsors_tiered ? `, in ${plural(v.sponsor_tiers.length, 'tier')}` : ''}.` : 'No sponsor logos.'}${v.presenting.logo ? ` ${v.presenting.label.trim() || 'Presented by'} ${v.presenting.name || 'a sponsor'}.` : ''}`, issues: messages(errs.sponsors(v)) },
               { label: 'Rules of play', step: 6, complete: true, summary: v.rules ? `Your own rules (${v.rules.name}).` : `The standard rules for ${v.client.province}.`, issues: [] },
