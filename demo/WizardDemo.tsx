@@ -6,7 +6,7 @@ import {
   type PreviewDevice, type WizardMutators, type WizardSiteDate, type WizardSiteSponsor,
 } from '../src/wizard';
 import {
-  AnimatedList, BrandColours, Button, DomainField, ExpandableRow, Icon, RichText, RichTextArea, Select, SortableList, StatusPill, Switch, TextArea, TextField, UploadTile,
+  AnimatedList, BrandColours, Button, SegmentedControl, DomainField, ExpandableRow, Icon, RichText, RichTextArea, Select, SortableList, StatusPill, Switch, TextArea, TextField, UploadTile,
   domainUrl, richTextLength, richTextToPlain, type BrandColourSet, type DomainType, type LicenceProvince,
 } from '../src';
 import { DatePicker } from '../src/inputs';
@@ -15,7 +15,11 @@ import { DatePicker } from '../src/inputs';
 type Slide = { id: string; src: string; alt: string };
 type Pack = { id: string; name: string; tickets: string; price: string };
 /** A licence and the ticket packs it covers (the app's ticket_pack_groups). */
-type Licence = { id: string; licence_number: string; ticket_packs: Pack[] };
+type Licence = {
+  id: string; licence_number: string; ticket_packs: Pack[];
+  /** The most tickets the licence lets the raffle sell, or no limit (Miguel, 2026-10-16: "allow option for unlimited tickets"). */
+  tickets_available: string; unlimited: boolean;
+};
 /** A prize's sponsor (optional): a logo, a name and a line about them. */
 type PrizeSponsor = { name: string; logo?: string; description: string };
 type Prize = { id: string; title: string; value: string; description: string; sponsor: PrizeSponsor };
@@ -58,7 +62,28 @@ const when = (v?: string) => (v ? moment(v).format('MMM D, YYYY, h:mm A') : '');
 const day = (v?: string) => (v ? moment(v) : null);
 
 // Character limits, from the app's validation where it has one (name 5 to 80, cause 30 to 1500).
-const LIMIT = { name: 80, heading: 90, subheading: 160, cause: 1500, alt: 150, location: 80, licence: 20, pack: 40, prize: 80, prizeText: 1000, earlyPrize: 80 };
+/**
+ * Character limits sized to where the text lands on the site, so nothing breaks the layout (Miguel, 2026-10-16: "too many
+ * characters would make the layout weird"). Measured on the preview at 1280 and 390 wide.
+ */
+const LIMIT = {
+  name: 60, //         the browser tab and search results cut longer titles
+  heading: 60, //      the hero heading: three lines on a desktop, four on a phone
+  subheading: 100, //  two or three lines under the heading
+  cause: 800, //       stays beside the cause photo instead of running far below it
+  alt: 125, //         what screen readers read out comfortably in one go
+  sponsor: 60, //      a sponsor's name (a logo's alt text, the prize and presenting sponsor)
+  location: 40, //     the last stop on the dates timeline
+  licence: 20, //      as printed on the licence
+  pack: 24, //         the small line in a pack card, two or three cards across
+  prize: 50, //        one line beside the prize's value
+  prizeText: 600, //   the prizes page, beside the prize's picture
+  sponsorText: 120, // "one or two lines" with the prize
+  tier: 30, //         the heading over a tier's logos
+  wording: 24, //      small text in the header, before the presenting sponsor's logo
+  earlyPrize: 30, //   a stop on the dates timeline, three or four across
+  social: 60, //       an account name or address
+};
 
 const START: Brief = {
   name: 'Sample Hospital Lottery', sub_domain: 'samplehospital', sub_domain_type: 'rn', heading: 'Win a lakeside home and support hospital care',
@@ -76,7 +101,7 @@ const START: Brief = {
   sales_open: '2026-11-02 09:00:00', sales_close: '2026-12-18 23:59:00', draw_at: '2026-12-19 12:00:00', draw_location: 'Foundation office',
   early_draws: [{ id: 'e1', date: '2026-11-20 12:00:00', prize: '$5,000 cash' }],
   ticket_pack_groups: [{
-    id: 'g1', licence_number: '000000',
+    id: 'g1', licence_number: '000000', tickets_available: '100000', unlimited: false,
     ticket_packs: [{ id: 'p1', name: 'Single ticket', tickets: '1', price: '25' }, { id: 'p2', name: 'Pack of 3', tickets: '3', price: '60' }],
   }],
   prizes: [{ id: 'z1', title: 'Lakeside home', value: '1250000', description: '<p>A four-bedroom home by the lake, <em>fully furnished</em>.</p>',
@@ -130,6 +155,13 @@ const rules = {
   price: (v: string) => (!v ? 'Enter the price' : !(amount(v) > 0) ? 'Enter a price above $0' : undefined),
   tickets: (v: string) => (!v ? 'Enter how many tickets' : !/^\d+$/.test(v) || Number(v) < 1 ? 'Enter a whole number, 1 or more' : undefined),
   value: (v: string) => (!v ? "Enter the prize's value" : !(amount(v) > 0) ? 'Enter a value above $0' : undefined),
+  ticketsAvailable: (l: Licence) => {
+    if (l.unlimited) return undefined;
+    const most = Math.max(0, ...l.ticket_packs.map((p) => Number(p.tickets) || 0));
+    return !l.tickets_available ? 'Enter the maximum tickets, or choose Unlimited'
+      : !/^\d+$/.test(l.tickets_available) || Number(l.tickets_available) < 1 ? 'Enter a whole number, 1 or more'
+        : Number(l.tickets_available) < most ? `Enter at least ${most.toLocaleString('en-CA')}: your biggest pack has that many tickets` : undefined;
+  },
   earlyDate: (v: string, b: Brief) => (!v ? 'Enter the date'
     : past(v) ? 'Pick a time from now on'
       : (b.sales_open && !moment(v).isAfter(moment(b.sales_open))) || (b.sales_close && !moment(v).isBefore(moment(b.sales_close))) ? 'Early draws happen while sales are open' : undefined),
@@ -187,6 +219,7 @@ const errs = {
       ...(g.some((l) => rules.licence(l.licence_number)) && { licence_number: 'Enter every licence number, as on the licence' }),
       ...(new Set(numbers).size < numbers.length && { licence_twice: 'The same licence number is entered twice' }),
       ...(g.some((l) => !l.ticket_packs.length) && { packs: 'Give every licence at least one ticket pack' }),
+      ...(g.some((l) => rules.ticketsAvailable(l)) && { tickets_available: 'Set each licence’s maximum tickets, or choose Unlimited' }),
       ...(packs.some((p) => !p.name.trim() || rules.price(p.price) || rules.tickets(p.tickets)) && { pack_fields: 'Give every pack a name, a price above $0 and a whole number of tickets' }),
       ...(repeats && { repeats: 'Two packs in one licence have the same number of tickets' }),
     };
@@ -293,7 +326,7 @@ function Packs({ licence, setPacks, ro }: { licence: Licence; setPacks: (packs: 
 /** Every licence the raffle sells under, each with its own ticket packs. Add a licence; remove one while there's more than one. */
 function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   const list = v.ticket_pack_groups;
-  const add = () => { const id = uid('g'); m.setLicences([...list, { id, licence_number: '', ticket_packs: [] }]); focusSoon(`${id}-number`); };
+  const add = () => { const id = uid('g'); m.setLicences([...list, { id, licence_number: '', ticket_packs: [], tickets_available: '', unlimited: false }]); focusSoon(`${id}-number`); };
   return (
     <>
       <AnimatedList aria-label="Licences" className="demo-licences" items={list} getKey={(g) => g.id} renderItem={(g, i) => (
@@ -303,6 +336,19 @@ function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
               <div style={grid(240)}>
                 <ItemText id={`${g.id}-number`} label="Licence number" hint="As it appears on your licence." value={g.licence_number} readOnly={ro} maxLength={LIMIT.licence}
                   check={(x) => rules.licence(x) ?? (list.some((o) => o.id !== g.id && o.licence_number === x) ? "This licence number is already entered" : undefined)} onValue={(x) => m.setLicences(patch(list, g.id, { licence_number: x }))} />
+                {/* A maximum, or unlimited (Miguel, 2026-10-16: "allow option for unlimited tickets", "allow option for max tickets"). */}
+                <div style={{ display: 'grid', gap: 10, alignContent: 'start', minWidth: 0 }}>
+                  <span className="rnc-field-label" id={`${g.id}-cap`}>Tickets for sale</span>
+                  <SegmentedControl aria-labelledby={`${g.id}-cap`} name={`${g.id}-cap`} disabled={ro} value={g.unlimited ? 'unlimited' : 'max'}
+                    options={[{ value: 'max', label: 'Set a maximum' }, { value: 'unlimited', label: 'Unlimited' }]}
+                    onChange={(x) => m.setLicences(patch(list, g.id, { unlimited: x === 'unlimited' }))} />
+                  {g.unlimited ? (
+                    <p className="rnc-field-hint" style={{ margin: 0 }}>Sell as many tickets as people buy.</p>
+                  ) : (
+                    <ItemText label="Maximum tickets" hint="The most this licence lets you sell." value={g.tickets_available} readOnly={ro} inputMode="numeric"
+                      check={() => rules.ticketsAvailable(g)} onValue={(x) => m.setLicences(patch(list, g.id, { tickets_available: x.replace(/[^0-9]/g, '') }))} />
+                  )}
+                </div>
               </div>
               <Packs licence={g} ro={ro} setPacks={(packs) => m.setLicences(patch(list, g.id, { ticket_packs: packs }))} />
               {!ro && list.length > 1 ? (
@@ -346,8 +392,8 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                       {/* Name and description on one side, the logo on the other, so neither column leaves a gap. */}
                       <div style={grid(220)}>
                         <div style={{ display: 'grid', gap: 16, alignContent: 'start', minWidth: 0 }}>
-                          <ItemText label="Sponsor name" value={p.sponsor.name} readOnly={ro} maxLength={LIMIT.prize} check={() => prizeSponsorError(p)} onValue={(x) => setSponsor(p, { name: x })} />
-                          <TextArea label="About the sponsor" hint="One or two lines, shown with the prize." value={p.sponsor.description} readOnly={ro} maxLength={300}
+                          <ItemText label="Sponsor name" value={p.sponsor.name} readOnly={ro} maxLength={LIMIT.sponsor} check={() => prizeSponsorError(p)} onValue={(x) => setSponsor(p, { name: x })} />
+                          <TextArea label="About the sponsor" hint="One or two lines, shown with the prize." value={p.sponsor.description} readOnly={ro} maxLength={LIMIT.sponsorText}
                             onChange={(e) => setSponsor(p, { description: e.target.value })} />
                         </div>
                         <UploadTile label="Sponsor logo" hint="At least 400 px wide. PNG or SVG on a clear background." src={p.sponsor.logo} alt={`${p.sponsor.name || 'Sponsor'} logo`} disabled={ro}
@@ -363,6 +409,26 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
       />
       {!ro ? <div><Button variant="secondary" startIcon="plus" onClick={add}>Add a prize to this draw</Button></div> : null}
     </WizardSection>
+  );
+}
+
+/** A sponsor row's logo with a Replace button under it: picks a new image and keeps the row (alt text, tier, place) as it is. */
+function LogoSwap({ src, name, disabled, onFile }: { src: string; name: string; disabled?: boolean; onFile: (url: string) => void }) {
+  const input = useRef<HTMLInputElement>(null);
+  const take = (file?: File) => {
+    if (!file || !file.type.startsWith('image/')) return;
+    const r = new FileReader(); r.onload = () => onFile(String(r.result)); r.readAsDataURL(file);
+  };
+  return (
+    <span style={{ display: 'grid', justifyItems: 'center', gap: 4, flex: 'none' }}>
+      <img src={src} alt="" style={{ width: 'clamp(72px, 12vw, 120px)', height: 48, objectFit: 'contain', borderRadius: 6, background: '#ffffff' }} />
+      {disabled ? null : (
+        <>
+          <Button variant="link" size="sm" aria-label={`Replace the ${name} logo`} onClick={() => input.current?.click()}>Replace</Button>
+          <input ref={input} type="file" accept="image/*" hidden onChange={(e) => { take(e.target.files?.[0]); e.target.value = ''; }} />
+        </>
+      )}
+    </span>
   );
 }
 
@@ -397,11 +463,11 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
       renderItem={(x, t) => (
         <div className="rnc-sort-row">
           {t.grip}
-          <img src={x.logo} alt="" style={{ width: 'clamp(72px, 12vw, 120px)', height: 48, objectFit: 'contain', borderRadius: 6, background: '#ffffff', flex: 'none' }} />
+          <LogoSwap src={x.logo} name={x.alt || `logo ${t.index + 1}`} disabled={ro || t.index < 0} onFile={(url) => m.setSponsors(patch(v.sponsors, x.id, { logo: url }))} />
           <div className="rnc-sort-body">
             {t.index > -1 ? (
               <div style={grid(200)}>
-                <TextField label={`Alt text for logo ${t.index + 1}`} value={x.alt} review={ro} maxLength={LIMIT.alt} error={x.alt ? undefined : 'Describe the logo (the sponsor’s name)'}
+                <TextField label={`Alt text for logo ${t.index + 1}`} value={x.alt} review={ro} maxLength={LIMIT.sponsor} error={x.alt ? undefined : 'Describe the logo (the sponsor’s name)'}
                   onChange={(e) => m.setSponsors(patch(v.sponsors, x.id, { alt: e.target.value }))} />
                 {v.sponsors_tiered && tiers.length > 1 ? (
                   <Select label="Tier" value={x.tier} disabled={ro} options={tiers.map((tt, n) => ({ value: tt.id, label: tierName(tt, n) }))} onChange={(e) => moveTo(x, e.target.value)} />
@@ -444,7 +510,7 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                     </div>
                     {tt.index > -1 ? (
                       <>
-                        <ItemText id={`${t.id}-name`} label="Tier name" value={t.name} readOnly={ro} maxLength={40} required="Name the tier" onValue={(x) => m.setTiers(patch(tiers, t.id, { name: x }))} />
+                        <ItemText id={`${t.id}-name`} label="Tier name" value={t.name} readOnly={ro} maxLength={LIMIT.tier} required="Name the tier" onValue={(x) => m.setTiers(patch(tiers, t.id, { name: x }))} />
                         {list.length ? logos(list, `${name} logos`, (next) => reorderIn(t.id, next)) : <p className="rnc-field-hint" style={{ margin: 0 }}>No logos in this tier yet.</p>}
                         {upload(`Add a logo to ${name}`, t.id)}
                       </>
@@ -466,10 +532,10 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
       <WizardSection title="Presenting sponsor" size="md" description="Optional. Shown beside your logo at the top of every page, after your own wording.">
         <div style={grid(220)}>
           <div style={{ display: 'grid', gap: 16, alignContent: 'start', minWidth: 0 }}>
-            <TextField label="Wording" hint="Shown before the logo. For example Presented by or Brought to you by." value={v.presenting.label} review={ro} maxLength={30}
+            <TextField label="Wording" hint="Shown before the logo. For example Presented by or Brought to you by." value={v.presenting.label} review={ro} maxLength={LIMIT.wording}
               error={v.presenting.logo && !v.presenting.label.trim() ? 'Add the wording, like Presented by' : undefined}
               onChange={(e) => m.setPresenting({ ...v.presenting, label: e.target.value })} />
-            <TextField label="Sponsor name" hint="Read out in place of the logo for people who can’t see it." value={v.presenting.name} review={ro} maxLength={LIMIT.alt}
+            <TextField label="Sponsor name" hint="Read out in place of the logo for people who can’t see it." value={v.presenting.name} review={ro} maxLength={LIMIT.sponsor}
               error={v.presenting.logo && !v.presenting.name.trim() ? 'Name the presenting sponsor' : undefined}
               onChange={(e) => m.setPresenting({ ...v.presenting, name: e.target.value })} />
           </div>
@@ -655,7 +721,7 @@ export function WizardDemo() {
                 <div style={{ display: 'grid', gap: 16, maxWidth: 560 }}>
                   {SOCIALS.map((x) => (
                     <Field key={x.key} name={`support_socials.${x.key}`} parse={(raw: string) => toHandle(raw ?? '', x)} validate={socialError}>
-                      {({ input, meta }) => <TextField label={x.label} hint={`${x.host}your-account`} review={ro} maxLength={100} {...input} value={input.value ?? ''}
+                      {({ input, meta }) => <TextField label={x.label} hint={`${x.host}your-account`} review={ro} maxLength={LIMIT.social} {...input} value={input.value ?? ''}
                         error={meta.error && meta.touched ? meta.error : undefined} />}
                     </Field>
                   ))}
@@ -716,7 +782,7 @@ export function WizardDemo() {
               { label: 'Website', step: 0, complete: !messages(errs.website(v)).length, summary: `${v.name}, at ${address(v) || 'no address yet'}. ${richTextToPlain(v.cause).split('\n')[0]}`, issues: messages(errs.website(v)) },
               { label: 'Slideshow', step: 1, complete: !messages(errs.slides(v)).length, summary: `${plural(v.slides.length, 'slide')}.`, issues: messages(errs.slides(v)) },
               { label: 'Dates', step: 2, complete: !messages(errs.dates(v)).length, summary: `Sales ${when(v.sales_open) || 'not set'} to ${when(v.sales_close) || 'not set'}. Draw ${when(v.draw_at) || 'not set'}.`, issues: messages(errs.dates(v)) },
-              { label: 'Licences and tickets', step: 3, complete: !messages(errs.licences(v)).length, summary: v.ticket_pack_groups.map((g) => `#${g.licence_number || '(no number)'}: ${g.ticket_packs.map((p) => `${p.name || 'New pack'} ${money(p.price)}`).join(', ') || 'no packs'}`).join('. '), issues: messages(errs.licences(v)) },
+              { label: 'Licences and tickets', step: 3, complete: !messages(errs.licences(v)).length, summary: v.ticket_pack_groups.map((g) => `#${g.licence_number || '(no number)'}: ${g.ticket_packs.map((p) => `${p.name || 'New pack'} ${money(p.price)}`).join(', ') || 'no packs'} (${g.unlimited ? 'unlimited tickets' : g.tickets_available ? `up to ${Number(g.tickets_available).toLocaleString('en-CA')} tickets` : 'maximum not set'})`).join('. '), issues: messages(errs.licences(v)) },
               { label: 'Prizes', step: 4, complete: !messages(errs.prizes(v)).length, summary: v.prizes.map((p) => p.title || 'New prize').join(', '), issues: messages(errs.prizes(v)) },
               { label: 'Sponsors', step: 5, complete: !messages(errs.sponsors(v)).length, summary: `${v.sponsors.length ? `${plural(v.sponsors.length, 'sponsor logo')}${v.sponsors_tiered ? `, in ${plural(v.sponsor_tiers.length, 'tier')}` : ''}.` : 'No sponsor logos.'}${v.presenting.logo ? ` ${v.presenting.label.trim() || 'Presented by'} ${v.presenting.name || 'a sponsor'}.` : ''}`, issues: messages(errs.sponsors(v)) },
               { label: 'Rules of play', step: 6, complete: true, summary: v.rules ? `Your own rules (${v.rules.name}).` : `The standard rules for ${v.client.province}.`, issues: [] },
