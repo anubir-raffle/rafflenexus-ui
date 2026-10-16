@@ -277,7 +277,8 @@ function Slides({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
             <div className="rnc-sort-row">
               {t.grip}
               <span className="rnc-sort-pos" aria-hidden="true">{t.index + 1}</span>
-              <img src={s.src} alt="" style={{ width: 'clamp(64px, 12vw, 120px)', aspectRatio: '13 / 10', objectFit: 'cover', borderRadius: 8, flex: 'none' }} />
+              <ImageSwap kind="slide" src={s.src} name={`slide ${t.index + 1}`} minWidth={650} minHeight={500} disabled={ro || t.index < 0}
+                onFile={(url) => m.setSlides(patch(v.slides, s.id, { src: url }))} />
               <div className="rnc-sort-body">
                 {t.index > -1 ? (
                   <TextField label={`Alt text for slide ${t.index + 1}`} value={s.alt} review={ro} maxLength={LIMIT.alt} error={s.alt ? undefined : 'Describe what the slide shows'}
@@ -420,24 +421,41 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
 }
 
 /**
- * A sponsor row's logo. Click it (or Enter / Space) to pick a new image; "Replace" fades in over it on hover and focus
- * (Miguel, 2026-10-16). The row keeps its alt text, tier and place.
+ * A row's picture (a sponsor logo or a slide). Click it (or Enter / Space) to pick a new image; "Replace" fades in over it on
+ * hover and focus (Miguel, 2026-10-16). The row keeps everything else. A slide is checked against its minimum size.
  */
-function LogoSwap({ src, name, disabled, onFile }: { src: string; name: string; disabled?: boolean; onFile: (url: string) => void }) {
+function ImageSwap({ src, name, kind = 'logo', minWidth, minHeight, disabled, onFile }: {
+  src: string; name: string; kind?: 'logo' | 'slide'; minWidth?: number; minHeight?: number; disabled?: boolean; onFile: (url: string) => void;
+}) {
   const input = useRef<HTMLInputElement>(null);
+  const [problem, setProblem] = useState('');
   const take = (file?: File) => {
     if (!file || !file.type.startsWith('image/')) return;
-    const r = new FileReader(); r.onload = () => onFile(String(r.result)); r.readAsDataURL(file);
+    const r = new FileReader();
+    r.onload = () => {
+      const url = String(r.result);
+      if (!minWidth && !minHeight) { setProblem(''); onFile(url); return; }
+      const img = new Image();
+      img.onload = () => {
+        const w = img.naturalWidth, h = img.naturalHeight;
+        if ((minWidth && w < minWidth) || (minHeight && h < minHeight)) { setProblem(`That image is ${w} × ${h}. Use one at least ${minWidth ?? 0} × ${minHeight ?? 0}.`); return; }
+        setProblem(''); onFile(url);
+      };
+      img.src = url;
+    };
+    r.readAsDataURL(file);
   };
-  if (disabled) return <span className="demo-logo-swap is-static"><img src={src} alt="" /></span>;
+  const cls = `demo-swap is-${kind}`;
+  if (disabled) return <span className={`${cls} is-static`}><img src={src} alt="" /></span>;
   return (
-    <>
-      <button type="button" className="demo-logo-swap" aria-label={`Replace the ${name} logo`} onClick={() => input.current?.click()}>
+    <span className="demo-swap-wrap">
+      <button type="button" className={cls} aria-label={`Replace ${name}`} onClick={() => input.current?.click()}>
         <img src={src} alt="" />
-        <span className="demo-logo-swap-label" aria-hidden="true"><Icon name="upload-simple" size={16} />Replace</span>
+        <span className="demo-swap-label" aria-hidden="true"><Icon name="upload-simple" size={16} />Replace</span>
       </button>
       <input ref={input} type="file" accept="image/*" hidden onChange={(e) => { take(e.target.files?.[0]); e.target.value = ''; }} />
-    </>
+      <span className="demo-swap-error" role="alert">{problem}</span>
+    </span>
   );
 }
 
@@ -473,7 +491,7 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
         // Two lines, so the row isn't cramped beside the preview: the logo and the row's buttons, then the fields at full width.
         <div className="rnc-sort-row" style={{ flexWrap: 'wrap', rowGap: 12 }}>
           {t.grip}
-          <LogoSwap src={x.logo} name={x.alt || `logo ${t.index + 1}`} disabled={ro || t.index < 0} onFile={(url) => m.setSponsors(patch(v.sponsors, x.id, { logo: url }))} />
+          <ImageSwap src={x.logo} name={`the ${x.alt || `logo ${t.index + 1}`} logo`} disabled={ro || t.index < 0} onFile={(url) => m.setSponsors(patch(v.sponsors, x.id, { logo: url }))} />
           <span style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
             {t.moves}
             {!ro && t.index > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${x.alt || `logo ${t.index + 1}`}`} onClick={() => m.setSponsors(v.sponsors.filter((o) => o.id !== x.id))} /> : null}
