@@ -43,6 +43,8 @@ type Prize = {
    * winner's `share` of the jackpot). Either way the winner gets `share` percent (Miguel, 2026-10-16).
    */
   fifty_mode?: 'jackpot' | 'guaranteed';
+  /** A split pot: the winners' share is divided between several winners, each a percent of it (Miguel, 2026-10-16). */
+  split?: boolean; splits?: { id: string; pct: string }[];
 };
 /** A raffle sponsor: a logo only on the site (Miguel, 2026-10-16), with alt text for people who can't see it. `tier` is a Tier id. */
 type Sponsor = { id: string; logo: string; alt: string; tier: string };
@@ -181,6 +183,13 @@ const rules = {
   price: (v: string) => (!v ? 'Enter the price' : !(amount(v) > 0) ? 'Enter a price above $0' : undefined),
   tickets: (v: string) => (!v ? 'Enter how many tickets' : !/^\d+$/.test(v) || Number(v) < 1 ? 'Enter a whole number, 1 or more' : undefined),
   value: (v: string) => (!v ? "Enter the prize's value" : !(amount(v) > 0) ? 'Enter a value above $0' : undefined),
+  splits: (p: Prize) => {
+    if (!p.split) return undefined;
+    const list = p.splits ?? [];
+    if (list.some((w) => !/^\d+$/.test(w.pct) || Number(w.pct) < 1)) return 'Give every winner a whole percent, 1 or more';
+    const sum = list.reduce((n, w) => n + Number(w.pct), 0);
+    return sum !== 100 ? `Winners' shares add up to ${sum}%. Make them 100%.` : undefined;
+  },
   share: (v: string) => (!v ? "Enter the winner's share" : !/^\d+$/.test(v) || Number(v) < 1 || Number(v) > 99 ? 'Enter a whole percent from 1 to 99' : undefined),
   // Optional: the overall maximum holds the biggest pack, and the packs' own pools can't add up to more.
   maxTickets: (l: Licence) => {
@@ -266,7 +275,7 @@ const errs = {
   },
   prizes: (v: Brief) => ({
     ...(!v.prizes.length && { prizes: 'Add a prize' }),
-    ...(v.prizes.some((p) => !p.title.trim() || (p.kind === 'fifty' ? rules.share(p.share ?? '') : rules.value(p.value))) && { prize_fields: 'Give every prize a title and a value above $0 (a 50/50, its share of the pot)' }),
+    ...(v.prizes.some((p) => !p.title.trim() || (p.kind === 'fifty' ? rules.share(p.share ?? '') ?? rules.splits(p) : rules.value(p.value))) && { prize_fields: 'Give every prize a title and a value above $0 (a 50/50, its share of the pot)' }),
     ...(v.prizes.some(prizeSponsorError) && { prize_sponsor: 'Name every prize sponsor you added' }),
   }),
 };
@@ -283,10 +292,10 @@ function Text({ name, label, hint, readOnly, id, maxLength, type, inputMode }: {
 }
 /** A field for one item in a list. It edits the item by id through a mutator (like the app's setTicketPacks), so removing or
  *  reordering rows never mixes their values up. Its error shows once someone leaves it empty. */
-function ItemText({ id, label, hint, value, onValue, readOnly, required, check, maxLength, inputMode, optional, showCount }: { id?: string; label: string; hint?: string; optional?: boolean; showCount?: boolean; value: string; onValue: (v: string) => void; readOnly?: boolean; required?: string; check?: (v: string) => string | undefined; maxLength?: number; inputMode?: 'numeric' | 'decimal' | 'text' }) {
+function ItemText({ id, label, hint, value, onValue, readOnly, required, check, maxLength, inputMode, optional, showCount, prefix, suffix }: { id?: string; label: string; hint?: string; optional?: boolean; showCount?: boolean; prefix?: string; suffix?: string; value: string; onValue: (v: string) => void; readOnly?: boolean; required?: string; check?: (v: string) => string | undefined; maxLength?: number; inputMode?: 'numeric' | 'decimal' | 'text' }) {
   const [left, setLeft] = useState(false);
   const problem = check ? check(value) : required && !value.trim() ? required : undefined;
-  return <TextField id={id} label={label} hint={hint} optional={optional} value={value} review={readOnly} maxLength={maxLength} showCount={showCount} inputMode={inputMode} onChange={(e) => onValue(e.target.value)} onBlur={() => setLeft(true)} error={left ? problem : undefined} />;
+  return <TextField id={id} label={label} hint={hint} optional={optional} value={value} review={readOnly} maxLength={maxLength} showCount={showCount} prefix={prefix} suffix={suffix} inputMode={inputMode} onChange={(e) => onValue(e.target.value)} onBlur={() => setLeft(true)} error={left ? problem : undefined} />;
 }
 const patch = <T extends { id: string }>(list: T[], id: string, change: Partial<T>) => list.map((x) => (x.id === id ? { ...x, ...change } : x));
 /** Focus a field once it exists (after an item is added and its row opens). */
@@ -398,7 +407,7 @@ function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
               </div>
               <Packs licence={g} ro={ro} setPacks={(packs) => m.setLicences(patch(list, g.id, { ticket_packs: packs }))} />
               {!ro && list.length > 1 ? (
-                <div><Button variant="danger-ghost" size="sm" startIcon="trash" onClick={() => m.setLicences(list.filter((x) => x.id !== g.id))}>Remove licence {i + 1}</Button></div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}><Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove licence ${i + 1}`} onClick={() => m.setLicences(list.filter((x) => x.id !== g.id))} /></div>
               ) : null}
             </>
           ) : null}
@@ -419,9 +428,10 @@ const isFiftyDescription = (html: string) => !html || /^<p>\d*% of the 50\/50 Ja
  * stands in for the figure.
  */
 function fiftyCard(p: Prize) {
-  if (p.fifty_mode === 'guaranteed') return { label: 'Guaranteed Payout', value: 'Live payout' };
+  if (p.fifty_mode === 'guaranteed') return { label: 'Guaranteed Payout', value: 'Live payout', note: p.split ? `Shared by ${p.splits?.length ?? 0} winners` : undefined };
   const share = p.share || '50';
-  return { label: 'Jackpot Amount', value: 'Live jackpot', note: `Winner takes ${share === '50' ? 'half' : `${share}%`}` };
+  const part = share === '50' ? 'half' : `${share}%`;
+  return { label: 'Jackpot Amount', value: 'Live jackpot', note: p.split ? `${p.splits?.length ?? 0} winners share ${part}` : `Winner takes ${part}` };
 }
 
 function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
@@ -431,10 +441,14 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   const hasFifty = v.prizes.some((p) => p.kind === 'fifty');
   const addFifty = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, kind: 'fifty', fifty_mode: 'jackpot', share: '50', title: '50/50 jackpot', value: '', description: fiftyDescription('50'), sponsors: [] }]); toggle(id, true); focusSoon(`${id}-share`); };
   const prizeMeta = (p: Prize) => (p.kind === 'fifty'
-    ? (p.share ? `${p.share}% to the winner · shows the ${p.fifty_mode === 'guaranteed' ? 'payout' : 'jackpot'}` : 'No share yet')
+    ? (p.share ? `${p.share}% to ${p.split ? `${p.splits?.length ?? 0} winners` : 'the winner'} · shows the ${p.fifty_mode === 'guaranteed' ? 'payout' : 'jackpot'}` : 'No share yet')
     : p.value ? money(p.value) : 'No value yet');
   // Switching how a 50/50 shows also switches its default title, unless people wrote their own.
   const FIFTY_TITLES = { jackpot: '50/50 jackpot', guaranteed: '50/50 guaranteed payout' } as const;
+  const setSplits = (p: Prize, splits: { id: string; pct: string }[]) => m.setPrizes(patch(v.prizes, p.id, { splits }));
+  const setSplit = (p: Prize, on: boolean) => m.setPrizes(patch(v.prizes, p.id, {
+    split: on, ...(on && !p.splits?.length && { splits: [{ id: uid('w'), pct: '50' }, { id: uid('w'), pct: '30' }, { id: uid('w'), pct: '20' }] }),
+  }));
   const setFiftyMode = (p: Prize, mode: 'jackpot' | 'guaranteed') => m.setPrizes(patch(v.prizes, p.id, {
     fifty_mode: mode, ...(Object.values(FIFTY_TITLES).includes(p.title as never) && { title: FIFTY_TITLES[mode] }),
     ...(isFiftyDescription(p.description) && { description: mode === 'jackpot' ? fiftyDescription(p.share) : '' }),
@@ -471,12 +485,35 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                     <div style={grid(220)}>
                       <ItemText id={`${p.id}-title`} label="Prize title" value={p.title} readOnly={ro} maxLength={LIMIT.prize} required="Give the prize a title" onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { title: x }))} />
                       {p.kind === 'fifty' ? (
-                        <ItemText id={`${p.id}-share`} label="Winner's share of the pot (%)" value={p.share ?? ''} readOnly={ro} inputMode="numeric" check={rules.share}
+                        <ItemText id={`${p.id}-share`} label="Winner's share of the pot" suffix="%" value={p.share ?? ''} readOnly={ro} inputMode="numeric" check={rules.share}
                           onValue={(x) => { const share = x.replace(/\D/g, '').slice(0, 2); m.setPrizes(patch(v.prizes, p.id, { share, ...(isFiftyDescription(p.description) && { description: fiftyDescription(share) }) })); }} />
                       ) : (
                         <ItemText label="Value ($)" value={p.value} readOnly={ro} inputMode="decimal" check={rules.value} onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { value: x.replace(/[^0-9.]/g, '') }))} />
                       )}
                     </div>
+                    {p.kind === 'fifty' ? (
+                      // Split pot: the winners' share divided between several winners (Miguel, 2026-10-16: "add option for split pots").
+                      <div style={{ display: 'grid', gap: 12 }}>
+                        <Switch label="Split the pot between several winners" checked={!!p.split} disabled={ro} onChange={(on) => setSplit(p, on)} />
+                        {p.split ? (
+                          <>
+                            <p className="rnc-field-hint" style={{ margin: 0 }}>{`Each winner's part of the winners' ${p.share || 50}%. They add up to 100%.`}</p>
+                            <AnimatedList aria-label="Winners' shares" className="demo-split" items={p.splits ?? []} getKey={(w) => w.id} renderItem={(w, k) => (
+                              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <ItemText label={k > -1 ? `Winner ${k + 1}` : 'Winner'} suffix="%" value={w.pct} readOnly={ro} inputMode="numeric"
+                                    onValue={(x) => setSplits(p, patch(p.splits ?? [], w.id, { pct: x.replace(/\D/g, '').slice(0, 3) }))} />
+                                </div>
+                                {!ro && k > -1 && (p.splits?.length ?? 0) > 2 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove winner ${k + 1}`} style={{ marginBottom: 6 }}
+                                  onClick={() => setSplits(p, (p.splits ?? []).filter((x) => x.id !== w.id))} /> : null}
+                              </div>
+                            )} />
+                            {rules.splits(p) ? <p className="rnc-field-error" role="alert" style={{ margin: 0 }}>{rules.splits(p)}</p> : null}
+                            {!ro ? <div><Button variant="secondary" size="sm" startIcon="plus" onClick={() => setSplits(p, [...(p.splits ?? []), { id: uid('w'), pct: '' }])}>Add a winner</Button></div> : null}
+                          </>
+                        ) : null}
+                      </div>
+                    ) : null}
                     <UploadTile label="Prize photo (optional)" hint="Shown on the prize's card. 1200 × 900 works best. At least 600 × 450." minWidth={600} minHeight={450}
                       src={p.image} alt={p.title || 'The prize'} disabled={ro} onFile={(_f, url) => m.setPrizes(patch(v.prizes, p.id, { image: url }))} onRemove={() => m.setPrizes(patch(v.prizes, p.id, { image: undefined }))} />
                     <RichTextArea label="Description" hint="What winners get. Shown on the prizes page." value={p.description} review={ro} maxLength={LIMIT.prizeText} minHeight={140}
@@ -801,6 +838,7 @@ export function WizardDemo() {
         disabledAll={ro}
         isQaPage={mode === 'qa'}
         reviewUnlocked={earlyReview}
+        defaultPreviewHidden
         celebrate
         briefStatus={mode === 'qa' ? 2 : 1}
         toolbar={(v) => (

@@ -12,6 +12,10 @@ export interface TextFieldProps extends FieldBaseProps, CountProps, Omit<InputHT
   /** Class for the field wrapper (the input itself takes `inputClassName`). */
   className?: string;
   inputClassName?: string;
+  /** Text inside the field before the value, e.g. "$". Not part of the field's name; clicking it focuses the field. */
+  prefix?: string;
+  /** Text inside the field after the value, e.g. "%". */
+  suffix?: string;
 }
 
 /**
@@ -20,7 +24,7 @@ export interface TextFieldProps extends FieldBaseProps, CountProps, Omit<InputHT
  * with `review` it's read-only with a Copy button inside.
  */
 export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function TextField(
-  { label, hint, error, optional, review, id, className, inputClassName, type = 'text', maxLength, showCount = true, value, defaultValue, onChange, readOnly, 'aria-describedby': describedBy, ...rest }, ref,
+  { label, hint, error, optional, review, id, className, inputClassName, type = 'text', maxLength, showCount = true, value, defaultValue, onChange, readOnly, prefix, suffix, 'aria-describedby': describedBy, ...rest }, ref,
 ) {
   const fid = useFieldId(id);
   const { length, track } = useCharCount(value, defaultValue);
@@ -36,7 +40,18 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(function T
     <FieldShell className={className} error={error} hint={hint} hintId={hintId} errorId={errorId} review={review}
       label={<FieldLabel htmlFor={fid} label={label} optional={optional} />}
       count={counted ? <CharCount id={countId!} length={length} max={maxLength!} /> : null}>
-      {review ? <div className="rnc-affix">{input}<CopyButton label={label} value={() => String(value ?? (document.getElementById(fid) as HTMLInputElement | null)?.value ?? '')} /></div> : input}
+      {review || prefix || suffix ? (
+        // The frame holds the affixes and Copy; a click on an affix focuses the field. Affixes are hidden from screen readers.
+        <div className={cx('rnc-affix', rest.disabled && 'is-disabled')} onMouseDown={(e) => {
+          if ((e.target as HTMLElement).closest('input, button')) return;
+          e.preventDefault(); document.getElementById(fid)?.focus();
+        }}>
+          {prefix ? <span aria-hidden="true">{prefix}</span> : null}
+          {input}
+          {suffix ? <span aria-hidden="true">{suffix}</span> : null}
+          {review ? <CopyButton label={label} value={() => String(value ?? (document.getElementById(fid) as HTMLInputElement | null)?.value ?? '')} /> : null}
+        </div>
+      ) : input}
     </FieldShell>
   );
 });

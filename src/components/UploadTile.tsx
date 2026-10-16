@@ -95,8 +95,9 @@ export function UploadTile({
         })() : <><Icon name={/image|video/.test(accept) ? 'image' : 'clipboard-text'} size={28} /><span>Drop a file here, or</span></>}
         <span className="rnc-upload-actions">
           <Button variant="secondary" size="sm" disabled={disabled} aria-describedby={`${id}-l`} onClick={() => input.current?.click()}>{src ? replaceLabel : chooseLabel}</Button>
-          {src && onRemove ? <Button variant="danger-ghost" size="sm" startIcon="trash" disabled={disabled} aria-describedby={`${id}-l`} onClick={onRemove}>{removeLabel}</Button> : null}
         </span>
+        {/* Remove is quiet: a trash icon in the corner (Miguel, 2026-10-16: "make remove or delete buttons less emphasized"). */}
+        {src && onRemove ? <Button className="rnc-upload-remove" variant="ghost" size="sm" iconOnly startIcon="trash" disabled={disabled} aria-label={removeLabel} aria-describedby={`${id}-l`} onClick={onRemove} /> : null}
         <input ref={input} className="rnc-upload-input" type="file" accept={accept} tabIndex={-1} aria-hidden="true" onChange={(e) => { void take(e.target.files?.[0]); e.target.value = ''; }} />
       </div>
       <div className="rnc-upload-msg" role="alert">{shown ? <p className="rnc-field-error">{shown}</p> : null}</div>

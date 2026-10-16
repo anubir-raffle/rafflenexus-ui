@@ -55,3 +55,6 @@ p { color: var(--ink-body); }
 /* A collapsible block inside an open row (a prize's sponsors): flat, ruled, no second shadow. */
 .demo-subrow.rnc-xrow { background: var(--ground); box-shadow: none; border: 1px solid var(--line); }
 .demo-subrow .rnc-xrow-inner { padding: 4px 12px 14px; }
+
+/* A split pot's winners: up to three across. */
+.rnc-alist.demo-split { grid-template-columns: repeat(auto-fill, minmax(max(140px, calc((100% - 20px) / 3)), 1fr)); }

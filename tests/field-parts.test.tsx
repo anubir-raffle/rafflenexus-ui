@@ -180,6 +180,15 @@ describe('WizardSitePreview sponsors, socials and cause media', () => {
   });
 });
 
+describe('TextField prefix and suffix', () => {
+  it('shows them inside the field, hidden from screen readers; the field keeps its name', () => {
+    const { container } = render(<TextField label="Winner's share" suffix="%" prefix="~" defaultValue="50" />);
+    const spans = container.querySelectorAll('.rnc-affix > span[aria-hidden="true"]');
+    expect([...spans].map((x) => x.textContent)).toEqual(['~', '%']);
+    expect(screen.getByRole('textbox', { name: "Winner's share" })).toHaveValue('50');
+  });
+});
+
 describe('WizardSitePreview prize cards and the phone header', () => {
   it('prizes are cards: the photo or a gift icon, the value, the title', () => {
     const { container } = render(<WizardSitePreview heading="Win" prizes={[{ title: 'Home', value: '$1', image: 'data:image/png;base64,AAAA' }, { title: 'Cash', value: '$2' }]} />);

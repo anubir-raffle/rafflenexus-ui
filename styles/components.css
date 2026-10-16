@@ -331,6 +331,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-affix:hover { border-color: var(--ink-muted); }
 .rnc-affix:focus-within { outline: 2px solid var(--focus); outline-offset: 0; border-color: var(--focus); }
 .rnc-affix > span { flex: none; color: var(--ink-muted); white-space: nowrap; }
+.rnc-affix.is-disabled { background: var(--ground); cursor: not-allowed; }
 .rnc-affix .rnc-input + span { margin-left: 4px; }
 .rnc-affix .rnc-input { flex: 1; min-width: 0; min-height: 44px; padding: 0; border: 0; border-radius: 0; background: none; }
 .rnc-affix .rnc-input:focus-visible { outline: none; }
@@ -1140,6 +1141,8 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 /* Only the empty tile's picture icon: the Remove button's trash icon takes the button's colour and size. */
 .rnc-upload-zone > .rnc-icon { width: 28px; height: 28px; color: var(--action); }
 .rnc-upload-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.rnc-upload-remove.rnc-btn { position: absolute; right: 6px; bottom: 6px; color: var(--ink-muted); transition: color .2s ease, background-color .2s ease; }
+.rnc-upload-remove.rnc-btn:hover { color: var(--error); background: var(--error-soft); }
 .rnc-upload-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 @media (prefers-reduced-motion: no-preference) {
   .rnc-upload-zone.is-over { transform: scale(1.015); }

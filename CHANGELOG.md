@@ -3,10 +3,12 @@
 ## 0.7.4 (2026-10-16)
 
 - `AnimatedList` / `SortableList`: items only slide when the list itself changes (a move, an add, a removal, a drop). A row opening above them, or a field growing, no longer sets off a slide, so expanding an `ExpandableRow` inside a list stays steady.
+- `TextField` takes `prefix` and `suffix` (e.g. "%"): shown inside the field, hidden from screen readers; a click on them focuses the field.
+- `UploadTile`: Remove is a quiet trash icon in the tile's bottom-right corner (red on hover), not a red button.
 - `WizardSitePreview` prize cards take `label` (a caption above the value), `note` (a line under the title) and `sponsors` (several; one shows logo and name, several show logos).
 - `ExpandableRow` inside another open `ExpandableRow` keeps its own open or closed state (the open rules were reaching nested rows).
 - `WizardSection` takes `action`: a control at the top right of its heading (the demo's "Unlimited tickets" switch for each licence).
-- The demo's prizes take one 50/50 prize ("Add a 50/50 prize") with the winner's share of the pot (50% by default). "Show as" sets what the site shows: the Jackpot ("Jackpot Amount", "Winner takes half"; default description "50% of the 50/50 Jackpot!" following the share) or the Guaranteed Payout (what the winner takes home). Prizes take several sponsors, in a collapsible "Prize sponsors" block.
+- The demo's prizes take one 50/50 prize ("Add a 50/50 prize") with the winner's share of the pot (50% by default). "Show as" sets what the site shows: the Jackpot ("Jackpot Amount", "Winner takes half"; default description "50% of the 50/50 Jackpot!" following the share) or the Guaranteed Payout (what the winner takes home). Prizes take several sponsors, in a collapsible "Prize sponsors" block. A 50/50 can split the pot between several winners (each a percent of the winners' share, adding up to 100%; "3 winners share half"). The preview starts hidden. Removing a licence is a trash icon.
 - The demo's prizes and ticket packs open and close on their own (opening one no longer folds another away), the prize photo shows as a thumbnail, sponsor logos without tiers sit two to a row, and each ticket pack has Price, Tickets quantity and Tickets in the pool (required unless unlimited; whole packs), with no name to type: its name comes from its tickets and price ("3 tickets for $60"). A licence's "Unlimited tickets" switch sets every pack's pool to Unlimited, and an optional "Maximum tickets overall" caps the licence either way (some licences are unlimited per pack with an overall maximum); the packs' pools can't add up to more.
 
 ## 0.7.3 (2026-10-16)
