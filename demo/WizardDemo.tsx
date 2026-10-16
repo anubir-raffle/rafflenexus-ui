@@ -269,10 +269,10 @@ function Text({ name, label, hint, readOnly, id, maxLength, type, inputMode }: {
 }
 /** A field for one item in a list. It edits the item by id through a mutator (like the app's setTicketPacks), so removing or
  *  reordering rows never mixes their values up. Its error shows once someone leaves it empty. */
-function ItemText({ id, label, hint, value, onValue, readOnly, required, check, maxLength, inputMode, optional }: { id?: string; label: string; hint?: string; optional?: boolean; value: string; onValue: (v: string) => void; readOnly?: boolean; required?: string; check?: (v: string) => string | undefined; maxLength?: number; inputMode?: 'numeric' | 'decimal' | 'text' }) {
+function ItemText({ id, label, hint, value, onValue, readOnly, required, check, maxLength, inputMode, optional, showCount }: { id?: string; label: string; hint?: string; optional?: boolean; showCount?: boolean; value: string; onValue: (v: string) => void; readOnly?: boolean; required?: string; check?: (v: string) => string | undefined; maxLength?: number; inputMode?: 'numeric' | 'decimal' | 'text' }) {
   const [left, setLeft] = useState(false);
   const problem = check ? check(value) : required && !value.trim() ? required : undefined;
-  return <TextField id={id} label={label} hint={hint} optional={optional} value={value} review={readOnly} maxLength={maxLength} inputMode={inputMode} onChange={(e) => onValue(e.target.value)} onBlur={() => setLeft(true)} error={left ? problem : undefined} />;
+  return <TextField id={id} label={label} hint={hint} optional={optional} value={value} review={readOnly} maxLength={maxLength} showCount={showCount} inputMode={inputMode} onChange={(e) => onValue(e.target.value)} onBlur={() => setLeft(true)} error={left ? problem : undefined} />;
 }
 const patch = <T extends { id: string }>(list: T[], id: string, change: Partial<T>) => list.map((x) => (x.id === id ? { ...x, ...change } : x));
 /** Focus a field once it exists (after an item is added and its row opens). */
@@ -377,7 +377,7 @@ function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
             <>
               {/* One column, so the fields line up whatever their hints. */}
               <div style={{ display: 'grid', gap: 16, maxWidth: 560 }}>
-                <ItemText id={`${g.id}-number`} label="Licence number" hint="As it appears on your licence." value={g.licence_number} readOnly={ro} maxLength={LIMIT.licence}
+                <ItemText id={`${g.id}-number`} label="Licence number" hint="As it appears on your licence." value={g.licence_number} readOnly={ro} maxLength={LIMIT.licence} showCount={false}
                   check={(x) => rules.licence(x) ?? (list.some((o) => o.id !== g.id && o.licence_number === x) ? "This licence number is already entered" : undefined)} onValue={(x) => m.setLicences(patch(list, g.id, { licence_number: x }))} />
                 <ItemText label="Maximum tickets overall" hint="Optional." value={g.max_tickets} readOnly={ro} inputMode="numeric"
                   check={() => rules.maxTickets(g)} onValue={(x) => m.setLicences(patch(list, g.id, { max_tickets: x.replace(/\D/g, '') }))} />
