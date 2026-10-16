@@ -376,7 +376,7 @@ function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
               <div style={grid(240)}>
                 <ItemText id={`${g.id}-number`} label="Licence number" hint="As it appears on your licence." value={g.licence_number} readOnly={ro} maxLength={LIMIT.licence}
                   check={(x) => rules.licence(x) ?? (list.some((o) => o.id !== g.id && o.licence_number === x) ? "This licence number is already entered" : undefined)} onValue={(x) => m.setLicences(patch(list, g.id, { licence_number: x }))} />
-                <ItemText label="Maximum tickets overall" optional hint="Across every pack. Some licences set one even when every pack is unlimited." value={g.max_tickets} readOnly={ro} inputMode="numeric"
+                <ItemText label="Maximum tickets overall" optional value={g.max_tickets} readOnly={ro} inputMode="numeric"
                   check={() => rules.maxTickets(g)} onValue={(x) => m.setLicences(patch(list, g.id, { max_tickets: x.replace(/\D/g, '') }))} />
                 {/* Unlimited tickets: every pack's "Tickets in the pool" reads Unlimited. */}
                 <div style={{ display: 'grid', gap: 6, alignContent: 'start', minWidth: 0, gridColumn: '1 / -1' }}>
