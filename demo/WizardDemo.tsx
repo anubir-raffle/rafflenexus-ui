@@ -1027,10 +1027,10 @@ export function WizardDemo() {
         {/* Every province: the standard rules are used unless the organization uploads its own (Miguel, 2026-10-16). */}
         <Wizard.Page label="Rules of play" summary={(v) => (v.rules ? 'Your own rules' : 'Standard rules')} description="The rules your raffle runs by, linked from every page of your site.">
           {(m, v) => (
-            <WizardSection title="Rules of play" description={`We use our standard rules of play for ${v.client.province} raffles unless you upload your own.`}>
+            <WizardSection title="Rules of play" description="We use our standard rules of play unless you upload your own.">
               <p style={{ margin: 0, display: 'flex', gap: 8, alignItems: 'center', color: 'var(--ink-body)' }}>
                 <Icon name="check-circle" size={18} style={{ color: 'var(--verified)' }} />
-                {v.rules ? `Using your own rules: ${v.rules.name}` : `Using the standard rules of play for ${v.client.province}.`}
+                {v.rules ? `Using your own rules: ${v.rules.name}` : 'Using the standard rules of play.'}
               </p>
               <UploadTile label="Your own rules (optional)" hint="A PDF, up to 10 MB. Remove it to go back to the standard rules." accept="application/pdf" maxBytes={10 * 1024 * 1024}
                 kind="file" src={v.rules?.src} fileName={v.rules?.name} disabled={ro}
@@ -1047,7 +1047,7 @@ export function WizardDemo() {
               { label: 'Licences and tickets', step: 3, complete: !messages(errs.licences(v)).length, summary: v.ticket_pack_groups.map((g) => `#${g.licence_number || '(no number)'}: ${g.ticket_packs.map(packName).join(', ') || 'no packs'} ${[g.unlimited && 'unlimited tickets', g.max_tickets && `up to ${Number(g.max_tickets).toLocaleString('en-CA')} tickets overall`].filter(Boolean).join(', ').replace(/^(.+)$/, ' ($1)')}`).join('. '), issues: messages(errs.licences(v)) },
               { label: 'Prizes', step: 4, complete: !messages(errs.prizes(v)).length, summary: v.prizes.map((p) => p.title || 'New prize').join(', '), issues: messages(errs.prizes(v)) },
               { label: 'Sponsors', step: 5, complete: !messages(errs.sponsors(v)).length, summary: `${v.sponsors.length ? `${plural(v.sponsors.length, 'sponsor logo')}${v.sponsors_tiered ? `, in ${plural(v.sponsor_tiers.length, 'tier')}` : ''}.` : 'No sponsor logos.'}${v.presenting.logo ? ` ${v.presenting.label.trim() || 'Presented by'} ${v.presenting.name || 'a sponsor'}.` : ''}`, issues: messages(errs.sponsors(v)) },
-              { label: 'Rules of play', step: 6, complete: true, summary: v.rules ? `Your own rules (${v.rules.name}).` : `The standard rules for ${v.client.province}.`, issues: [] },
+              { label: 'Rules of play', step: 6, complete: true, summary: v.rules ? `Your own rules (${v.rules.name}).` : 'The standard rules of play.', issues: [] },
             ]} />
           )}
         </Wizard.Page>
