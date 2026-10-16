@@ -173,6 +173,12 @@ describe('Wizard (/wizard)', () => {
     expect(screen.getByText('October 20, 2026')).toBeInTheDocument();
   });
 
+  it('WizardSection takes an action at the top right of its heading', () => {
+    const { container } = render(<WizardSection title="Licence 1" description="Your licence." action={<button type="button">Unlimited tickets</button>}><p>Fields</p></WizardSection>);
+    expect(container.querySelector('.rnc-wizard-section-top')).toHaveClass('has-action');
+    expect(container.querySelector('.rnc-wizard-section-action')).toHaveTextContent('Unlimited tickets');
+  });
+
   it('WizardDeadline says Past due in words; WizardSection has a title, a tooltip slot and an explainer line', () => {
     render(<>
       <WizardDeadline date="October 20, 2026" overdue />

@@ -370,19 +370,17 @@ function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   return (
     <>
       <AnimatedList aria-label="Licences" className="demo-licences" items={list} getKey={(g) => g.id} renderItem={(g, i) => (
-        <WizardSection title={i > -1 ? `Licence ${i + 1}` : 'Licence'} description={i === 0 ? 'Your gaming licence from the provincial regulator, and the ticket packs it covers.' : undefined}>
+        <WizardSection title={i > -1 ? `Licence ${i + 1}` : 'Licence'} description={i === 0 ? 'Your gaming licence from the provincial regulator, and the ticket packs it covers.' : undefined}
+          // Top right (Miguel, 2026-10-16). On: every pack's "Tickets in the pool" reads Unlimited.
+          action={i > -1 ? <Switch label="Unlimited tickets" checked={g.unlimited} disabled={ro} onChange={(on) => m.setLicences(patch(list, g.id, { unlimited: on }))} /> : null}>
           {i > -1 ? (
             <>
-              <div style={grid(240)}>
+              {/* One column, so the fields line up whatever their hints. */}
+              <div style={{ display: 'grid', gap: 16, maxWidth: 560 }}>
                 <ItemText id={`${g.id}-number`} label="Licence number" hint="As it appears on your licence." value={g.licence_number} readOnly={ro} maxLength={LIMIT.licence}
                   check={(x) => rules.licence(x) ?? (list.some((o) => o.id !== g.id && o.licence_number === x) ? "This licence number is already entered" : undefined)} onValue={(x) => m.setLicences(patch(list, g.id, { licence_number: x }))} />
-                <ItemText label="Maximum tickets overall" optional value={g.max_tickets} readOnly={ro} inputMode="numeric"
+                <ItemText label="Maximum tickets overall" hint="Optional." value={g.max_tickets} readOnly={ro} inputMode="numeric"
                   check={() => rules.maxTickets(g)} onValue={(x) => m.setLicences(patch(list, g.id, { max_tickets: x.replace(/\D/g, '') }))} />
-                {/* Unlimited tickets: every pack's "Tickets in the pool" reads Unlimited. */}
-                <div style={{ display: 'grid', gap: 6, alignContent: 'start', minWidth: 0, gridColumn: '1 / -1' }}>
-                  <Switch label="Unlimited tickets" checked={g.unlimited} disabled={ro} onChange={(on) => m.setLicences(patch(list, g.id, { unlimited: on }))} />
-                  <p className="rnc-field-hint" style={{ margin: 0 }}>{g.unlimited ? 'Every pack’s tickets in the pool is unlimited.' : 'Off: set each pack’s tickets in the pool.'}</p>
-                </div>
               </div>
               <Packs licence={g} ro={ro} setPacks={(packs) => m.setLicences(patch(list, g.id, { ticket_packs: packs }))} />
               {!ro && list.length > 1 ? (

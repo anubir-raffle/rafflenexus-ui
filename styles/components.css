@@ -752,6 +752,10 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 /* Sections inside a step: a heading (with an optional info button), an explainer line, then the fields. Space separates them, not rules. */
 .rnc-wizard-section + .rnc-wizard-section { margin-top: 40px; }
 .rnc-wizard-section-head { display: flex; align-items: center; gap: 4px; min-height: 28px; }
+/* A section's action (a switch or a button) sits at the top right of its heading, beside the title and description. */
+.rnc-wizard-section-top.has-action { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: center; }
+.rnc-wizard-section-top.has-action > :not(.rnc-wizard-section-action) { grid-column: 1; }
+.rnc-wizard-section-action { grid-column: 2; grid-row: 1 / span 2; justify-self: end; }
 .rnc-wizard-section-title { margin: 0; font: 600 20px/1.3 var(--font-sans); color: var(--ink); }
 .rnc-wizard-section.is-md .rnc-wizard-section-title { font-size: 17px; }
 .rnc-wizard-section.is-sm .rnc-wizard-section-title { font-size: 15px; color: var(--ink-body); }

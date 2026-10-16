@@ -70,6 +70,8 @@ export interface WizardSectionProps {
   description?: ReactNode;
   /** `lg` (default, the app's h5), `md` (sub-1), `sm` (sub-2). */
   size?: 'lg' | 'md' | 'sm';
+  /** A control at the top right of the section's heading, e.g. a `Switch` that changes the whole section. */
+  action?: ReactNode;
   /** The title's element. Default h3. */
   as?: ElementType;
   className?: string;
@@ -77,15 +79,16 @@ export interface WizardSectionProps {
 }
 
 /** A section inside a step: a heading (with an optional info button), an explainer line, then the fields. */
-export function WizardSection({ title, tooltip, description, size = 'lg', as: Title = 'h3', className, children }: WizardSectionProps) {
+export function WizardSection({ title, tooltip, description, size = 'lg', as: Title = 'h3', action, className, children }: WizardSectionProps) {
   return (
     <section className={cx('rnc-wizard-section', size !== 'lg' && `is-${size}`, className)}>
-      <div className="rnc-wizard-section-top">
+      <div className={cx('rnc-wizard-section-top', action != null && 'has-action')}>
         <div className="rnc-wizard-section-head">
           <Title className="rnc-wizard-section-title">{title}</Title>
           {tooltip}
         </div>
         {description ? <p className="rnc-wizard-section-desc">{description}</p> : null}
+        {action != null ? <div className="rnc-wizard-section-action">{action}</div> : null}
       </div>
       {children != null ? <div className="rnc-wizard-section-body">{children}</div> : null}
     </section>
