@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Field } from 'react-final-form';
-import { Wizard, WizardDeadline, WizardHeader, WizardPreview, WizardSection, WizardSitePreview, WizardToolbar, type WizardProps } from '../src/wizard';
+import { Wizard, WizardCelebration, WizardDeadline, WizardHeader, WizardPreview, WizardSection, WizardSitePreview, WizardToolbar, type WizardProps } from '../src/wizard';
 import DefaultWizard from '../src/wizard';
 
 type Brief = { name?: string; draw_at?: string; prize?: string; logo?: string; prizes?: string[]; client: { name: string; province: string } };
@@ -311,6 +311,43 @@ describe('Wizard layout v2 (the Raffle Builder of RNC V2.1)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
     expect(step(/^Dates/)).toHaveAttribute('aria-current', 'step');
     expect(screen.getByRole('heading', { level: 2, name: 'Dates' })).toBeInTheDocument();
+  });
+});
+
+describe('WizardCelebration', () => {
+  it('celebrate: after a successful submit a dialog says what happens next; focus goes to Done; Escape closes it', async () => {
+    const onSubmit = vi.fn();
+    render(
+      <Wizard onSubmit={onSubmit} celebrate initialValues={{ name: 'Sample' }}>
+        <Wizard.Page label="Review and submit"><p>Check</p></Wizard.Page>
+      </Wizard>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Your raffle is ready to build' });
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    expect(screen.getByRole('button', { name: 'Done' })).toHaveFocus();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('no celebration when onSubmit returns submission errors, or when celebrate is off', async () => {
+    const { unmount } = render(
+      <Wizard onSubmit={() => ({ name: 'Taken' })} celebrate><Wizard.Page label="Review and submit"><p>Check</p></Wizard.Page></Wizard>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    unmount();
+    render(<Wizard onSubmit={vi.fn()}><Wizard.Page label="Review and submit"><p>Check</p></Wizard.Page></Wizard>);
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('takes its own words; Done calls onClose', async () => {
+    const onClose = vi.fn();
+    render(<WizardCelebration open onClose={onClose} title="Submitted" text="Thanks." actionLabel="Close" />);
+    expect(screen.getByRole('dialog', { name: 'Submitted' })).toHaveAccessibleDescription('Thanks.');
+    await userEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onClose).toHaveBeenCalled();
   });
 });
 

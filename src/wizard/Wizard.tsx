@@ -8,6 +8,7 @@ import { Button } from '../components/Button';
 import { Icon } from '../components/Icon';
 import { cx, useReducedMotion } from '../utils';
 import { useDragScroll } from '../dragScroll';
+import { WizardCelebration, type WizardCelebrationProps } from './celebration';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 type Values = Record<string, any>;
@@ -76,6 +77,11 @@ export interface WizardProps<V extends Values = Values> {
   onReviewBlocked?: () => void;
   /** Testing only: Review opens before every step is complete, so you can check it. Submit stays disabled until every step is. */
   reviewUnlocked?: boolean;
+  /**
+   * Celebrate a successful submit with `WizardCelebration` (confetti, a check, what happens next). `true` uses its default words;
+   * pass `{ title, text, actionLabel }` to change them. Off by default. Skipped when `onSubmit` returns submission errors or throws.
+   */
+  celebrate?: boolean | Pick<WizardCelebrationProps, 'title' | 'text' | 'actionLabel'>;
   /** Submit-type buttons are disabled while this is true. Default: while a SweetAlert2 dialog is open. */
   isSubmitBlocked?: () => boolean;
   /** The step bar's accessible name. Default "Form steps". */
@@ -232,9 +238,10 @@ export function WizardSteps({ steps, current, onSelect, label = 'Form steps', la
 function WizardRoot<V extends Values = Values>({
   onSubmit, initialValues, onSave, lastSaved, isSaving, disabledAll, isQaPage, briefStatus, mutators, header, notice,
   backLabel = 'Back', nextLabel = 'Next', reviewLabel = 'Review', submitLabel = 'Submit', completeLabel = 'Complete form',
-  onReviewBlocked, reviewUnlocked = false, isSubmitBlocked = swalOpen, stepsLabel = 'Form steps', layout = 'v1', aside, railLabel = 'Setup form', toolbar, preview, className, children,
+  onReviewBlocked, reviewUnlocked = false, celebrate = false, isSubmitBlocked = swalOpen, stepsLabel = 'Form steps', layout = 'v1', aside, railLabel = 'Setup form', toolbar, preview, className, children,
   previewToggle = true, defaultPreviewHidden = false, previewHidden, onPreviewHiddenChange, hidePreviewLabel = 'Hide preview', showPreviewLabel = 'Show preview',
 }: WizardProps<V>) {
+  const [celebrating, setCelebrating] = useState(false);
   const [ownHidden, setOwnHidden] = useState(defaultPreviewHidden);
   const hidden = previewToggle && (previewHidden ?? ownHidden);
   const [revealed, setRevealed] = useState(false);
@@ -285,6 +292,8 @@ function WizardRoot<V extends Values = Values>({
     if (page >= visible.length - 1) {
       const data = await onSubmit(values);
       form.reset();
+      const failed = !!data && typeof data === 'object' && Object.keys(data as object).length > 0;
+      if (celebrate && !failed) setCelebrating(true);
       return data as any;
     }
     goTo(Math.min(page + 1, visible.length - 1));
@@ -415,6 +424,7 @@ function WizardRoot<V extends Values = Values>({
               </div>
             )}
             <KeepFieldState form={form as FormApi<any>} />
+            {celebrate ? <WizardCelebration open={celebrating} onClose={() => setCelebrating(false)} {...(typeof celebrate === 'object' ? celebrate : {})} /> : null}
             {onSave ? <FormSpy<V> subscription={{ active: true, values: true }} onChange={(st) => onSave({ values: st.values as V, active: st.active as string | undefined })} /> : null}
           </form>
         );

@@ -22,7 +22,7 @@ type Licence = {
 };
 /** A prize's sponsor (optional): a logo, a name and a line about them. */
 type PrizeSponsor = { name: string; logo?: string; description: string };
-type Prize = { id: string; title: string; value: string; description: string; sponsor: PrizeSponsor };
+type Prize = { id: string; title: string; value: string; description: string; image?: string; sponsor: PrizeSponsor };
 /** A raffle sponsor: a logo only on the site (Miguel, 2026-10-16), with alt text for people who can't see it. `tier` is a Tier id. */
 type Sponsor = { id: string; logo: string; alt: string; tier: string };
 type Tier = { id: string; name: string };
@@ -104,8 +104,13 @@ const START: Brief = {
     id: 'g1', licence_number: '000000', tickets_available: '100000', unlimited: false,
     ticket_packs: [{ id: 'p1', name: 'Single ticket', tickets: '1', price: '25' }, { id: 'p2', name: 'Pack of 3', tickets: '3', price: '60' }],
   }],
-  prizes: [{ id: 'z1', title: 'Lakeside home', value: '1250000', description: '<p>A four-bedroom home by the lake, <em>fully furnished</em>.</p>',
-    sponsor: { name: 'Sample Builders', logo: badge('SAMPLE BUILDERS', '#3b4656'), description: 'Built and furnished by Sample Builders.' } }],
+  prizes: [
+    { id: 'z1', title: 'Lakeside home', value: '1250000', description: '<p>A four-bedroom home by the lake, <em>fully furnished</em>.</p>', image: art('Lakeside home', 1200, 900, '#126ab5', '#0c3f75'),
+      sponsor: { name: 'Sample Builders', logo: badge('SAMPLE BUILDERS', '#3b4656'), description: 'Built and furnished by Sample Builders.' } },
+    { id: 'z2', title: 'Electric SUV', value: '65000', description: '<p>A new all-electric SUV with three years of charging.</p>', image: art('Electric SUV', 1200, 900, '#2b7a3d', '#174a24'),
+      sponsor: { name: 'Sample Motors', logo: badge('SAMPLE MOTORS', '#7e0c20'), description: 'Courtesy of Sample Motors.' } },
+    { id: 'z3', title: '$10,000 cash', value: '10000', description: '<p>Paid by cheque within 30 days of the draw.</p>', sponsor: { name: '', description: '' } },
+  ],
   support_socials: { facebook: 'samplehospital', instagram: 'samplehospital', twitter: 'samplehospital', youtube: '@samplehospital', linkedin: 'company/samplehospital' },
   sponsors: [
     { id: 'sp1', logo: badge('SAMPLE CREDIT UNION', '#13324f'), alt: 'Sample Credit Union', tier: 't1' },
@@ -384,6 +389,8 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                       <ItemText id={`${p.id}-title`} label="Prize title" value={p.title} readOnly={ro} maxLength={LIMIT.prize} required="Give the prize a title" onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { title: x }))} />
                       <ItemText label="Value ($)" value={p.value} readOnly={ro} inputMode="decimal" check={rules.value} onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { value: x.replace(/[^0-9.]/g, '') }))} />
                     </div>
+                    <UploadTile label="Prize photo (optional)" hint="Shown on the prize's card. 1200 × 900 works best. At least 600 × 450." minWidth={600} minHeight={450} preview="lg"
+                      src={p.image} alt={p.title || 'The prize'} disabled={ro} onFile={(_f, url) => m.setPrizes(patch(v.prizes, p.id, { image: url }))} onRemove={() => m.setPrizes(patch(v.prizes, p.id, { image: undefined }))} />
                     <RichTextArea label="Description" hint="What winners get. Shown on the prizes page." value={p.description} review={ro} maxLength={LIMIT.prizeText} minHeight={140}
                       onChange={(html) => m.setPrizes(patch(v.prizes, p.id, { description: html }))} />
                     {/* Optional: the prize's own sponsor, shown as "Sponsored by" on the prize (Miguel, 2026-10-16). */}
@@ -461,11 +468,16 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   const logos = (list: Sponsor[], label: string, onReorder: (next: Sponsor[]) => void) => (
     <SortableList aria-label={label} items={list} getKey={(x) => x.id} disabled={ro} itemLabel={(x, i) => x.alt || `Logo ${i + 1}`} onReorder={onReorder}
       renderItem={(x, t) => (
-        <div className="rnc-sort-row">
+        // Two lines, so the row isn't cramped beside the preview: the logo and the row's buttons, then the fields at full width.
+        <div className="rnc-sort-row" style={{ flexWrap: 'wrap', rowGap: 12 }}>
           {t.grip}
           <LogoSwap src={x.logo} name={x.alt || `logo ${t.index + 1}`} disabled={ro || t.index < 0} onFile={(url) => m.setSponsors(patch(v.sponsors, x.id, { logo: url }))} />
-          <div className="rnc-sort-body">
-            {t.index > -1 ? (
+          <span style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 'auto' }}>
+            {t.moves}
+            {!ro && t.index > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${x.alt || `logo ${t.index + 1}`}`} onClick={() => m.setSponsors(v.sponsors.filter((o) => o.id !== x.id))} /> : null}
+          </span>
+          {t.index > -1 ? (
+            <div className="rnc-sort-body" style={{ order: 10, flex: '1 1 100%' }}>
               <div style={grid(200)}>
                 <TextField label={`Alt text for logo ${t.index + 1}`} value={x.alt} review={ro} maxLength={LIMIT.sponsor} error={x.alt ? undefined : 'Describe the logo (the sponsor’s name)'}
                   onChange={(e) => m.setSponsors(patch(v.sponsors, x.id, { alt: e.target.value }))} />
@@ -473,10 +485,8 @@ function Sponsors({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                   <Select label="Tier" value={x.tier} disabled={ro} options={tiers.map((tt, n) => ({ value: tt.id, label: tierName(tt, n) }))} onChange={(e) => moveTo(x, e.target.value)} />
                 ) : null}
               </div>
-            ) : null}
-          </div>
-          {t.moves}
-          {!ro && t.index > -1 ? <Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${x.alt || `logo ${t.index + 1}`}`} onClick={() => m.setSponsors(v.sponsors.filter((o) => o.id !== x.id))} /> : null}
+            </div>
+          ) : null}
         </div>
       )}
     />
@@ -594,7 +604,7 @@ function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice;
         slides={v.slides.map((s) => s.src)}
         packs={(first?.ticket_packs ?? []).filter((p) => p.price).map((p) => ({ label: plural(Number(p.tickets) || 0, 'ticket'), note: p.name, price: money(p.price) }))}
         dates={dates}
-        prizes={v.prizes.filter((p) => p.title).map((p) => ({ title: p.title, value: p.value ? money(p.value) : undefined, sponsor: p.sponsor.name || p.sponsor.logo ? { name: p.sponsor.name, logo: p.sponsor.logo } : undefined }))}
+        prizes={v.prizes.filter((p) => p.title).map((p) => ({ title: p.title, value: p.value ? money(p.value) : undefined, image: p.image, sponsor: p.sponsor.name || p.sponsor.logo ? { name: p.sponsor.name, logo: p.sponsor.logo } : undefined }))}
         causeMedia={v.cause_media ? { kind: v.cause_media.kind, src: v.cause_media.src } : undefined}
         sponsor={v.presenting.logo ? { name: v.presenting.name, logo: v.presenting.logo, label: v.presenting.label.trim() || 'Presented by' } : undefined}
         sponsors={v.sponsors_tiered ? { tiers: v.sponsor_tiers.map((t) => ({ name: t.name, sponsors: v.sponsors.filter((x) => x.tier === t.id).map(logo) })) } : v.sponsors.map(logo)}
@@ -655,6 +665,7 @@ export function WizardDemo() {
         disabledAll={ro}
         isQaPage={mode === 'qa'}
         reviewUnlocked={earlyReview}
+        celebrate
         briefStatus={mode === 'qa' ? 2 : 1}
         toolbar={(v) => (
           <WizardToolbar back="#" crumb={<>Raffles / <b>{v.name}</b></>}

@@ -11,4 +11,5 @@ export {
   WizardHeader, WizardDeadline, WizardSection, WizardToolbar, WizardPreview, WizardSitePreview, WizardReview, usePreviewDevice,
   type WizardHeaderProps, type WizardDeadlineProps, type WizardSectionProps, type WizardToolbarProps, type WizardPreviewProps, type WizardSitePreviewProps, type WizardReviewSection, type PreviewDevice, type WizardSitePack, type WizardSiteDate, type WizardSitePrize, type WizardCauseMedia, type WizardSiteSponsor, type WizardSiteSocial,
 } from './parts';
+export { WizardCelebration, type WizardCelebrationProps } from './celebration';
 export { Wizard as default } from './Wizard';

@@ -95,7 +95,8 @@ export interface WizardSiteDate { when: ReactNode; what: ReactNode }
 /** A sponsor: a name, and a logo (an image URL) when there is one. */
 export interface WizardSiteSponsor { name: ReactNode; logo?: string }
 /** A prize. `sponsor` shows "Sponsored by" with the sponsor's logo (or name) on the prize. */
-export interface WizardSitePrize { title: ReactNode; value?: ReactNode; sponsor?: WizardSiteSponsor }
+/** One prize card: its photo (a gift icon on the site colour without one), value, title and optional sponsor. */
+export interface WizardSitePrize { title: ReactNode; value?: ReactNode; image?: string; sponsor?: WizardSiteSponsor }
 /** One social account, linked in the footer: the network's name and the full address. */
 export interface WizardSiteSocial { label: ReactNode; href: string }
 
@@ -186,6 +187,12 @@ export function WizardSitePreview({
   const tiers = !sponsors ? [] : Array.isArray(sponsors)
     ? (logos(sponsors).length ? [{ name: undefined as ReactNode, sponsors: logos(sponsors) }] : [])
     : sponsors.tiers.map((t) => ({ ...t, sponsors: logos(t.sponsors) })).filter((t) => t.sponsors.length);
+  const presenter = sponsor ? (
+    <span className="rnc-wsite-presenter">
+      <small>{sponsor.label ?? 'Presented by'}</small>
+      {sponsor.logo ? <img src={sponsor.logo} alt="" /> : <b>{sponsor.name}</b>}
+    </span>
+  ) : null;
   return (
     <div className={cx('rnc-wsite', `is-${device}`)} style={style}>
       <div className="rnc-wsite-hero" style={background ? { ['--site-photo' as string]: `url("${background}")` } : undefined}>
@@ -193,16 +200,19 @@ export function WizardSitePreview({
           <span className="rnc-wsite-brand">
             {logo ? <img src={logo} alt={logoAlt} /> : null}
             {org && (!logo || device === 'desktop') ? <span>{org}</span> : null}
-            {sponsor ? (
-              <span className="rnc-wsite-presenter">
-                <small>{sponsor.label ?? 'Presented by'}</small>
-                {sponsor.logo ? <img src={sponsor.logo} alt="" /> : <b>{sponsor.name}</b>}
-              </span>
-            ) : null}
+            {sponsor && device === 'desktop' ? presenter : null}
           </span>
-          {device === 'desktop' ? <span className="rnc-wsite-nav"><span>Prizes</span><span>Rules of play</span><span>Winners</span><span>Manage order</span></span> : null}
-          <span className="rnc-wsite-btn is-light">{cta}</span>
+          {device === 'desktop' ? (
+            <>
+              <span className="rnc-wsite-nav"><span>Prizes</span><span>Rules of play</span><span>Winners</span><span>Manage order</span></span>
+              <span className="rnc-wsite-btn is-light">{cta}</span>
+            </>
+          ) : (
+            // A phone: the logo and a menu button, as phone sites do; Order tickets is right below in the hero (Miguel, 2026-10-16).
+            <span className="rnc-wsite-menu"><Icon name="list" size={22} /></span>
+          )}
         </div>
+        {sponsor && device === 'mobile' ? <div className="rnc-wsite-presenter-bar">{presenter}</div> : null}
         <div className="rnc-wsite-heroin">
           <div className="rnc-wsite-copy">
             {org ? <small>{org}</small> : null}
@@ -239,8 +249,9 @@ export function WizardSitePreview({
           <h4>Prizes</h4>
           <ul className="rnc-wsite-prizes">
             {prizes.map((p, i) => (
-              <li key={i}>
-                <span className="rnc-wsite-prize-main"><span>{p.title}</span>{p.value ? <b>{p.value}</b> : null}</span>
+              <li key={i} className="rnc-wsite-prize">
+                <span className="rnc-wsite-prize-media">{p.image ? <img src={p.image} alt="" /> : <Icon name="gift" size={36} />}</span>
+                <span className="rnc-wsite-prize-main">{p.value ? <b>{p.value}</b> : null}<span className="rnc-wsite-prize-title">{p.title}</span></span>
                 {p.sponsor ? (
                   <span className="rnc-wsite-prize-sponsor">
                     <small>Sponsored by</small>

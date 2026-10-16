@@ -180,6 +180,26 @@ describe('WizardSitePreview sponsors, socials and cause media', () => {
   });
 });
 
+describe('WizardSitePreview prize cards and the phone header', () => {
+  it('prizes are cards: the photo or a gift icon, the value, the title', () => {
+    const { container } = render(<WizardSitePreview heading="Win" prizes={[{ title: 'Home', value: '$1', image: 'data:image/png;base64,AAAA' }, { title: 'Cash', value: '$2' }]} />);
+    const cards = container.querySelectorAll('.rnc-wsite-prize');
+    expect(cards).toHaveLength(2);
+    expect(cards[0].querySelector('.rnc-wsite-prize-media img')).toBeInTheDocument();
+    expect(cards[1].querySelector('.rnc-wsite-prize-media svg')).toBeInTheDocument();
+    expect(cards[1]).toHaveTextContent('$2Cash');
+  });
+
+  it('on a phone the header is the logo and a menu; the presenting sponsor sits in a bar under it', () => {
+    const sponsor = { name: 'Sample Credit Union', logo: 'data:image/png;base64,AAAA', label: 'Presented by' };
+    const { container } = render(<WizardPreview url="x" device="mobile"><WizardSitePreview heading="Win" sponsor={sponsor} /></WizardPreview>);
+    expect(container.querySelector('.rnc-wsite-head .rnc-wsite-menu')).toBeInTheDocument();
+    expect(container.querySelector('.rnc-wsite-head .rnc-wsite-btn')).toBeNull();
+    expect(container.querySelector('.rnc-wsite-presenter-bar')).toHaveTextContent('Presented by');
+    expect(container.querySelector('.rnc-wsite-brand .rnc-wsite-presenter')).toBeNull();
+  });
+});
+
 describe('WizardPreview devices', () => {
   it('lays the site out for desktop, then for a phone, and the site follows', async () => {
     const { container } = render(
