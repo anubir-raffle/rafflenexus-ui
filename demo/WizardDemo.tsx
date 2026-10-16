@@ -6,7 +6,7 @@ import {
   type PreviewDevice, type WizardMutators, type WizardSiteDate, type WizardSiteSponsor,
 } from '../src/wizard';
 import {
-  AnimatedList, BrandColours, Button, DomainField, ExpandableRow, Icon, RichText, RichTextArea, Select, SortableList, StatusPill, Switch, TextArea, TextField, UploadTile,
+  AnimatedList, BrandColours, Button, DomainField, SegmentedControl, ExpandableRow, Icon, RichText, RichTextArea, Select, SortableList, StatusPill, Switch, TextArea, TextField, UploadTile,
   domainUrl, richTextLength, richTextToPlain, type BrandColourSet, type DomainType, type LicenceProvince,
 } from '../src';
 import { DatePicker } from '../src/inputs';
@@ -32,7 +32,15 @@ type Licence = {
 };
 /** A prize's sponsor (optional): a logo, a name and a line about them. */
 type PrizeSponsor = { name: string; logo?: string; description: string };
-type Prize = { id: string; title: string; value: string; description: string; image?: string; sponsor: PrizeSponsor };
+/**
+ * A prize. Most have a fixed value; a 50/50 prize (`kind: 'fifty'`) pays the winner a share of the pot instead (`share`, a percent),
+ * so it has no value (Miguel, 2026-10-16: "give option to add 5050 prize").
+ */
+type Prize = {
+  id: string; title: string; value: string; description: string; image?: string; sponsor: PrizeSponsor; kind?: 'fixed' | 'fifty'; share?: string;
+  /** A 50/50 shows as a jackpot (a share of the pot) or a guaranteed payout (a fixed amount, in `value`). Miguel, 2026-10-16. */
+  fifty_mode?: 'jackpot' | 'guaranteed';
+};
 /** A raffle sponsor: a logo only on the site (Miguel, 2026-10-16), with alt text for people who can't see it. `tier` is a Tier id. */
 type Sponsor = { id: string; logo: string; alt: string; tier: string };
 type Tier = { id: string; name: string };
@@ -169,6 +177,7 @@ const rules = {
   price: (v: string) => (!v ? 'Enter the price' : !(amount(v) > 0) ? 'Enter a price above $0' : undefined),
   tickets: (v: string) => (!v ? 'Enter how many tickets' : !/^\d+$/.test(v) || Number(v) < 1 ? 'Enter a whole number, 1 or more' : undefined),
   value: (v: string) => (!v ? "Enter the prize's value" : !(amount(v) > 0) ? 'Enter a value above $0' : undefined),
+  share: (v: string) => (!v ? "Enter the winner's share" : !/^\d+$/.test(v) || Number(v) < 1 || Number(v) > 99 ? 'Enter a whole percent from 1 to 99' : undefined),
   // Optional: the overall maximum holds the biggest pack, and the packs' own pools can't add up to more.
   maxTickets: (l: Licence) => {
     if (!l.max_tickets) return undefined;
@@ -252,7 +261,7 @@ const errs = {
   },
   prizes: (v: Brief) => ({
     ...(!v.prizes.length && { prizes: 'Add a prize' }),
-    ...(v.prizes.some((p) => !p.title.trim() || rules.value(p.value)) && { prize_fields: 'Give every prize a title and a value above $0' }),
+    ...(v.prizes.some((p) => !p.title.trim() || (p.kind === 'fifty' && p.fifty_mode !== 'guaranteed' ? rules.share(p.share ?? '') : rules.value(p.value))) && { prize_fields: 'Give every prize a title and a value above $0 (a 50/50, its share of the pot)' }),
     ...(v.prizes.some(prizeSponsorError) && { prize_sponsor: 'Name every prize sponsor you added' }),
   }),
 };
@@ -395,9 +404,29 @@ function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   );
 }
 
+/** A jackpot 50/50's default description, following its share (Miguel, 2026-10-16). Replaced only while people haven't edited it. */
+const fiftyDescription = (share?: string) => `<p>${share || '50'}% of the 50/50 Jackpot!</p>`;
+const isFiftyDescription = (html: string) => !html || /^<p>\d*% of the 50\/50 Jackpot!<\/p>$/.test(html);
+
+/** What a 50/50 pays, in words: "50% of the pot" or "$25,000 guaranteed". */
+function fiftyValue(p: Prize) {
+  if (p.fifty_mode === 'guaranteed') return p.value ? `${money(p.value)} guaranteed` : undefined;
+  return p.share ? `${p.share}% of the pot` : undefined;
+}
+
 function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   const [isOpen, toggle] = useOpenRows();
   const add = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, title: '', value: '', description: '', sponsor: { name: '', description: '' } }]); toggle(id, true); focusSoon(`${id}-title`); };
+  // One 50/50 per raffle: the winner gets a share of the pot, 50% unless the licence says otherwise.
+  const hasFifty = v.prizes.some((p) => p.kind === 'fifty');
+  const addFifty = () => { const id = uid('z'); m.setPrizes([...v.prizes, { id, kind: 'fifty', fifty_mode: 'jackpot', share: '50', title: '50/50 jackpot', value: '', description: fiftyDescription('50'), sponsor: { name: '', description: '' } }]); toggle(id, true); focusSoon(`${id}-share`); };
+  const prizeMeta = (p: Prize) => (p.kind === 'fifty' ? fiftyValue(p) ?? (p.fifty_mode === 'guaranteed' ? 'No payout yet' : 'No share yet') : p.value ? money(p.value) : 'No value yet');
+  // Switching how a 50/50 shows also switches its default title, unless people wrote their own.
+  const FIFTY_TITLES = { jackpot: '50/50 jackpot', guaranteed: '50/50 guaranteed payout' } as const;
+  const setFiftyMode = (p: Prize, mode: 'jackpot' | 'guaranteed') => m.setPrizes(patch(v.prizes, p.id, {
+    fifty_mode: mode, ...(Object.values(FIFTY_TITLES).includes(p.title as never) && { title: FIFTY_TITLES[mode] }),
+    ...(isFiftyDescription(p.description) && { description: mode === 'jackpot' ? fiftyDescription(p.share) : '' }),
+  }));
   const setSponsor = (p: Prize, change: Partial<PrizeSponsor>) => m.setPrizes(patch(v.prizes, p.id, { sponsor: { ...p.sponsor, ...change } }));
   return (
     <WizardSection title="Prizes for the main draw" description="Drag to set the order they're drawn in. Open a prize to edit it.">
@@ -407,14 +436,29 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
             <div style={{ paddingTop: 6 }}>{t.grip}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <ExpandableRow
-                title={p.title || 'New prize'} meta={p.value ? money(p.value) : 'No value yet'} open={isOpen(p.id)} onOpenChange={(o) => toggle(p.id, o)}
+                title={p.title || 'New prize'} meta={prizeMeta(p)} open={isOpen(p.id)} onOpenChange={(o) => toggle(p.id, o)}
                 actions={!ro && t.index > -1 ? <>{t.moves}<Button variant="ghost" size="sm" iconOnly startIcon="trash" aria-label={`Remove ${p.title || 'this prize'}`} onClick={() => m.setPrizes(v.prizes.filter((x) => x.id !== p.id))} /></> : null}
               >
                 {t.index > -1 ? (
                   <div style={{ display: 'grid', gap: 16 }}>
+                    {p.kind === 'fifty' ? (
+                      <div style={{ display: 'grid', gap: 8 }}>
+                        <span className="rnc-field-label" id={`${p.id}-mode`}>Show as</span>
+                        <SegmentedControl aria-labelledby={`${p.id}-mode`} name={`${p.id}-mode`} disabled={ro} value={p.fifty_mode ?? 'jackpot'}
+                          options={[{ value: 'jackpot', label: 'Jackpot' }, { value: 'guaranteed', label: 'Guaranteed payout' }]} onChange={(x) => setFiftyMode(p, x as 'jackpot' | 'guaranteed')} />
+                      </div>
+                    ) : null}
                     <div style={grid(220)}>
                       <ItemText id={`${p.id}-title`} label="Prize title" value={p.title} readOnly={ro} maxLength={LIMIT.prize} required="Give the prize a title" onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { title: x }))} />
-                      <ItemText label="Value ($)" value={p.value} readOnly={ro} inputMode="decimal" check={rules.value} onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { value: x.replace(/[^0-9.]/g, '') }))} />
+                      {p.kind === 'fifty' && p.fifty_mode === 'guaranteed' ? (
+                        <ItemText id={`${p.id}-share`} label="Guaranteed payout ($)" hint="The amount the winner gets, however many tickets sell." value={p.value} readOnly={ro} inputMode="decimal" check={rules.value}
+                          onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { value: x.replace(/[^0-9.]/g, '') }))} />
+                      ) : p.kind === 'fifty' ? (
+                        <ItemText id={`${p.id}-share`} label="Winner's share of the pot (%)" hint="Usually 50: the other half goes to the cause." value={p.share ?? ''} readOnly={ro} inputMode="numeric" check={rules.share}
+                          onValue={(x) => { const share = x.replace(/\D/g, '').slice(0, 2); m.setPrizes(patch(v.prizes, p.id, { share, ...(isFiftyDescription(p.description) && { description: fiftyDescription(share) }) })); }} />
+                      ) : (
+                        <ItemText label="Value ($)" value={p.value} readOnly={ro} inputMode="decimal" check={rules.value} onValue={(x) => m.setPrizes(patch(v.prizes, p.id, { value: x.replace(/[^0-9.]/g, '') }))} />
+                      )}
                     </div>
                     <UploadTile label="Prize photo (optional)" hint="Shown on the prize's card. 1200 × 900 works best. At least 600 × 450." minWidth={600} minHeight={450}
                       src={p.image} alt={p.title || 'The prize'} disabled={ro} onFile={(_f, url) => m.setPrizes(patch(v.prizes, p.id, { image: url }))} onRemove={() => m.setPrizes(patch(v.prizes, p.id, { image: undefined }))} />
@@ -441,7 +485,12 @@ function Prizes({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
           </div>
         )}
       />
-      {!ro ? <div><Button variant="secondary" startIcon="plus" onClick={add}>Add a prize to this draw</Button></div> : null}
+      {!ro ? (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          <Button variant="secondary" startIcon="plus" onClick={add}>Add a prize to this draw</Button>
+          {!hasFifty ? <Button variant="secondary" startIcon="plus" onClick={addFifty}>Add a 50/50 prize</Button> : null}
+        </div>
+      ) : null}
     </WizardSection>
   );
 }
@@ -661,7 +710,7 @@ function SitePreview({ v, device, onDevice }: { v: Brief; device: PreviewDevice;
         slides={v.slides.map((s) => s.src)}
         packs={(first?.ticket_packs ?? []).filter((p) => p.price).map((p) => ({ label: plural(Number(p.tickets) || 0, 'ticket'), price: money(p.price) }))}
         dates={dates}
-        prizes={v.prizes.filter((p) => p.title).map((p) => ({ title: p.title, value: p.value ? money(p.value) : undefined, image: p.image, sponsor: p.sponsor.name || p.sponsor.logo ? { name: p.sponsor.name, logo: p.sponsor.logo } : undefined }))}
+        prizes={v.prizes.filter((p) => p.title).map((p) => ({ title: p.title, value: p.kind === 'fifty' ? fiftyValue(p) : p.value ? money(p.value) : undefined, image: p.image, sponsor: p.sponsor.name || p.sponsor.logo ? { name: p.sponsor.name, logo: p.sponsor.logo } : undefined }))}
         causeMedia={v.cause_media ? { kind: v.cause_media.kind, src: v.cause_media.src } : undefined}
         sponsor={v.presenting.logo ? { name: v.presenting.name, logo: v.presenting.logo, label: v.presenting.label.trim() || 'Presented by' } : undefined}
         sponsors={v.sponsors_tiered ? { tiers: v.sponsor_tiers.map((t) => ({ name: t.name, sponsors: v.sponsors.filter((x) => x.tier === t.id).map(logo) })) } : v.sponsors.map(logo)}
