@@ -844,7 +844,7 @@ function EarlyDraws({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) 
   return (
     <WizardSection title="Early draws" size="md" description="Extra draws while sales are open. Their prizes go on the Prizes step as early bird prizes.">
       <AnimatedList aria-label="Early draws" items={v.early_draws} getKey={(d) => d.id} renderItem={(d, i) => (
-        <div className="rnc-sort-row" style={{ alignItems: 'flex-start' }}>
+        <div className="rnc-sort-row" style={{ alignItems: 'flex-start', paddingTop: 18, paddingBottom: 18 }}>
           <span className="rnc-sort-pos" aria-hidden="true" style={{ marginTop: 36 }}>{i > -1 ? i + 1 : ''}</span>
           {/* Name, cut-off, draw time (Miguel, 2026-10-16). */}
           <div className="rnc-sort-body" style={{ display: 'grid', gap: 12 }}>
