@@ -801,7 +801,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-wizard-steps.is-rail .is-locked .rnc-wizard-step-name { color: var(--ink-muted); }
 .rnc-wizard-step-sub { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 400; color: var(--ink-muted); }
 .rnc-wizard-steps.is-rail .is-complete .rnc-wizard-step-dot { background: var(--verified-soft); color: var(--verified); }
-.rnc-wizard-steps.is-rail [aria-current="step"] .rnc-wizard-step-dot { background: var(--action); color: var(--on-action); }
+/* The current step keeps its circle's own colours (green check, red cross); the white card marks it (Miguel, 2026-10-16). */
 .rnc-wizard-rail-extra { display: grid; gap: 8px; font-size: 13px; }
 .rnc-wizard-main { --main-pad: clamp(16px, 2.4vw, 40px); display: flex; flex-direction: column; min-width: 0; padding: 28px var(--main-pad) 0; }
 .rnc-wizard.is-v2 .rnc-wizard-blocked { margin: 0 0 20px; padding: 12px 16px; border-radius: var(--radius-md); }

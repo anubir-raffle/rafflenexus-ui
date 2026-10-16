@@ -9,6 +9,7 @@
 - Wizard: `reviewUnlocked`, for testing: Review opens before every step is complete; Submit stays disabled until it is. The demo has "Open Review early (testing)".
 - `WizardSitePreview`: `causeMedia` (a photo or video beside Where the money goes), `sponsor` (presenting sponsor beside the logo), `sponsors` (logos only, in tiers or one list), prize `sponsor` ("Sponsored by"), `socials` in the footer. Types `WizardCauseMedia`, `WizardSiteSponsor`, `WizardSiteSocial`.
 - `WizardSitePreview` on a phone: the licence badge no longer stretches tall with empty space (a column flex-basis set its height), and sponsor logos sit two across (one for the top tier, three for the smallest).
+- Wizard V2: the current step's circle keeps its own colours (green check, red cross); the white card alone marks the current step.
 - Wizard V2: the rail's white card follows the current step again. It measured the step against its own list item (positioned for the connecting line), so it stayed on the first step whatever Next or Back did.
 - `WizardSitePreview` on a phone: the header no longer pushes Order tickets off the edge with a presenting sponsor; the sponsor stacks its wording over a smaller logo and the header wraps if it must.
 - `WizardSitePreview`: "Thank you to our sponsors" is centred: the heading, tier names and logos (on phones too).
