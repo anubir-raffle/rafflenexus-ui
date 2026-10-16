@@ -17,8 +17,11 @@ type Pack = { id: string; name: string; tickets: string; price: string };
 /** A licence and the ticket packs it covers (the app's ticket_pack_groups). */
 type Licence = {
   id: string; licence_number: string; ticket_packs: Pack[];
-  /** The most tickets the licence lets the raffle sell, or no limit (Miguel, 2026-10-16: "allow option for unlimited tickets"). */
-  tickets_available: string; unlimited: boolean;
+  /**
+   * Optional: the most tickets the licence lets the raffle sell, or unlimited; '' when not set (Miguel, 2026-10-16: "allow option
+   * for unlimited tickets", "set maximum and unlimited should be optional").
+   */
+  ticket_limit: '' | 'max' | 'unlimited'; tickets_available: string;
 };
 /** A prize's sponsor (optional): a logo, a name and a line about them. */
 type PrizeSponsor = { name: string; logo?: string; description: string };
@@ -101,7 +104,7 @@ const START: Brief = {
   sales_open: '2026-11-02 09:00:00', sales_close: '2026-12-18 23:59:00', draw_at: '2026-12-19 12:00:00', draw_location: 'Foundation office',
   early_draws: [{ id: 'e1', date: '2026-11-20 12:00:00', prize: '$5,000 cash' }],
   ticket_pack_groups: [{
-    id: 'g1', licence_number: '000000', tickets_available: '100000', unlimited: false,
+    id: 'g1', licence_number: '000000', ticket_limit: 'max', tickets_available: '100000',
     ticket_packs: [{ id: 'p1', name: 'Single ticket', tickets: '1', price: '25' }, { id: 'p2', name: 'Pack of 3', tickets: '3', price: '60' }],
   }],
   prizes: [
@@ -160,11 +163,11 @@ const rules = {
   price: (v: string) => (!v ? 'Enter the price' : !(amount(v) > 0) ? 'Enter a price above $0' : undefined),
   tickets: (v: string) => (!v ? 'Enter how many tickets' : !/^\d+$/.test(v) || Number(v) < 1 ? 'Enter a whole number, 1 or more' : undefined),
   value: (v: string) => (!v ? "Enter the prize's value" : !(amount(v) > 0) ? 'Enter a value above $0' : undefined),
+  // Optional: only a maximum that's been typed in is checked.
   ticketsAvailable: (l: Licence) => {
-    if (l.unlimited) return undefined;
+    if (l.ticket_limit !== 'max' || !l.tickets_available) return undefined;
     const most = Math.max(0, ...l.ticket_packs.map((p) => Number(p.tickets) || 0));
-    return !l.tickets_available ? 'Enter the maximum tickets, or choose Unlimited'
-      : !/^\d+$/.test(l.tickets_available) || Number(l.tickets_available) < 1 ? 'Enter a whole number, 1 or more'
+    return !/^\d+$/.test(l.tickets_available) || Number(l.tickets_available) < 1 ? 'Enter a whole number, 1 or more'
         : Number(l.tickets_available) < most ? `Enter at least ${most.toLocaleString('en-CA')}: your biggest pack has that many tickets` : undefined;
   },
   earlyDate: (v: string, b: Brief) => (!v ? 'Enter the date'
@@ -224,7 +227,7 @@ const errs = {
       ...(g.some((l) => rules.licence(l.licence_number)) && { licence_number: 'Enter every licence number, as on the licence' }),
       ...(new Set(numbers).size < numbers.length && { licence_twice: 'The same licence number is entered twice' }),
       ...(g.some((l) => !l.ticket_packs.length) && { packs: 'Give every licence at least one ticket pack' }),
-      ...(g.some((l) => rules.ticketsAvailable(l)) && { tickets_available: 'Set each licence’s maximum tickets, or choose Unlimited' }),
+      ...(g.some((l) => rules.ticketsAvailable(l)) && { tickets_available: 'Check each licence’s maximum tickets' }),
       ...(packs.some((p) => !p.name.trim() || rules.price(p.price) || rules.tickets(p.tickets)) && { pack_fields: 'Give every pack a name, a price above $0 and a whole number of tickets' }),
       ...(repeats && { repeats: 'Two packs in one licence have the same number of tickets' }),
     };
@@ -332,7 +335,7 @@ function Packs({ licence, setPacks, ro }: { licence: Licence; setPacks: (packs: 
 /** Every licence the raffle sells under, each with its own ticket packs. Add a licence; remove one while there's more than one. */
 function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
   const list = v.ticket_pack_groups;
-  const add = () => { const id = uid('g'); m.setLicences([...list, { id, licence_number: '', ticket_packs: [], tickets_available: '', unlimited: false }]); focusSoon(`${id}-number`); };
+  const add = () => { const id = uid('g'); m.setLicences([...list, { id, licence_number: '', ticket_packs: [], ticket_limit: '', tickets_available: '' }]); focusSoon(`${id}-number`); };
   return (
     <>
       <AnimatedList aria-label="Licences" className="demo-licences" items={list} getKey={(g) => g.id} renderItem={(g, i) => (
@@ -344,16 +347,19 @@ function Licences({ v, m, ro }: { v: Brief; m: WizardMutators; ro: boolean }) {
                   check={(x) => rules.licence(x) ?? (list.some((o) => o.id !== g.id && o.licence_number === x) ? "This licence number is already entered" : undefined)} onValue={(x) => m.setLicences(patch(list, g.id, { licence_number: x }))} />
                 {/* A maximum, or unlimited (Miguel, 2026-10-16: "allow option for unlimited tickets", "allow option for max tickets"). */}
                 <div style={{ display: 'grid', gap: 10, alignContent: 'start', minWidth: 0 }}>
-                  <span className="rnc-field-label" id={`${g.id}-cap`}>Tickets for sale</span>
-                  <SegmentedControl aria-labelledby={`${g.id}-cap`} name={`${g.id}-cap`} disabled={ro} value={g.unlimited ? 'unlimited' : 'max'}
+                  <span style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+                    <span className="rnc-field-label" id={`${g.id}-cap`}>Tickets for sale <em style={{ fontStyle: 'normal', fontWeight: 400, color: 'var(--ink-muted)' }}>(optional)</em></span>
+                    {g.ticket_limit && !ro ? <Button variant="link" size="sm" aria-label={`Clear tickets for sale for licence ${i + 1}`} onClick={() => m.setLicences(patch(list, g.id, { ticket_limit: '', tickets_available: '' }))}>Clear</Button> : null}
+                  </span>
+                  <SegmentedControl aria-labelledby={`${g.id}-cap`} name={`${g.id}-cap`} disabled={ro} value={g.ticket_limit}
                     options={[{ value: 'max', label: 'Set a maximum' }, { value: 'unlimited', label: 'Unlimited' }]}
-                    onChange={(x) => m.setLicences(patch(list, g.id, { unlimited: x === 'unlimited' }))} />
-                  {g.unlimited ? (
+                    onChange={(x) => m.setLicences(patch(list, g.id, { ticket_limit: x as Licence['ticket_limit'] }))} />
+                  {g.ticket_limit === 'unlimited' ? (
                     <p className="rnc-field-hint" style={{ margin: 0 }}>Sell as many tickets as people buy.</p>
-                  ) : (
-                    <ItemText label="Maximum tickets" hint="The most this licence lets you sell." value={g.tickets_available} readOnly={ro} inputMode="numeric"
+                  ) : g.ticket_limit === 'max' ? (
+                    <ItemText label="Maximum tickets (optional)" hint="The most this licence lets you sell." value={g.tickets_available} readOnly={ro} inputMode="numeric"
                       check={() => rules.ticketsAvailable(g)} onValue={(x) => m.setLicences(patch(list, g.id, { tickets_available: x.replace(/[^0-9]/g, '') }))} />
-                  )}
+                  ) : null}
                 </div>
               </div>
               <Packs licence={g} ro={ro} setPacks={(packs) => m.setLicences(patch(list, g.id, { ticket_packs: packs }))} />
@@ -824,7 +830,7 @@ export function WizardDemo() {
               { label: 'Website', step: 0, complete: !messages(errs.website(v)).length, summary: `${v.name}, at ${address(v) || 'no address yet'}. ${richTextToPlain(v.cause).split('\n')[0]}`, issues: messages(errs.website(v)) },
               { label: 'Slideshow', step: 1, complete: !messages(errs.slides(v)).length, summary: `${plural(v.slides.length, 'slide')}.`, issues: messages(errs.slides(v)) },
               { label: 'Dates', step: 2, complete: !messages(errs.dates(v)).length, summary: `Sales ${when(v.sales_open) || 'not set'} to ${when(v.sales_close) || 'not set'}. Draw ${when(v.draw_at) || 'not set'}.`, issues: messages(errs.dates(v)) },
-              { label: 'Licences and tickets', step: 3, complete: !messages(errs.licences(v)).length, summary: v.ticket_pack_groups.map((g) => `#${g.licence_number || '(no number)'}: ${g.ticket_packs.map((p) => `${p.name || 'New pack'} ${money(p.price)}`).join(', ') || 'no packs'} (${g.unlimited ? 'unlimited tickets' : g.tickets_available ? `up to ${Number(g.tickets_available).toLocaleString('en-CA')} tickets` : 'maximum not set'})`).join('. '), issues: messages(errs.licences(v)) },
+              { label: 'Licences and tickets', step: 3, complete: !messages(errs.licences(v)).length, summary: v.ticket_pack_groups.map((g) => `#${g.licence_number || '(no number)'}: ${g.ticket_packs.map((p) => `${p.name || 'New pack'} ${money(p.price)}`).join(', ') || 'no packs'} ${g.ticket_limit === 'unlimited' ? ' (unlimited tickets)' : g.ticket_limit === 'max' && g.tickets_available ? ` (up to ${Number(g.tickets_available).toLocaleString('en-CA')} tickets)` : ''}`).join('. '), issues: messages(errs.licences(v)) },
               { label: 'Prizes', step: 4, complete: !messages(errs.prizes(v)).length, summary: v.prizes.map((p) => p.title || 'New prize').join(', '), issues: messages(errs.prizes(v)) },
               { label: 'Sponsors', step: 5, complete: !messages(errs.sponsors(v)).length, summary: `${v.sponsors.length ? `${plural(v.sponsors.length, 'sponsor logo')}${v.sponsors_tiered ? `, in ${plural(v.sponsor_tiers.length, 'tier')}` : ''}.` : 'No sponsor logos.'}${v.presenting.logo ? ` ${v.presenting.label.trim() || 'Presented by'} ${v.presenting.name || 'a sponsor'}.` : ''}`, issues: messages(errs.sponsors(v)) },
               { label: 'Rules of play', step: 6, complete: true, summary: v.rules ? `Your own rules (${v.rules.name}).` : `The standard rules for ${v.client.province}.`, issues: [] },
