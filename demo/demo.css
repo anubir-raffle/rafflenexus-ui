@@ -88,3 +88,6 @@ p { color: var(--ink-body); }
 /* The rules editor: tokens (and headings) semibold; tokens in the hint too. */
 .demo-rules-editor [contenteditable] strong, .demo-rules-editor [contenteditable] b { font-weight: 600; }
 .demo-token { font-weight: 600; color: var(--ink); }
+
+/* The Raffle Builder on its own page: full width, a small gutter. */
+.demo-builder-page { box-sizing: border-box; min-height: 100vh; padding: clamp(12px, 2vw, 24px); background: var(--ground); }

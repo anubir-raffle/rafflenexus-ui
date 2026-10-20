@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- The demo has the Raffle Builder on its own page too: `builder.html` (the setup form and its live site preview, full width).
 - The demo's social media takes more links ("Add a social link"): TikTok, Threads, Bluesky or Pinterest by account name, or any other site by name and https:// address. They join the site's footer.
 - `UploadTile`: an image is its own Replace button ("Replace" fades in over it on hover and focus; shown faintly on touch screens); no separate Replace button. Videos and files keep theirs.
 - `UploadTile` `preview="md"`: the picture at 4:3, up to 320 px wide. The demo's cause photo uses it (Miguel: "the thumbnail is too big").
