@@ -13,7 +13,7 @@ const tokens = read('design/tokens.json');
 const icons = read('design/icons.json');
 const nodes = read('design/nodes.json');
 
-// Only the chosen direction ships: Flagship Navy, Newsreader, DM Sans, DM Mono.
+// Only the chosen direction ships: Flagship Navy, Newsreader, DM Sans (text and figures).
 const THEME = 'flagship';
 const colorOf = (t) => (typeof t.value === 'string' ? t.value : t.value[THEME]);
 const colors = Object.fromEntries(tokens.color.tokens.map((t) => [t.name, colorOf(t)]));
@@ -22,7 +22,8 @@ const space = list('spacing');
 const radius = list('radius');
 const shadow = list('shadow');
 const fam = tokens.type.families;
-const fonts = { display: fam['display-b'], sans: fam.sans, mono: fam.mono };
+// mono is the retired name of figure (DM Mono was dropped on 2 Nov 2026); kept so code that reads it still works.
+const fonts = { display: fam['display-b'], sans: fam.sans, figure: fam.figure, mono: fam.figure };
 
 // Type styles. Serif is for h1 and h2 only, so h3 is set in DM Sans (as the concepts set card titles).
 const group = (prefix) => tokens.type.groups.find((g) => g.name.startsWith(prefix));
@@ -33,24 +34,25 @@ for (const s of group('Pairing B').styles) {
   else styles.push({ ...s, name, family: 'display' });
 }
 for (const s of group('Text').styles) styles.push({ ...s, family: 'sans' });
-for (const s of group('Figures ·').styles) styles.push({ ...s, family: 'mono' });
+for (const s of group('Figures ·').styles) styles.push({ ...s, family: 'figure' });
 
 const px = (v) => (typeof v === 'number' ? v + 'px' : v);
 let css = `/* @rafflenexuscanada/design-system tokens (generated from design/tokens.json; do not edit by hand).
-   Flagship Navy, Newsreader headlines, DM Sans text, DM Mono figures. */
+   Flagship Navy, Newsreader headlines, DM Sans text and figures (figures take Libre Franklin's comma and full stop). */
 :root {
 `;
 for (const [k, v] of Object.entries(colors)) css += `  --${k}: ${v};\n`;
 for (const [k, v] of Object.entries(shadow)) css += `  --${k}: ${v};\n`;
 for (const [k, v] of Object.entries(space)) css += `  --${k}: ${px(v)};\n`;
 for (const [k, v] of Object.entries(radius)) css += `  --${k}: ${px(v)};\n`;
-css += `  --font-display: ${fonts.display};\n  --font-sans: ${fonts.sans};\n  --font-mono: ${fonts.mono};\n}\n\n`;
+css += `  --font-display: ${fonts.display};\n  --font-sans: ${fonts.sans};\n  --font-figure: ${fonts.figure};\n  /* Retired name: use --font-figure. No monospaced type since 2 Nov 2026. */\n  --font-mono: var(--font-figure);\n}\n\n`;
 css += `/* Type styles: add the class, e.g. <h2 className="rnc-h2">. */\n`;
 for (const s of styles) {
   css += `.rnc-${s.name} { font-family: var(--font-${s.family}); font-size: ${px(s.fontSize)}; line-height: ${s.lineHeight}; font-weight: ${s.fontWeight};`;
   if (s.letterSpacing) css += ` letter-spacing: ${s.letterSpacing};`;
   if (s.opticalSize) css += ` font-variation-settings: 'opsz' ${s.opticalSize};`;
-  if (s.family === 'mono') css += ' font-variant-numeric: tabular-nums;';
+  // DM Sans has no tabular figures; this applies when a client font that has them is swapped in.
+  if (s.family === 'figure') css += ' font-variant-numeric: tabular-nums;';
   if (s.family === 'display') css += ' text-wrap: balance;';
   css += ' }\n';
 }

@@ -121,7 +121,7 @@ function App() {
     <main className="demo">
       <header className="demo-head">
         <h1 className="rnc-h rnc-display">Raffle Nexus design system</h1>
-        <p className="rnc-lede">React components and tokens for “Canada’s raffle leader”: Flagship Navy, Newsreader headlines, DM Sans text and DM Mono figures. Every name and figure on this page is a sample.</p>
+        <p className="rnc-lede">React components and tokens for “Canada’s raffle leader”: Flagship Navy, Newsreader headlines, DM Sans text and figures. Every name and figure on this page is a sample.</p>
       </header>
 
       <LeaderHero
@@ -160,8 +160,8 @@ function App() {
 
       <Section title="Odometer" note="For Raffle Insider and client raffle sites only: rolling digits for real numbers.">
         <div className="demo-grid">
-          <div style={{ font: '600 56px/1 var(--font-mono)', color: 'var(--ink)' }}><Odometer value={684270} prefix="$" replayKey={replay} /></div>
-          <div style={{ font: '600 40px/1 var(--font-mono)', color: 'var(--action)' }}><Odometer value="0428713" replayKey={replay} stagger={140} /></div>
+          <div style={{ font: '600 56px/1 var(--font-figure)', color: 'var(--ink)' }}><Odometer value={684270} prefix="$" replayKey={replay} /></div>
+          <div style={{ font: '600 40px/1 var(--font-figure)', color: 'var(--action)' }}><Odometer value="0428713" replayKey={replay} stagger={140} /></div>
         </div>
         <p><Button variant="secondary" onClick={() => setReplay((n) => n + 1)}>Replay the animations</Button></p>
       </Section>

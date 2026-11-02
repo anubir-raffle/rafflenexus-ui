@@ -21,7 +21,7 @@ const cases = [
   ['VerifiedBadge', h(DS.VerifiedBadge, { regulator: 'IGCO', licence: '171012' }), ['IGCO licence #171012', 'GLI-certified RNG']],
   ['LedgerLine', h(DS.LedgerLine, { items: [{ label: 'Tickets', value: '12,400' }, { label: 'Reconciled', value: 'Yes', done: true }] }), ['rnc-ledger', 'is-done', '12,400']],
   ['ProofStat', h(DS.ProofStat, { value: 11, of: 29, label: 'flagship lotteries', source: 'Research count · 5 Oct 2026' }), ['rnc-proof', ' of ', 'Research count']],
-  ['JackpotFigure', h(DS.JackpotFigure, { amount: 2548700, growth: 'Up $1,240 since yesterday' }), ['aria-label="$2,548,700"', 'rnc-jp-sep', 'rnc-jp-perf', 'Up $1,240']],
+  ['JackpotFigure', h(DS.JackpotFigure, { amount: 2548700, growth: 'Up $1,240 since yesterday' }), ['aria-label="$2,548,700"', 'rnc-jp-sep', 'Up $1,240']],
   ['JackpotTile', h(DS.JackpotTile, { program: 'Sample Hospital Lottery', amount: 10640, province: 'BC' }), ['Live · BC', 'Sample Hospital Lottery', '$10,640']],
   ['FlagshipRoster', h(DS.FlagshipRoster, { groups: [{ province: 'BC', items: ['Sample Lottery A', 'Sample Lottery B'] }, { province: 'SK', items: [] }] }), ['British Columbia', 'Sample Lottery A', 'None yet']],
   ['PoweredBy', h(DS.PoweredBy), ['Powered by', 'data:image/png;base64']],
@@ -52,7 +52,7 @@ for (const [name, el, expect] of cases) {
   catch (e) { check(name, false, e.message); }
 }
 const hex = /^#[0-9a-f]{6}$/i;
-check('tokens', ['action', 'ink', 'stage', 'ground', 'reward', 'verified', 'focus'].every((k) => hex.test(DS.tokens.color[k])) && DS.tokens.font.display.startsWith('Newsreader') && DS.tokens.font.mono.includes('DM Mono'));
+check('tokens', ['action', 'ink', 'stage', 'ground', 'reward', 'verified', 'focus'].every((k) => hex.test(DS.tokens.color[k])) && DS.tokens.font.display.startsWith('Newsreader') && DS.tokens.font.figure.includes('DM Sans') && DS.tokens.font.mono === DS.tokens.font.figure);
 check('icon names', DS.ICON_NAMES.length >= 57 && ['ticket', 'x', 'list', 'user', 'plus', 'upload-simple', 'arrow-square-out', 'caret-left', 'caret-right'].every((n) => DS.ICON_NAMES.includes(n)));
 const require = createRequire(import.meta.url);
 const cjs = require('../dist/index.cjs');

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Figures are DM Sans, not DM Mono** (Mark: monospaced figures read as "AI"). New token `--font-figure` (`tokens.font.figure`): DM Sans with the comma and full stop from Libre Franklin, because DM Sans's comma hooks under the next digit in big figures. `fonts.css` loads a 984-byte Libre Franklin subset (`LibreFranklin-Punctuation.woff2`, only for "," and ".") and no longer loads DM Mono; the DM Mono files are gone from `fonts/`. Every component that used `--font-mono` uses `--font-figure`. **`--font-mono` stays as an alias of `--font-figure`** (and `tokens.font.mono` equals `tokens.font.figure`), so app code that reads it keeps working; move to `--font-figure`. DM Sans has no tabular figures, so columns of numbers no longer line up digit for digit; right-aligned columns still line up at the right edge.
+- `JackpotFigure`: no dotted perforation rule under the figure (Miguel); `perforation` is ignored. Tracking relaxed to -0.01em with a little air around each comma (the old pulled-in comma collided in DM Sans). While it counts up from `from`, the number holds today's width, so nothing around it moves.
 - The demo has the Raffle Builder on its own page too: `builder.html` (the setup form and its live site preview, full width).
 - The demo's social media takes more links ("Add a social link"): TikTok, Threads, Bluesky or Pinterest by account name, or any other site by name and https:// address. They join the site's footer.
 - `UploadTile`: an image is its own Replace button ("Replace" fades in over it on hover and focus; shown faintly on touch screens); no separate Replace button. Videos and files keep theirs.

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { cx, formatWhole, prefersReducedMotion, toNumber } from '../utils';
 
 export interface JackpotFigureProps {
@@ -8,7 +8,7 @@ export interface JackpotFigureProps {
   from?: number | string;
   /** Optional growth line, e.g. "Up $1,240 since yesterday". Only when the platform supplies yesterday's figure. */
   growth?: ReactNode;
-  /** The ticket-perforation rule under the figure. Default true. */
+  /** @deprecated Ignored. Jackpots have no rule under them since 2 Nov 2026. */
   perforation?: boolean;
   className?: string;
 }
@@ -19,13 +19,23 @@ function Digits({ n }: { n: number }) {
 }
 
 /**
- * Every jackpot uses this: a raised "$", tight tabular DM Mono digits with the comma pulled in (never faded),
- * and a perforation rule. Size it with font-size on a parent; colour it with color, --jp-cur and --jp-perf.
+ * Every jackpot uses this: a raised "$" and the digits in --font-figure (DM Sans), never faded, with no rule under
+ * them. Size it with font-size on a parent; colour it with color and --jp-cur.
  */
-export function JackpotFigure({ amount, from, growth, perforation = true, className }: JackpotFigureProps) {
+export function JackpotFigure({ amount, from, growth, className }: JackpotFigureProps) {
   const to = toNumber(amount);
   const start = from != null ? toNumber(from) : null;
   const [shown, setShown] = useState(to);
+  const num = useRef<HTMLSpanElement>(null);
+
+  // DM Sans has no tabular figures, so while it counts the number keeps today's width: nothing around it moves.
+  // Measured with today's figure on screen, before the count starts.
+  useLayoutEffect(() => {
+    const el = num.current;
+    if (!el || start == null) return;
+    el.style.minWidth = '';
+    el.style.minWidth = `${el.getBoundingClientRect().width}px`;
+  }, [to, start]);
 
   useEffect(() => {
     if (start == null || prefersReducedMotion()) { setShown(to); return; }
@@ -46,9 +56,8 @@ export function JackpotFigure({ amount, from, growth, perforation = true, classN
     <span className={cx('rnc-jp', className)}>
       <span className="rnc-jp-fig" role="img" aria-label={`$${formatWhole(to)}`}>
         <span className="rnc-jp-cur" aria-hidden="true">$</span>
-        <span className="rnc-jp-num" aria-hidden="true"><Digits n={shown} /></span>
+        <span className="rnc-jp-num" ref={num} aria-hidden="true" style={start != null ? { display: 'inline-block' } : undefined}><Digits n={shown} /></span>
       </span>
-      {perforation ? <span className="rnc-jp-perf" aria-hidden="true" /> : null}
       {growth ? <span className="rnc-jp-grow">{growth}</span> : null}
     </span>
   );

@@ -61,7 +61,7 @@ let out = `/* @rafflenexuscanada/design-system component styles. Every colour co
 /* Headlines: Newsreader, for h1 and h2 only */
 .rnc-h { font-family: var(--font-display); font-weight: 600; line-height: 1.04; letter-spacing: -0.015em; text-wrap: balance; margin: 0; color: var(--ink); }
 .rnc-label { color: var(--ink-muted); }
-.rnc-fig { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 500; }
+.rnc-fig { font-family: var(--font-figure); font-variant-numeric: tabular-nums; font-weight: 500; }
 
 ` + [cut('/* Button */', '/* Flagship roster'), cut('/* Flagship roster', '/* Studies */'), cut('/* Icons: inline Phosphor', '/* Preview control')].join('\n');
 // Package-only names and fixes. Each anchor must still exist; if one doesn't, the design changed and this needs a look.
@@ -70,7 +70,7 @@ const PATCHES = [
   ['/* Odometer (RNC.odometer): rolling digits for real figures.', '/* Odometer: rolling digits for real figures.'],
   ['/* Ticket button (RNC.ticketButtonHtml): the buy action as a ticket.', '/* TicketButton: the buy action as a ticket.'],
   // ProofStat wraps after the number and scales down on phones
-  ['font: 500 56px/1 var(--font-mono); letter-spacing: -0.02em; white-space: nowrap;', 'font: 500 clamp(40px, 11vw, 56px)/1 var(--font-mono); letter-spacing: -0.02em;'],
+  ['font: 500 56px/1 var(--font-figure); letter-spacing: -0.02em; white-space: nowrap;', 'font: 500 clamp(40px, 11vw, 56px)/1 var(--font-figure); letter-spacing: -0.02em;'],
   ['.rnc-proof .rnc-big em { font-style: normal; color: var(--ink-muted); }', '.rnc-proof .rnc-big em { font-style: normal; color: var(--ink-muted); white-space: nowrap; }'],
   // TicketButton can render as a <button>
   ['.rnc-tbtn.big { min-height: 58px;', 'button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit; text-align: left; }\n.rnc-tbtn.big { min-height: 58px;'],

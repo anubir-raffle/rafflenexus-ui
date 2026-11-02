@@ -6,7 +6,7 @@ import userEvent from '@testing-library/user-event';
 import { FilterChip, FilterChipGroup, StatusPill, StepTimeline, StepTimelineLabels, stepStates } from '../src';
 
 describe('StatusPill', () => {
-  it('shows the label in its tone, with the figure in the mono face', () => {
+  it('shows the label in its tone, with the figure in the figure face', () => {
     const { container } = render(<StatusPill tone="progress" value="44%">In progress</StatusPill>);
     const pill = container.querySelector('.rnc-status')!;
     expect(pill).toHaveClass('rnc-status', 'is-progress');

@@ -1,6 +1,6 @@
 # @rafflenexuscanada/design-system
 
-React components, design tokens and fonts for Raffle Nexus Canada: the "Canada's raffle leader" direction (RNC V2.1). Flagship Navy colours, Newsreader headlines, DM Sans text and DM Mono figures.
+React components, design tokens and fonts for Raffle Nexus Canada: the "Canada's raffle leader" direction (RNC V2.1). Flagship Navy colours, Newsreader headlines, DM Sans text and figures.
 
 The full design system, with page concepts, guidelines and assets, lives in the RNC V2.1 design-system artifact on claude.ai. This package holds the parts you build with.
 
@@ -20,7 +20,7 @@ Import the styles once, at the root of your app (for example `main.tsx`, or `app
 
 ```tsx
 import '@rafflenexuscanada/design-system/styles.css'; // tokens + component styles
-import '@rafflenexuscanada/design-system/fonts.css';  // self-hosted Newsreader, DM Sans, DM Mono (optional)
+import '@rafflenexuscanada/design-system/fonts.css';  // self-hosted Newsreader, DM Sans and the figures' punctuation (optional)
 ```
 
 - `styles.css` includes `tokens.css`. If you only want the CSS variables, import `tokens.css` on its own.
@@ -50,7 +50,7 @@ export function Hero() {
 | --- | --- | --- |
 | `Button` | Every action, on a native `<button>` (or `<a>` with `href`). Sentence-case labels that say what happens. `type` defaults to `"button"`. While `loading`, a spinner takes the icon's place, clicks are ignored, focus stays and the width doesn't change. | `variant`: `primary`, `secondary`, `ghost`, `link`, `danger`, `danger-ghost`, `stage`, `stage-ghost`; `size` (`sm`, `md`, `lg`); `startIcon`, `endIcon` (icon name or element); `iconOnly` (with `aria-label`); `loading`, `loadingText`; `fullWidth`; `disabled`; `href`, `target`, `rel`; `as` (e.g. your router's `Link`); `ref` |
 | `TicketButton` | The buy action, shaped like a ticket. The stub tilts on hover; a hole punches through on click. | `label`, `stub` ("from $10" or the order total), `size` (`big`), `fullWidth`, `colors` (client colours), `href` |
-| `JackpotFigure` | Every jackpot figure: raised "$", tight tabular digits, perforation rule. | `amount`, `from` (counts up once from yesterday's figure), `growth`, `perforation` |
+| `JackpotFigure` | Every jackpot figure: raised "$" and the digits in `--font-figure`, no rule under it. | `amount`, `from` (counts up once from yesterday's figure, holding its width), `growth` (`perforation` is ignored since 0.8.0) |
 | `JackpotTile` | A live jackpot as proof. | `program`, `amount`, `from`, `province`, `live`, `caption` |
 | `Odometer` | Rolling digits for real numbers (Raffle Insider and client raffle sites only). | `value`, `prefix`, `trigger` (`mount`, `visible`, `none`), `replayKey`, `onDone` |
 | `ProofStat` | One proof figure per section. | `value`, `of`, `label`, `source` |
@@ -441,7 +441,7 @@ The same values are available in JavaScript (`import { tokens } from '@rafflenex
 
 ## Brand rules that affect code
 
-- **Serif for h1 and h2 only.** Newsreader (`rnc-h`, `rnc-display`, `rnc-h2`) is for h1 and h2. Everything else, including h3 (`rnc-h3`), card titles, quotes and labels, is DM Sans; figures are DM Mono.
+- **Serif for h1 and h2 only.** Newsreader (`rnc-h`, `rnc-display`, `rnc-h2`) is for h1 and h2. Everything else, including h3 (`rnc-h3`), card titles, quotes and labels, is DM Sans. Figures use `--font-figure`: DM Sans with Libre Franklin's comma and full stop. No monospaced type: `--font-mono` is a retired alias of `--font-figure`.
 - **Real figures only.** Jackpots, counts and drawn numbers come from the platform. Label our own counts with a source and date (`ProofStat` `source`).
 - **Excitement with guardrails.** `Odometer`, `TicketButton` effects and count-ups belong on Raffle Insider and client raffle sites. The organizations side stays calm: one jackpot count-up at most. No reels, near-miss effects, repeat-buy prompts or urgency beyond real deadlines.
 - **Client names need permission.** Pass program names in as props, and only once the client has approved public use. The package itself contains no client names.
