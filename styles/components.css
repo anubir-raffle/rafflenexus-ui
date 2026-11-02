@@ -9,7 +9,7 @@
 /* Headlines: Newsreader, for h1 and h2 only */
 .rnc-h { font-family: var(--font-display); font-weight: 600; line-height: 1.04; letter-spacing: -0.015em; text-wrap: balance; margin: 0; color: var(--ink); }
 .rnc-label { color: var(--ink-muted); }
-.rnc-fig { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 500; }
+.rnc-fig { font-family: var(--font-figure); font-variant-numeric: tabular-nums; font-weight: 500; }
 
 /* Button */
 /* One component for every action. Variants by job, three sizes, a loading state that keeps its width, icons beside the label.
@@ -67,7 +67,7 @@
 .rnc-badge-check { flex: none; width: 32px; height: 32px; border-radius: 50%; background: var(--verified-soft); display: grid; place-items: center; }
 .rnc-badge-check svg { display: block; }
 .rnc-badge b { display: block; color: var(--ink); font-size: 15px; line-height: 1.3; }
-.rnc-badge span { display: block; font: 400 12px/1.4 var(--font-mono); letter-spacing: 0.01em; color: var(--ink-body); }
+.rnc-badge span { display: block; font: 400 12px/1.4 var(--font-figure); letter-spacing: 0.01em; color: var(--ink-body); }
 .rnc-stage .rnc-badge { background: var(--stage-raised); border-color: var(--stage-verified); }
 .rnc-stage .rnc-badge b { color: var(--on-stage); }
 .rnc-stage .rnc-badge span { color: var(--on-stage-muted); }
@@ -82,7 +82,7 @@
 .rnc-licence-seal-check { fill: none; stroke: #ffffff; stroke-width: 5.5; stroke-linecap: round; stroke-linejoin: round; }
 .rnc-licence-body { grid-area: body; min-width: 0; }
 .rnc-licence .rnc-licence-title { margin: 0; color: #ffffff; font: 700 18px/1.25 var(--font-sans); }
-.rnc-licence .rnc-licence-number { margin: 4px 0 0; color: var(--stage-accent); font: 500 15px/1.4 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+.rnc-licence .rnc-licence-number { margin: 4px 0 0; color: var(--stage-accent); font: 500 15px/1.4 var(--font-figure); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
 .rnc-licence-numbers { display: grid; gap: 2px; margin: 4px 0 0; padding: 0; list-style: none; }
 .rnc-licence-numbers .rnc-licence-number { margin: 0; font-size: 14px; }
 .rnc-licence-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; margin-top: 2px; color: var(--stage-accent); font: 600 14px/1.3 var(--font-sans); text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); text-underline-offset: 3px; list-style: none; cursor: pointer; transition: color .2s ease, text-decoration-color .2s ease; }
@@ -108,12 +108,12 @@
 .rnc-licence.is-compact .rnc-licence-seal-check { stroke-width: 6.5; }
 .rnc-licence.is-compact .rnc-licence-body { display: flex; flex-wrap: wrap; gap: 0 8px; }
 .rnc-licence.is-compact .rnc-licence-title { color: var(--ink); font: 700 13px/1.4 var(--font-sans); }
-.rnc-licence.is-compact .rnc-licence-number { margin: 0; color: var(--ink-body); font: 400 13px/1.4 var(--font-mono); }
+.rnc-licence.is-compact .rnc-licence-number { margin: 0; color: var(--ink-body); font: 400 13px/1.4 var(--font-figure); }
 @media (prefers-reduced-motion: no-preference) { .rnc-licence-toggle::after { transition: transform .22s ease, margin .22s ease; } }
 .rnc-stage .rnc-badge-check { background: var(--stage); }
 
 /* Ledger line */
-.rnc-ledger { display: flex; flex-wrap: wrap; border-top: 2px solid var(--ink); font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.rnc-ledger { display: flex; flex-wrap: wrap; border-top: 2px solid var(--ink); font-family: var(--font-figure); font-variant-numeric: tabular-nums; }
 .rnc-ledger > div { flex: 1 1 140px; min-width: 0; padding: 14px 16px 14px 0; display: flex; flex-direction: column; gap: 2px; }
 .rnc-ledger small { font: 500 13px/1.3 var(--font-sans); color: var(--ink-muted); }
 .rnc-ledger strong { font-size: 20px; font-weight: 500; color: var(--ink); }
@@ -140,7 +140,7 @@
 
 /* Proof stat */
 .rnc-proof { display: flex; flex-direction: column; gap: var(--space-2); border-top: 3px solid var(--lead-fill); padding-top: var(--space-4); max-width: 420px; }
-.rnc-proof .rnc-big { font: 500 clamp(40px, 11vw, 56px)/1 var(--font-mono); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--lead); }
+.rnc-proof .rnc-big { font: 500 clamp(40px, 11vw, 56px)/1 var(--font-figure); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--lead); }
 .rnc-proof .rnc-big em { font-style: normal; color: var(--ink-muted); white-space: nowrap; }
 .rnc-proof p { margin: 0; color: var(--ink); font-size: 17px; line-height: 1.45; font-weight: 500; }
 .rnc-proof small { font: 400 13px/1.4 var(--font-sans); color: var(--ink-muted); }
@@ -207,18 +207,15 @@
   .rnc-rb-plate { padding: 10px 14px 12px; }
 }
 
-/* Jackpot figure: raised currency, tight tabular digits, a ticket-perforation rule, optional growth line.
-   Size it with font-size on the wrapper; colour with color, --jp-cur (currency) and --jp-perf (rule). */
+/* Jackpot figure: raised currency, the digits in the figure face, optional growth line. No rule under it (Miguel, 2 Nov 2026).
+   Size it with font-size on the wrapper; colour with color and --jp-cur (currency). */
 .rnc-jp.rnc-jp { font-size: inherit; opacity: 1; }
-.rnc-jp { display: flex; width: fit-content; flex-direction: column; align-items: flex-start; max-width: 100%; --jp-cur: currentColor; --jp-perf: currentColor; }
+.rnc-jp { display: flex; width: fit-content; flex-direction: column; align-items: flex-start; max-width: 100%; --jp-cur: currentColor; }
 .rnc-jp .rnc-jp-num { font-size: inherit; opacity: 1; }
-.rnc-jp .rnc-jp-fig { font-size: inherit; opacity: 1; display: inline-flex; align-items: flex-start; font-family: var(--font-mono); font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -0.045em; line-height: 0.92; white-space: nowrap; }
+.rnc-jp .rnc-jp-fig { font-size: inherit; opacity: 1; display: inline-flex; align-items: flex-start; font-family: var(--font-figure); font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; line-height: 0.92; white-space: nowrap; }
 .rnc-jp .rnc-jp-cur { opacity: 1; font: 600 0.44em/1 var(--font-sans); letter-spacing: 0; margin: 0.16em 0.1em 0 0; color: var(--jp-cur); }
-.rnc-jp .rnc-jp-sep { font-size: inherit; display: inline-block; margin: 0 -0.12em 0 -0.1em; }
-.rnc-jp .rnc-jp-perf { display: block; align-self: stretch; height: max(5px, 0.05em); margin-top: 0.14em; background: radial-gradient(circle closest-side, var(--jp-perf) 72%, transparent 78%) left center / max(9px, 0.09em) 100% repeat-x; opacity: 0.55; }
+.rnc-jp .rnc-jp-sep { font-size: inherit; margin: 0 0.02em; }
 .rnc-jp .rnc-jp-grow { opacity: 1; margin-top: 10px; font: 600 14px/1.3 var(--font-sans); letter-spacing: 0; color: var(--jp-grow, currentColor); }
-.rnc-jackpot .rnc-amt .rnc-jp { --jp-perf: var(--reward); }
-.rnc-stage .rnc-jackpot .rnc-amt .rnc-jp { --jp-perf: var(--stage-reward); }
 /* On a plate (dark or photo headers), the sponsor stays inside the plate on phones, stacked under the logo */
 @container (max-width: 640px) {
   .rnc-rb.rnc-rb-plate { flex-direction: column; align-items: flex-start; gap: 8px; }
@@ -366,7 +363,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
    the choice hugs its two options. It sizes to its own width: narrow, the https:// drops and the choice stacks full width. */
 .rnc-domain { container: rnc-domain / inline-size; width: 100%; max-width: min(100%, 36rem); }
 .rnc-domain .rnc-segmented { align-self: flex-start; }
-.rnc-domain .rnc-affix > span { font: 500 14px/1.4 var(--font-mono); }
+.rnc-domain .rnc-affix > span { font: 500 14px/1.4 var(--font-figure); }
 @container rnc-domain (max-width: 400px) {
   .rnc-domain .rnc-domain-scheme { display: none; }
   .rnc-domain .rnc-affix { padding: 0 12px; }
@@ -401,7 +398,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
   .rnc-colour-swatch { grid-row: 1 / span 3; }
   .rnc-colour-row { grid-column: 2; grid-row: auto; flex-direction: row; align-items: center; margin-top: 4px; }
 }
-.rnc-colour-hex { box-sizing: border-box; width: 7.5em; min-height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font: 500 14px/1 var(--font-mono); text-transform: uppercase; transition: border-color .2s ease; }
+.rnc-colour-hex { box-sizing: border-box; width: 7.5em; min-height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink); font: 500 14px/1 var(--font-figure); text-transform: uppercase; transition: border-color .2s ease; }
 .rnc-colour-hex:hover { border-color: var(--ink-muted); }
 .rnc-colour-hex:focus-visible { outline: 2px solid var(--focus); outline-offset: 0; border-color: var(--focus); }
 .rnc-colour-hex[aria-invalid="true"] { border: 2px solid var(--error); }
@@ -477,7 +474,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-sidebar-item[aria-current="page"] { background: var(--action); color: var(--on-action); font-weight: 700; }
 .rnc-sidebar-item[aria-current="page"] .rnc-icon, .rnc-sidebar-item[aria-current="page"] .rnc-sidebar-icon { color: var(--on-action); }
 .rnc-sidebar-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rnc-sidebar-badge { margin-left: auto; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--lead-soft); color: var(--lead); font: 500 12px/1.4 var(--font-mono); font-variant-numeric: tabular-nums; }
+.rnc-sidebar-badge { margin-left: auto; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--lead-soft); color: var(--lead); font: 500 12px/1.4 var(--font-figure); font-variant-numeric: tabular-nums; }
 .rnc-sidebar-item[aria-current="page"] .rnc-sidebar-badge { background: var(--on-action); color: var(--action); }
 .rnc-sidebar-footer { padding: 16px 20px 20px; }
 .rnc-sidebar.is-collapsed .rnc-sidebar-logo { justify-content: center; padding-inline: 12px; }
@@ -507,7 +504,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-sidebar.is-collapsed .rnc-sidebar-action { display: flex; justify-content: center; padding-inline: 0; }
 .rnc-sidebar.is-collapsed .rnc-sidebar-footer { display: flex; justify-content: center; padding-inline: 8px; }
 /* A version chip for the footer ("What's new v1.5.5"); it stays visible when collapsed */
-.rnc-sidebar-version { flex: none; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--surface-tint); color: var(--ink-body); font: 500 12px/1.4 var(--font-mono); font-variant-numeric: tabular-nums; transition: background-color .2s ease; }
+.rnc-sidebar-version { flex: none; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--surface-tint); color: var(--ink-body); font: 500 12px/1.4 var(--font-figure); font-variant-numeric: tabular-nums; transition: background-color .2s ease; }
 .rnc-sidebar-item:hover .rnc-sidebar-version { background: var(--surface); }
 /* Tooltip for collapsed items: to the right with an arrow, on hover and on keyboard focus. Fixed, so the scrolling list can't clip it. */
 .rnc-sidebar-tip { position: fixed; z-index: 1100; transform: translateY(-50%); padding: 6px 10px; border-radius: 8px; background: var(--stage); color: var(--on-stage); font: 600 13px/1.3 var(--font-sans); white-space: nowrap; pointer-events: none; box-shadow: var(--shadow-2); animation: rnc-tip-in .15s ease; }
@@ -572,7 +569,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-table td { padding: 12px 16px; color: var(--ink); vertical-align: middle; }
 .rnc-table tbody tr:nth-child(even) td { background: var(--ground); }
 .rnc-table tbody tr.is-selected td { background: var(--lead-soft); }
-.rnc-table .is-num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.rnc-table .is-num { text-align: right; font-family: var(--font-figure); font-variant-numeric: tabular-nums; }
 .rnc-table thead th.is-num { font-family: var(--font-sans); }
 .rnc-table .is-center { text-align: center; }
 .rnc-table-sort { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: inherit; cursor: pointer; }
@@ -639,7 +636,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-avatar-group { display: inline-flex; align-items: center; }
 .rnc-avatar-group .rnc-avatar-pic { box-shadow: 0 0 0 2px var(--surface); }
 .rnc-avatar-group > * + * { margin-left: calc(var(--av-size) * -.25); }
-.rnc-avatar-pic.is-more { --av-bg: var(--surface-tint); --av-fg: var(--ink); font: 500 calc(var(--av-size) * .34)/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.rnc-avatar-pic.is-more { --av-bg: var(--surface-tint); --av-fg: var(--ink); font: 500 calc(var(--av-size) * .34)/1 var(--font-figure); font-variant-numeric: tabular-nums; }
 
 /* Status pill: where a record stands, in a word. Tone by meaning: neutral (not started), progress (blue, with an optional mono figure), review (gold: waiting on someone), success (green: done), error (red). The word carries the meaning; colour backs it up. */
 .rnc-status { --st-bg: var(--surface-tint); --st-fg: var(--ink-body); box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; height: 28px; max-width: 100%; padding: 0 12px; border-radius: var(--radius-pill); background: var(--st-bg); color: var(--st-fg); font: 600 13px/1 var(--font-sans); white-space: nowrap; vertical-align: middle; }
@@ -652,7 +649,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-status.is-sm .rnc-icon { width: 14px; height: 14px; }
 .rnc-status-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 .rnc-status-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-.rnc-status-value { font: 500 1em/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.rnc-status-value { font: 500 1em/1 var(--font-figure); font-variant-numeric: tabular-nums; }
 
 /* Filter chips: the filters in force, each removable, with "Clear all" after them. Sit in the toolbar between search and the Filter button. */
 .rnc-chips { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-width: 0; }
@@ -682,7 +679,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-step-line { flex: 1; height: 2px; margin: 0 4px; border-radius: 2px; background: var(--line); }
 .rnc-step-line.is-reached { background: var(--verified); }
 .rnc-step-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; color: var(--ink-muted); }
-.rnc-step-date { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+.rnc-step-date { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-figure); font-variant-numeric: tabular-nums; color: var(--ink); }
 .rnc-step.is-late .rnc-step-date { color: var(--error); }
 .rnc-step-empty { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-muted); }
 .rnc-step.is-next .rnc-step-empty { font-weight: 500; color: var(--action); }
@@ -904,7 +901,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-wizard-preview.is-mobile .rnc-wizard-browser-view { max-height: min(70vh, 720px); }
 .rnc-wizard-browser-bar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--surface-tint); }
 .rnc-wizard-browser-bar i { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
-.rnc-wizard-browser-url { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 5px 8px; border-radius: 6px; background: var(--surface); font: 12px/1.3 var(--font-mono); color: var(--ink-body); }
+.rnc-wizard-browser-url { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 5px 8px; border-radius: 6px; background: var(--surface); font: 12px/1.3 var(--font-figure); color: var(--ink-body); }
 .rnc-wizard-site { --site-colour: var(--stage); --site-accent: var(--action); position: relative; isolation: isolate; container-type: inline-size; padding: clamp(22px, 6cqi, 48px) clamp(20px, 6cqi, 44px) clamp(26px, 7cqi, 56px); background: var(--site-colour) center / cover no-repeat; color: #ffffff; }
 .rnc-wizard-site.has-image::before { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(15, 42, 68, .62); }
 .rnc-wizard-site small { display: block; font-size: clamp(12px, 3cqi, 16px); opacity: .9; }
@@ -942,7 +939,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-wsite-packlist { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
 .rnc-wsite-pack { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-radius: 12px; background: #edf2f7; font-weight: 700; }
 .rnc-wsite-pack small { display: block; font-size: 13px; font-weight: 400; color: #5a6a79; }
-.rnc-wsite-pack > b { font: 600 18px/1 var(--font-mono); }
+.rnc-wsite-pack > b { font: 600 18px/1 var(--font-figure); }
 .rnc-wsite-licence { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; font-size: 13px; color: #5a6a79; }
 .rnc-wsite-section { padding: 52px 56px 0; }
 .rnc-wsite-section.is-tint { margin-top: 52px; padding-bottom: 52px; background: #e6edf4; background: color-mix(in srgb, var(--site-secondary) 10%, #ffffff); }
@@ -966,7 +963,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-wsite-prize-sponsor { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding-top: 10px; border-top: 1px solid #e3e9ef; font-weight: 500; font-size: 13px; color: #5a6875; }
 .rnc-wsite-prize-sponsor img { height: 22px; width: auto; max-width: 90px; object-fit: contain; }
 .rnc-wsite-prize-sponsor-item { display: inline-flex; align-items: center; gap: 6px; }
-.rnc-wsite-prizes b { font: 600 20px/1.2 var(--font-mono); color: var(--site-colour, #126ab5); white-space: nowrap; }
+.rnc-wsite-prizes b { font: 600 20px/1.2 var(--font-figure); color: var(--site-colour, #126ab5); white-space: nowrap; }
 .rnc-wsite-cause { max-width: 68ch; font-size: 17px; line-height: 1.6; color: #33414e; overflow-wrap: anywhere; }
 /* Where the money goes, with a photo or video: the text on the left, the media on the right; stacked on the phone preview. */
 .rnc-wsite-causeg { display: grid; gap: 20px; }
@@ -1005,7 +1002,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-wsite-trust > small b { color: #1d2b38; }
 .rnc-wsite-trust + .rnc-wsite-foot { margin-top: 0; }
 .rnc-wsite-licensed { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 10px 14px; border: 1px solid currentColor; border-radius: 10px; font-weight: 700; }
-.rnc-wsite-licensed small { font: 400 12px/1.3 var(--font-mono); opacity: .85; }
+.rnc-wsite-licensed small { font: 400 12px/1.3 var(--font-figure); opacity: .85; }
 .rnc-wsite-foot > small:last-child { margin-left: auto; }
 .rnc-wsite.is-mobile .rnc-wsite-hero { padding: 16px 20px 36px; }
 .rnc-wsite.is-mobile .rnc-wsite-head { flex-wrap: wrap; gap: 10px 12px; }
@@ -1104,7 +1101,7 @@ button.rnc-tbtn { border: 0; padding: 0; background: none; font-family: inherit;
 .rnc-xrow-chev { flex: none; color: var(--ink-muted); transition: transform .22s ease; }
 .rnc-xrow.is-open > .rnc-xrow-head .rnc-xrow-chev { transform: rotate(90deg); }
 .rnc-xrow-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 15px/1.3 var(--font-sans); }
-.rnc-xrow-meta { margin-left: auto; padding-left: 12px; white-space: nowrap; font: 500 13px/1.3 var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
+.rnc-xrow-meta { margin-left: auto; padding-left: 12px; white-space: nowrap; font: 500 13px/1.3 var(--font-figure); font-variant-numeric: tabular-nums; color: var(--ink-muted); }
 .rnc-xrow-actions { display: flex; flex: none; gap: 4px; }
 .rnc-xrow-panel { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .26s cubic-bezier(.2, .8, .2, 1); }
 /* Child combinators, so a row inside an open row keeps its own open or closed state. */

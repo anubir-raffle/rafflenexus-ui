@@ -60,7 +60,8 @@ export const tokens = {
   "font": {
     "display": "Newsreader, Georgia, \"Times New Roman\", serif",
     "sans": "\"DM Sans\", \"Helvetica Neue\", Arial, sans-serif",
-    "mono": "\"DM Mono\", \"SFMono-Regular\", Menlo, Consolas, monospace"
+    "figure": "\"Libre Franklin Punctuation\", \"DM Sans\", \"Helvetica Neue\", Arial, sans-serif",
+    "mono": "\"Libre Franklin Punctuation\", \"DM Sans\", \"Helvetica Neue\", Arial, sans-serif"
   }
 } as const;
 

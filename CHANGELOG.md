@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.0 (2026-11-02)
+
+- Synced with the design system: figures in DM Sans, no dotted rule under jackpots. Updated: tokens, component styles.
+
 ## Unreleased
 
 - **Figures are DM Sans, not DM Mono** (Mark: monospaced figures read as "AI"). New token `--font-figure` (`tokens.font.figure`): DM Sans with the comma and full stop from Libre Franklin, because DM Sans's comma hooks under the next digit in big figures. `fonts.css` loads a 984-byte Libre Franklin subset (`LibreFranklin-Punctuation.woff2`, only for "," and ".") and no longer loads DM Mono; the DM Mono files are gone from `fonts/`. Every component that used `--font-mono` uses `--font-figure`. **`--font-mono` stays as an alias of `--font-figure`** (and `tokens.font.mono` equals `tokens.font.figure`), so app code that reads it keeps working; move to `--font-figure`. DM Sans has no tabular figures, so columns of numbers no longer line up digit for digit; right-aligned columns still line up at the right edge.
